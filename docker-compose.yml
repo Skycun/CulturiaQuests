@@ -1,0 +1,77 @@
+services:
+  # --- BASE DE DONNÉES ---
+  database:
+    image: postgres:14-alpine
+    container_name: postgres_db
+    restart: unless-stopped
+    env_file: .env # Charge les variables du .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - strapi-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    networks:
+      - app-network
+
+  # --- BACKEND (Strapi) ---
+  backend:
+    container_name: strapi_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: database # Nom du service ci-dessus
+      DATABASE_PORT: ${POSTGRES_PORT}
+      DATABASE_NAME: ${POSTGRES_DB}
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      NODE_ENV: development
+    volumes:
+      - ./backend:/opt/app
+      - /opt/app/node_modules
+    ports:
+      - "${PORT}:${PORT}"
+    depends_on:
+      - database
+    networks:
+      - app-network
+    command: npm run develop
+
+  # --- FRONTEND (Nuxt) ---
+  frontend:
+    container_name: nuxt_frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - HOST=0.0.0.0
+      - PORT=${NUXT_PORT}
+    volumes:
+      - ./frontend:/src
+      - /src/node_modules
+      - /src/.nuxt
+    ports:
+      - "${NUXT_PORT}:${NUXT_PORT}"
+      - "24678:24678" # Port HMR pour le hot reload
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    command: npm run dev
+
+volumes:
+  strapi-data:
+
+networks:
+  app-network:
+    driver: bridge
