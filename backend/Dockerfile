@@ -1,7 +1,5 @@
-# 1. IMPORTANT : On utilise "slim" (Debian), PAS "alpine"
 FROM node:22-slim
 
-# 2. Comme on est sur Debian, on peut utiliser apt-get
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
@@ -17,11 +15,12 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /opt/app
 
-# 3. Installation
-COPY package.json ./
-RUN npm install
+# ✅ Copier package.json ET package-lock.json
+COPY package*.json ./
 
-# 4. Copie du code
+# ✅ Utiliser npm ci pour une installation plus rapide
+RUN npm ci
+
 COPY . .
 
 EXPOSE 1337

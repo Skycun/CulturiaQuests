@@ -1,10 +1,8 @@
 services:
-  # --- BASE DE DONNÉES ---
   database:
     image: postgres:14-alpine
     container_name: postgres_db
     restart: unless-stopped
-    env_file: .env # Charge les variables du .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -12,56 +10,59 @@ services:
     volumes:
       - strapi-data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "${POSTGRES_PORT:-5432}:5432" 
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # --- BACKEND (Strapi) ---
   backend:
     container_name: strapi_backend
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: .env
     environment:
       DATABASE_CLIENT: postgres
-      DATABASE_HOST: database # Nom du service ci-dessus
-      DATABASE_PORT: ${POSTGRES_PORT}
+      DATABASE_HOST: database
+      DATABASE_PORT: 5432 
       DATABASE_NAME: ${POSTGRES_DB}
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: development
     volumes:
       - ./backend:/opt/app
-      - /opt/app/node_modules
+      - backend_node_modules:/opt/app/node_modules
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-1337}:1337"
     depends_on:
-      - database
+      database:
+        condition: service_healthy  # ✅ Attend que Postgres soit prêt
     networks:
       - app-network
     command: npm run develop
 
-  # --- FRONTEND (Nuxt) ---
   frontend:
     container_name: nuxt_frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: .env
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - HOST=0.0.0.0
-      - PORT=${NUXT_PORT}
+      - PORT=${NUXT_PORT:-3000}
+      - NUXT_PUBLIC_API_BASE=http://localhost:${PORT:-1337}
     volumes:
       - ./frontend:/src
-      - /src/node_modules
+      - frontend_node_modules:/src/node_modules
     ports:
-      - "${NUXT_PORT}:${NUXT_PORT}"
-      - "24678:24678" # Port HMR pour le hot reload
+      - "${NUXT_PORT:-3000}:3000"
+      - "24678:24678"
     depends_on:
       - backend
     networks:
@@ -70,6 +71,8 @@ services:
 
 volumes:
   strapi-data:
+  backend_node_modules:
+  frontend_node_modules: 
 
 networks:
   app-network:
