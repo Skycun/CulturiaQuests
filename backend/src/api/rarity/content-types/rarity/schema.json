@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rarities",
+  "info": {
+    "singularName": "rarity",
+    "pluralName": "rarities",
+    "displayName": "Rarity"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    }
+  }
+}

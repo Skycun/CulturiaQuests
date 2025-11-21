@@ -11,11 +11,23 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "Guild_name": {
+    "experience": {
+      "type": "biginteger"
+    },
+    "name": {
       "type": "string"
     },
-    "Test": {
-      "type": "boolean"
+    "gold": {
+      "type": "integer"
+    },
+    "scraps": {
+      "type": "integer"
+    },
+    "characters": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::character.character",
+      "mappedBy": "guild"
     }
   }
 }

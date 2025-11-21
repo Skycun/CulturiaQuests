@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "items",
+  "info": {
+    "singularName": "item",
+    "pluralName": "items",
+    "displayName": "Item"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "rarity": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::rarity.rarity"
+    },
+    "level": {
+      "type": "integer"
+    },
+    "guild": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::guild.guild"
+    },
+    "index_damage": {
+      "type": "integer"
+    },
+    "character": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::character.character"
+    }
+  }
+}
