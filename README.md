@@ -13,11 +13,12 @@ Ce projet est une application web full-stack comprenant un back-end (API headles
 
 ## 🚀 Démarrage Rapide
 
-Suivez ces étapes pour lancer l'application en environnement de développement.
+Suivez ces étapes rigoureusement pour installer le projet et éviter les erreurs de première génération (notamment sur Strapi v5).
 
 ### Prérequis
 
 Assurez-vous d'avoir installé sur votre machine :
+-   [Node.js](https://nodejs.org/) (Version 20 ou supérieure recommandée)
 -   [Docker](https://docs.docker.com/get-docker/)
 -   [Docker Compose](https://docs.docker.com/compose/install/)
 
@@ -28,71 +29,98 @@ git clone <URL_DU_DEPOT>
 cd CulturiaQuests
 ```
 
-### 2. Configuration de l'Environnement
+### 2\. Configuration des Variables d'Environnement
 
-Le projet utilise un fichier `.env` à la racine pour gérer toutes les variables d'environnement (base de données, ports, clés secrètes).
+Le projet nécessite deux fichiers de configuration `.env` (un à la racine pour Docker, un dans le backend pour Strapi).
 
-Copiez le fichier d'exemple pour créer votre propre configuration :
+**A. À la racine du projet :**
+Copiez le fichier d'exemple :
 
 ```bash
 cp .env.exemple .env
 ```
 
-Le fichier `.env` contient déjà des valeurs par défaut pour un environnement de développement local. **Pour un environnement de production, il est crucial de modifier les clés de sécurité** (`APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `JWT_SECRET`, etc.).
-
-### 3. Lancer l'Application
-
-Une fois le fichier `.env` configuré, lancez l'ensemble des services avec Docker Compose :
+**B. Dans le dossier backend :**
+Strapi a besoin de ses propres clés pour construire l'interface d'administration.
 
 ```bash
-docker-compose up --build -d
+cd backend
+cp .env.example .env
 ```
--   `--build` : Construit les images Docker pour le front-end et le back-end à partir de leur `Dockerfile`.
--   `-d` : Lance les conteneurs en mode détaché (en arrière-plan).
+
+> **Note :** Pour la production, modifiez impérativement les clés secrètes (`APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, etc.) dans ces fichiers.
+
+### 3\. Installation et Construction Manuelle (Important)
+
+Pour éviter des erreurs d'interface lors du premier lancement (ex: *TypeError: reading 'tours'*), il est nécessaire de construire l'admin panel manuellement une première fois.
+
+Toujours dans le dossier `backend/` :
+
+1.  Installez les dépendances :
+
+    ```bash
+    npm install
+    ```
+
+2.  **Étape Cruciale :** Reconstruisez l'admin panel pour générer les fichiers correctement :
+
+    ```bash
+    npm run build
+    ```
+
+3.  Revenez à la racine du projet :
+
+    ```bash
+    cd ..
+    ```
+
+### 4\. Lancer l'Application avec Docker
+
+Une fois la préparation terminée, lancez l'ensemble des services :
+
+```bash
+docker-compose up --build
+```
+
+*(Ajoutez l'option `-d` si vous souhaitez lancer les conteneurs en arrière-plan).*
 
 Les services suivants seront démarrés :
--   `database`: Le serveur PostgreSQL.
--   `backend`: L'application Strapi.
--   `frontend`: L'application Nuxt.js.
 
-### 4. Accéder à l'Application
+  - `database`: Le serveur PostgreSQL.
+  - `backend`: L'application Strapi (démarre sur le port 1337).
+  - `frontend`: L'application Nuxt.js (démarre sur le port 3000).
 
-Une fois les conteneurs lancés :
+### 5\. Accéder à l'Application
 
--   🌍 **Frontend (Nuxt)** est accessible à l'adresse : [http://localhost:3000](http://localhost:3000)
--   ⚙️ **Backend (API Strapi)** est accessible à l'adresse : [http://localhost:1337/api](http://localhost:1337/api)
--   🔐 **Panneau d'Administration Strapi** est accessible à : [http://localhost:1337/admin](http://localhost:1337/admin)
+  - 🌍 **Frontend (Nuxt)** : [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
+  - ⚙️ **Backend (API Strapi)** : [http://localhost:1337/api](https://www.google.com/search?q=http://localhost:1337/api)
+  - 🔐 **Panneau d'Administration Strapi** : [http://localhost:1337/admin](https://www.google.com/search?q=http://localhost:1337/admin)
 
-> **Note importante :** Lors du premier accès au panneau d'administration de Strapi, vous devrez créer le premier compte administrateur.
+> **Premier lancement :** Vous devrez créer le premier compte administrateur ("Super Admin") lors de votre première connexion au panneau d'administration.
 
----
+-----
 
-##  Scripts Docker Compose Utiles
+## 🛠 Dépannage Courant
 
--   **Arrêter tous les services :**
-    ```bash
-    docker-compose down
-    ```
+**Erreur "reading 'tours' undefined" sur Strapi :**
+Si vous rencontrez cette erreur au lancement, c'est que le build de l'admin est corrompu.
 
--   **Voir les logs d'un service en temps réel** (remplacer `backend` par `frontend` ou `database` si besoin) :
-    ```bash
-    docker-compose logs -f backend
-    ```
+1.  Arrêtez les conteneurs.
+2.  Allez dans le dossier `backend`.
+3.  Supprimez les dossiers `.strapi`, `dist` et `node_modules`.
+4.  Relancez `npm install` puis `npm run build`.
 
--   **Se connecter au terminal d'un conteneur :**
-    ```bash
-    docker-compose exec backend bash
-    ```
-
----
+-----
 
 ## 📂 Structure du Projet
 
 ```
 .
 ├── backend/         # Contient l'application Strapi (API)
+│   ├── .env         # Config Strapi (à créer)
+│   └── ...
 ├── frontend/        # Contient l'application Nuxt.js (Client)
-├── .env             # Fichier de configuration local (à créer)
-├── .env.exemple     # Fichier d'exemple pour la configuration
-└── docker-compose.yml # Fichier d'orchestration des conteneurs
+├── .env             # Config Docker (à créer)
+├── .env.exemple     # Modèle de config racine
+└── docker-compose.yml # Orchestration des conteneurs
 ```

@@ -59,7 +59,6 @@ services:
     volumes:
       - ./frontend:/src
       - /src/node_modules
-      - /src/.nuxt
     ports:
       - "${NUXT_PORT}:${NUXT_PORT}"
       - "24678:24678" # Port HMR pour le hot reload
