@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "npcs",
+  "info": {
+    "singularName": "npc",
+    "pluralName": "npcs",
+    "displayName": "Npc"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "entry_count": {
+      "type": "integer"
+    }
+  }
+}

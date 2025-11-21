@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "friendships",
+  "info": {
+    "singularName": "friendship",
+    "pluralName": "friendships",
+    "displayName": "Friendship"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "npc": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::npc.npc"
+    },
+    "guild": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::guild.guild"
+    },
+    "entry_count_unlocked": {
+      "type": "integer"
+    }
+  }
+}

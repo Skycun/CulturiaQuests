@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "runs",
+  "info": {
+    "singularName": "run",
+    "pluralName": "runs",
+    "displayName": "Run"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "dps": {
+      "type": "integer"
+    },
+    "date_start": {
+      "type": "datetime"
+    },
+    "date_end": {
+      "type": "datetime"
+    },
+    "gold_earned": {
+      "type": "integer"
+    },
+    "guild": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::guild.guild"
+    },
+    "poi": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::poi.poi"
+    }
+  }
+}
