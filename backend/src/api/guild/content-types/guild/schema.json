@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guilds",
+  "info": {
+    "singularName": "guild",
+    "pluralName": "guilds",
+    "displayName": "Guild"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Guild_name": {
+      "type": "string"
+    },
+    "Test": {
+      "type": "boolean"
+    }
+  }
+}

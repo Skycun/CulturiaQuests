@@ -31,6 +31,10 @@ cd CulturiaQuests
 
 ### 2\. Configuration des Variables d'Environnement
 
+```
+node -e "const crypto=require('crypto');const g=()=>crypto.randomBytes(32).toString('base64').replace(/[=+/]/g,'').substring(0,32);const k=[g(),g(),g(),g()];console.log('APP_KEYS='+k.join(',')+'\nAPI_TOKEN_SALT='+g()+'\nADMIN_JWT_SECRET='+g()+'\nTRANSFER_TOKEN_SALT='+g()+'\nJWT_SECRET='+g())" >> .env
+```
+
 Le projet nécessite deux fichiers de configuration `.env` (un à la racine pour Docker, un dans le backend pour Strapi).
 
 **A. À la racine du projet :**
