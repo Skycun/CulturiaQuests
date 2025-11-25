@@ -460,6 +460,33 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiEntryEntry extends Struct.CollectionTypeSchema {
+  collectionName: 'entries';
+  info: {
+    displayName: 'Entry';
+    pluralName: 'entries';
+    singularName: 'entry';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    entry_number: Schema.Attribute.Integer;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::entry.entry'> &
+      Schema.Attribute.Private;
+    npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
+    publishedAt: Schema.Attribute.DateTime;
+    text: Schema.Attribute.Text;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiFriendshipFriendship extends Struct.CollectionTypeSchema {
   collectionName: 'friendships';
   info: {
@@ -569,7 +596,7 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    entry_count: Schema.Attribute.Integer;
+    entries: Schema.Attribute.Relation<'oneToMany', 'api::entry.entry'>;
     firstname: Schema.Attribute.String;
     lastname: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1204,6 +1231,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::character.character': ApiCharacterCharacter;
+      'api::entry.entry': ApiEntryEntry;
       'api::friendship.friendship': ApiFriendshipFriendship;
       'api::guild.guild': ApiGuildGuild;
       'api::item.item': ApiItemItem;
