@@ -9,5 +9,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',
     '@hypernym/nuxt-anime',
+    '@nuxtjs/strapi',
   ],
 })
