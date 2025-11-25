@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "entries",
+  "info": {
+    "singularName": "entry",
+    "pluralName": "entries",
+    "displayName": "Entry"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "entry_number": {
+      "type": "integer"
+    },
+    "text": {
+      "type": "text"
+    },
+    "npc": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::npc.npc",
+      "inversedBy": "entries"
+    }
+  }
+}

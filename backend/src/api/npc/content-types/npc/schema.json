@@ -11,9 +11,6 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "entry_count": {
-      "type": "integer"
-    },
     "firstname": {
       "type": "string"
     },
@@ -25,6 +22,12 @@
     },
     "pronouns": {
       "type": "string"
+    },
+    "entries": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::entry.entry",
+      "mappedBy": "npc"
     }
   }
 }
