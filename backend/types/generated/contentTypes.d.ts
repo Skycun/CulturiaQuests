@@ -570,10 +570,13 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     entry_count: Schema.Attribute.Integer;
+    firstname: Schema.Attribute.String;
+    lastname: Schema.Attribute.String;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::npc.npc'> &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
+    professions: Schema.Attribute.String;
+    pronouns: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &

@@ -11,11 +11,20 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "name": {
-      "type": "string"
-    },
     "entry_count": {
       "type": "integer"
+    },
+    "firstname": {
+      "type": "string"
+    },
+    "lastname": {
+      "type": "string"
+    },
+    "professions": {
+      "type": "string"
+    },
+    "pronouns": {
+      "type": "string"
     }
   }
 }
