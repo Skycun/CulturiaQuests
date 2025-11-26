@@ -1,0 +1,37 @@
+name: 🤖 AI Code Review
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.vue'
+      - '**.ts'
+      - '**.js'
+      # J'ajoute le script python pour que tu puisses tester en modifiant le script lui-même
+      - 'scripts/**.py' 
+
+jobs:
+  ai_review:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Récupération du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Important pour pouvoir comparer avec le commit précédent
+
+      - name: 🐍 Installation de Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Installation des dépendances
+        run: pip install openai requests
+
+      - name: 🧠 Lancement de l'analyse IA
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python scripts/ai_reviewer.py
