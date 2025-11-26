@@ -28,7 +28,7 @@ jobs:
           python-version: '3.10'
 
       - name: 📦 Installation des dépendances
-        run: pip install openai requests
+        run: pip install openai requests pydantic
 
       - name: 🧠 Lancement de l'analyse IA
         env:
