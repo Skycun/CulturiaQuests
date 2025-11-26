@@ -111,30 +111,27 @@ def analyze_code(files_content: str) -> Optional[str]:
         print("❌ Aucun contenu à analyser")
         return None
 
-    # Prompt optimisé avec schéma JSON strict
+    # Prompt optimisé avec schéma JSON strict et exemples
     prompt = f"""
-    Tu es un Tech Lead expert et un auditeur de sécurité.
-    Analyse ce commit (Strapi 5 / Nuxt 3) selon 3 axes stricts.
+Tu es un code reviewer technique. Analyse ce code et RETOURNE UNIQUEMENT LE JSON SUIVANT (AUCUN AUTRE TEXTE) :
 
-    CODE À ANALYSER :
-    {files_content}
+{{
+    "score_global": 15,
+    "details": {{
+        "SOLID": 14,
+        "Clarte": 16,
+        "Securite": 13
+    }},
+    "resume": "Résumé de l'analyse en une phrase courte",
+    "points_forts": ["Point fort 1", "Point fort 2"],
+    "points_faibles": ["Point faible 1", "Point faible 2"],
+    "conseil_mentor": "Un conseil concret et actionnable"
+}}
 
-    RÉPONDS UNIQUEMENT AU FORMAT JSON VALIDE (sans markdown, sans commentaires) :
-    {{
-        "score_global": <int entre 0 et 20>,
-        "details": {{
-            "SOLID": <int entre 0 et 20>,
-            "Clarte": <int entre 0 et 20>,
-            "Securite": <int entre 0 et 20>
-        }},
-        "resume": "<texte max 200 caractères>",
-        "points_forts": ["point 1", "point 2"],
-        "points_faibles": ["point 1", "point 2"],
-        "conseil_mentor": "<texte max 300 caractères>"
-    }}
-    
-    IMPORTANT: Réponds UNIQUEMENT avec le JSON, sans balises markdown ni texte avant/après.
-    """
+CODE À ANALYSER :
+{files_content}
+
+RAPPEL CRITIQUE : Retourne UNIQUEMENT le JSON valide ci-dessus avec tes valeurs, sans ```json, sans commentaires, sans texte additionnel."""
 
     max_retries = 2
     for attempt in range(max_retries):
@@ -143,10 +140,10 @@ def analyze_code(files_content: str) -> Optional[str]:
             response = client.responses.create(
                 model=MODEL_NAME,
                 input=[
-                    {"role": "system", "content": "Tu es un assistant CI/CD qui répond exclusivement en JSON valide, sans markdown."},
+                    {"role": "system", "content": "You are a JSON API that only outputs valid JSON. Never add markdown formatting or explanatory text. Return only raw JSON."},
                     {"role": "user", "content": prompt}
                 ],
-                reasoning={"effort": "medium"}
+                reasoning={"effort": "low"}  # Réduit pour éviter les explications
             )
             
             output = response.output_text.strip()
@@ -166,6 +163,14 @@ def send_discord_notification(report_json: str, commit_hash: str, commit_message
     try:
         # Nettoyage des balises Markdown et espaces
         cleaned_json = report_json.replace("```json", "").replace("```", "").strip()
+        
+        # Nettoyage supplémentaire : extraction du JSON si du texte est présent avant/après
+        # Cherche le premier { et le dernier }
+        start_idx = cleaned_json.find('{')
+        end_idx = cleaned_json.rfind('}')
+        
+        if start_idx != -1 and end_idx != -1:
+            cleaned_json = cleaned_json[start_idx:end_idx+1]
         
         # Tentative de parsing JSON brut
         try:
