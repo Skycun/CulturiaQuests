@@ -1,0 +1,456 @@
+[
+  {
+    "name": "Pole Horse De Saint-Lô",
+    "description": "Pole Hippique de, 437 Rue Maréchal Juin, Saint-Lô - Pôle hippique consacré au cheval et aux pratiques/techniques équestres, relevant du patrimoine technique et des savoir‑faire (formation/présentation liées à une activité spécialisée).",
+    "latitude": 49.11721840000001,
+    "longitude": -1.0770386,
+    "type": "museum",
+    "categories": [
+      "Savoir-faire"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Departmental Archives De La Manche",
+    "description": "Basse-Normandie, 103 Rue Maréchal Juin, Saint-Lô - Lieu conservant des documents historiques (Histoire) et fonctionnement comme un établissement public/bibliothèque offrant accès aux archives (Société).",
+    "latitude": 49.11579510000001,
+    "longitude": -1.0809746,
+    "type": "museum",
+    "categories": [
+      "Histoire",
+      "Société"
+    ],
+    "rating": 3.6
+  },
+  {
+    "name": "Musée du Bocage Normand",
+    "description": "Boulevard de la Commune, Saint-Lô - Musée consacré au bocage normand présentant le patrimoine et l'histoire locale ainsi que les pratiques et savoir‑faire ruraux (artisanat, agriculture).",
+    "latitude": 49.10450869999999,
+    "longitude": -1.0766467,
+    "type": "museum",
+    "categories": [
+      "Histoire",
+      "Savoir-faire"
+    ],
+    "rating": 3.8
+  },
+  {
+    "name": "Museum of Fine Arts",
+    "description": "5 Place du Champ de Mars, Saint-Lô - Musée des beaux-arts : établissement dédié aux collections et expositions d'art, correspond à la catégorie Art.",
+    "latitude": 49.11700619999999,
+    "longitude": -1.0878218,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Pheede",
+    "description": "44 Rue du Pré de Bas, Saint-Lô - Types Google incluent 'art_gallery' et 'store' — il s'agit d'une galerie/lieu d'exposition d'art, correspondant à la catégorie Art.",
+    "latitude": 49.1175662,
+    "longitude": -1.0918043,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Office National des Forêts (O.N.F)",
+    "description": "19 Route de Coutances, Agneaux - Organisme et site liés à la gestion des forêts et espaces naturels (types Google : park, tourist_attraction) — correspond à Nature.",
+    "latitude": 49.1183588,
+    "longitude": -1.1040602,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 3.9
+  },
+  {
+    "name": "Chapelle de la Madeleine",
+    "description": "Square des Victimes du 11-Septembre 2001, Saint-Lô - Chapelle = lieu de culte (Société) ; édifice religieux et point touristique susceptible d'être un monument historique (Histoire).",
+    "latitude": 49.1172592,
+    "longitude": -1.0611048,
+    "type": "poi",
+    "categories": [
+      "Société",
+      "Histoire"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Église Sainte-Croix de Saint-Lô",
+    "description": "4 Place Sainte-Croix, Saint-Lô - Église = lieu de culte ; selon les règles, les lieux de culte sont classés en 'Société'.",
+    "latitude": 49.1163147,
+    "longitude": -1.0851875,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Vallon de la Dollée",
+    "description": "172 Rue des Acres, Saint-Lô - Classé comme park et point d'intérêt touristique : il s'agit d'un espace naturel / parc (jardin/parc).",
+    "latitude": 49.1192984,
+    "longitude": -1.0818902,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Sat market Place du Général de Gaulle",
+    "description": "42 Place Général de Gaulle, Saint-Lô - Marché public et place de rassemblement communautaire : lieu social et d'activité publique relevant de la catégorie Société.",
+    "latitude": 49.1158412,
+    "longitude": -1.091068,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Église Notre-Dame de Saint-Lô",
+    "description": "2 Rue Carnot, Saint-Lô - Église = lieu de culte, correspond à la catégorie Société selon les règles (lieux de culte, bibliothèques, centres culturels).",
+    "latitude": 49.1153209,
+    "longitude": -1.0942457,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Les remparts de St Lô",
+    "description": "Saint-Lô - Fortifications et vestiges historiques (remparts) relevant du patrimoine/monument historique.",
+    "latitude": 49.11484600000001,
+    "longitude": -1.0950936,
+    "type": "poi",
+    "categories": [
+      "Histoire"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Wandmalerei",
+    "description": "7 Rue des Prés, Saint-Lô - Le nom (Wandmalerei = peinture murale) et le fait que c'est une attraction touristique indiquent une œuvre d'art/arte public, donc catégorie Art.",
+    "latitude": 49.11504739999999,
+    "longitude": -1.0968636,
+    "type": "poi",
+    "categories": [
+      "Art"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Île Mosselman",
+    "description": "675 Promenade des Ports, Saint-Lô - Nom et adresse (Île, Promenade des Ports) indiquent un espace naturel/lieu de promenade; types Google (tourist_attraction, point_of_interest) cohérents avec un parc/île récréatif.",
+    "latitude": 49.11962560000001,
+    "longitude": -1.0971717,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Workshop Canopy - 50 Saint-Lô",
+    "description": "Rue des Paliers, Saint-Lô - Le type Google indiqué est 'library' (bibliothèque) ; selon les règles, les bibliothèques relèvent de la catégorie Société.",
+    "latitude": 49.11851270000001,
+    "longitude": -1.0935011,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Médiathèque de Saint-Lô",
+    "description": "Centre Culturel La Source, Place du Champ de Mars, Saint-Lô - Médiathèque = bibliothèque et située dans un centre culturel, donc correspond à la catégorie « Société » selon les règles.",
+    "latitude": 49.11654659999999,
+    "longitude": -1.0877985,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Bibliothèque du Chat perché",
+    "description": "45 Avenue des Tilleuls, Saint-Lô - C'est une bibliothèque — selon les règles, les bibliothèques sont classées dans la catégorie Société.",
+    "latitude": 49.111361,
+    "longitude": -1.0698124,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 1
+  },
+  {
+    "name": "Mediatheque",
+    "description": "Place Pierre de Gouville, Agneaux - Médiathèque = bibliothèque/centre culturel selon les règles (lieu de lecture et ressources culturelles).",
+    "latitude": 49.116212,
+    "longitude": -1.1130751,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.8
+  },
+  {
+    "name": "Bibliothèque universitaire INSPE, centre de Saint-Lô",
+    "description": "10 Rue Saint-Georges, Saint-Lô - Il s'agit d'une bibliothèque universitaire — les bibliothèques sont classées dans la catégorie 'Société' selon les règles fournies.",
+    "latitude": 49.1192901,
+    "longitude": -1.0919595,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Bibliothèque Départementale de la Manche",
+    "description": "Place Georges Pompidou, Saint-Lô - Bibliothèque départementale — lieu de lecture et services culturels, correspond à la règle « bibliothèques » classée dans Société.",
+    "latitude": 49.10277549999999,
+    "longitude": -1.0835624,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.7
+  },
+  {
+    "name": "Presbytère Saint Jean Eudes",
+    "description": "Avenue des Tilleuls, Saint-Lô - Presbytère associé à une église/lieu de culte (types : church, place_of_worship) — relève de la catégorie Société.",
+    "latitude": 49.1111475,
+    "longitude": -1.0701123,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Eglise Saint-Georges-Montcocq",
+    "description": "Rue de l'Église, Saint-Lô - Il s'agit d'une église (lieu de culte) ; selon les règles, les lieux de culte relèvent de la catégorie Société. Pas d'indication qu'il s'agit d'un musée ou d'un monument historique.",
+    "latitude": 49.12475549999999,
+    "longitude": -1.0916814,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Eglise Protestante Evangélique",
+    "description": "43 Rue Alsace Lorraine, Saint-Lô - Église protestante évangélique, lieu de culte — correspond à la catégorie 'Société' (lieux de culte).",
+    "latitude": 49.1161153,
+    "longitude": -1.1012418,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Paroisse St Laud",
+    "description": "47 Avenue du Cotentin, Saint-Georges-Montcocq - Paroisse St Laud est une église/paroisse, donc un lieu de culte qui relève de la catégorie Société.",
+    "latitude": 49.1302773,
+    "longitude": -1.0947743,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Communauté Bon Sauveur",
+    "description": "74 Rue Elisabeth de Surville, Saint-Lô - Lieu de culte/communauté religieuse (types Google: church, place_of_worship), correspond à la catégorie Société.",
+    "latitude": 49.1121256,
+    "longitude": -1.0949573,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Paroisse St Laud",
+    "description": "4 Rue Henri Amiard, Saint-Lô - Église/lieu de culte (Paroisse St Laud) correspond à la catégorie Société selon les règles.",
+    "latitude": 49.115188,
+    "longitude": -1.0935621,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Aumonerie de l'Enseignement Public",
+    "description": "Place du Major Howie, Saint-Lô - Aumônerie/lieu de culte (church/place_of_worship) : classé en Société selon la règle incluant les lieux de culte.",
+    "latitude": 49.1153338,
+    "longitude": -1.0844845,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Église Évangélique Baptiste Chemin Nouveau",
+    "description": "570 Avenue de Verdun, Saint-Lô - Il s'agit d'une église (lieu de culte) ; la catégorie Société couvre explicitement les lieux de culte.",
+    "latitude": 49.11823709999999,
+    "longitude": -1.0839685,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Temple Protestant (EPUF Saint-Lô)",
+    "description": "6 Rue Fontaine Venise, Saint-Lô - Temple protestant — lieu de culte, correspond directement à la catégorie « Société ».",
+    "latitude": 49.1123323,
+    "longitude": -1.0878872,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Association Diocésaine Coutances",
+    "description": "28 Rue de la Cavée, Agneaux - Association diocésaine et types Google (church, place_of_worship) indiquent un lieu de culte, classé en Société.",
+    "latitude": 49.1153679,
+    "longitude": -1.112178,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Église Saint-Jean-Baptiste d'Agneaux",
+    "description": "23 Place Pierre de Gouville, Agneaux - Église (lieu de culte) correspond directement à la catégorie 'Société' selon les règles fournies.",
+    "latitude": 49.11527590000001,
+    "longitude": -1.1128985,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.1
+  },
+  {
+    "name": "Chapelle Sainte-Marie",
+    "description": "France - Chapelle = lieu de culte; selon les règles, les lieux de culte appartiennent à la catégorie 'Société'.",
+    "latitude": 49.12055410000001,
+    "longitude": -1.12082,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 2
+  },
+  {
+    "name": "Église Saint-Ouen",
+    "description": "Le Bourg, Baudre - Église / lieu de culte — correspond à la catégorie «Société» (lieux de culte, bibliothèques, centres culturels).",
+    "latitude": 49.0898695,
+    "longitude": -1.0732579,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3
+  },
+  {
+    "name": "Église Saint-Ébremond de La Barre-de-Semilly",
+    "description": "Rue des Écoles, La Barre-de-Semilly - Église et lieu de culte : correspond à la catégorie Société selon les règles.",
+    "latitude": 49.11216959999999,
+    "longitude": -1.0347306,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Église Saint-Pierre",
+    "description": "Le Bourg, La Luzerne - Église (lieu de culte) — correspond à la catégorie Société selon les règles.",
+    "latitude": 49.1395431,
+    "longitude": -1.0499288,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Église Notre-Dame",
+    "description": "Rue Saint-Martin, Le Mesnil-Rouxelin - Église = lieu de culte, correspond à la catégorie Société.",
+    "latitude": 49.147508,
+    "longitude": -1.0878035,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3.8
+  },
+  {
+    "name": "Église Notre-Dame",
+    "description": "Rue du Bel - Église (lieu de culte) — correspond à la catégorie Société selon les règles (types: church, place_of_worship).",
+    "latitude": 49.0819375,
+    "longitude": -1.1126507,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Église Saint-Pierre",
+    "description": "Place de l'Église, Villiers-Fossard - Église = lieu de culte, classée sous Société selon les règles.",
+    "latitude": 49.1570909,
+    "longitude": -1.0602452,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Mosquée de Saint-Lô",
+    "description": "443 Rue Jean Mantelet A, Saint-Lô - Mosquée = lieu de culte (place_of_worship) ; correspond à la catégorie Société.",
+    "latitude": 49.112188,
+    "longitude": -1.0509799,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3.8
+  },
+  {
+    "name": "Saint lo new mosque",
+    "description": "15 Le Bourg, Baudre - Mosquée (lieu de culte) — correspond à la catégorie Société (lieux de culte, bibliothèques, centres culturels).",
+    "latitude": 49.0894289,
+    "longitude": -1.0729745,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Masjid jum'ah saint lo",
+    "description": "Chemin de la Vannerie, Baudre - Mosquée (lieu de culte) : correspond à la catégorie Société.",
+    "latitude": 49.0893984,
+    "longitude": -1.0724819,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  }
+]

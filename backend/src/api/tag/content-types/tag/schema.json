@@ -19,13 +19,13 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::item.item",
-      "inversedBy": "tags"
+      "mappedBy": "tags"
     },
     "museums": {
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::museum.museum",
-      "inversedBy": "tags"
+      "mappedBy": "tags"
     }
   }
 }

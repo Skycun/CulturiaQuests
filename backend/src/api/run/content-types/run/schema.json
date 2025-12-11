@@ -65,7 +65,7 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::item.item",
-      "inversedBy": "runs"
+      "mappedBy": "runs"
     }
   }
 }

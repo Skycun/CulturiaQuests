@@ -1,1 +1,3 @@
 .env
+scripts/pois_importer/.env
+scripts/pois_importer/node_modules
