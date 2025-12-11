@@ -17,11 +17,11 @@
     },
     "lat": {
       "type": "float",
-      "required": true
+      "required": false
     },
     "lng": {
       "type": "float",
-      "required": true
+      "required": false
     },
     "geohash": {
       "type": "string"

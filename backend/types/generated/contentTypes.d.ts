@@ -641,8 +641,8 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     geohash: Schema.Attribute.String;
-    lat: Schema.Attribute.Float & Schema.Attribute.Required;
-    lng: Schema.Attribute.Float & Schema.Attribute.Required;
+    lat: Schema.Attribute.Float;
+    lng: Schema.Attribute.Float;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -721,8 +721,8 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     geohash: Schema.Attribute.String;
-    lat: Schema.Attribute.Float & Schema.Attribute.Required;
-    lng: Schema.Attribute.Float & Schema.Attribute.Required;
+    lat: Schema.Attribute.Float;
+    lng: Schema.Attribute.Float;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::poi.poi'> &
       Schema.Attribute.Private;
