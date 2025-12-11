@@ -11,17 +11,30 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "name": {
-      "type": "string"
+    "firstname": {
+      "type": "string",
+      "required": true
+    },
+    "lastname": {
+      "type": "string",
+      "required": true
     },
     "job": {
-      "type": "string"
+      "type": "enumeration",
+      "enum": ["hero", "mage", "archer", "soldier"],
+      "required": true
     },
     "guild": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::guild.guild",
       "inversedBy": "characters"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::item.item",
+      "mappedBy": "character"
     }
   }
 }

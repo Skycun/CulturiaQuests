@@ -444,15 +444,18 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    firstname: Schema.Attribute.String & Schema.Attribute.Required;
     guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
-    job: Schema.Attribute.String;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
+    job: Schema.Attribute.Enumeration<['hero', 'mage', 'archer', 'soldier']> &
+      Schema.Attribute.Required;
+    lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::character.character'
     > &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -460,12 +463,12 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiEntryEntry extends Struct.CollectionTypeSchema {
-  collectionName: 'entries';
+export interface ApiDialogDialog extends Struct.CollectionTypeSchema {
+  collectionName: 'dialogs';
   info: {
-    displayName: 'Entry';
-    pluralName: 'entries';
-    singularName: 'entry';
+    displayName: 'Dialog';
+    pluralName: 'dialogs';
+    singularName: 'dialog';
   };
   options: {
     draftAndPublish: true;
@@ -474,13 +477,25 @@ export interface ApiEntryEntry extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    entry_number: Schema.Attribute.Integer;
+    dialogues: Schema.Attribute.JSON & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::entry.entry'> &
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::dialog.dialog'
+    > &
       Schema.Attribute.Private;
     npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
     publishedAt: Schema.Attribute.DateTime;
-    text: Schema.Attribute.Text;
+    text_type: Schema.Attribute.Enumeration<
+      [
+        'quest_description',
+        'expedition_appear',
+        'expedition_fail',
+        'quest_complete',
+        'journal_entries',
+      ]
+    > &
+      Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -501,16 +516,21 @@ export interface ApiFriendshipFriendship extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    entry_count_unlocked: Schema.Attribute.Integer;
-    guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
+    expedition_entry_unlocked: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::friendship.friendship'
     > &
       Schema.Attribute.Private;
-    npc: Schema.Attribute.Relation<'oneToOne', 'api::npc.npc'>;
+    npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
     publishedAt: Schema.Attribute.DateTime;
+    quests_entry_unlocked: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -535,17 +555,33 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    experience: Schema.Attribute.BigInteger;
-    gold: Schema.Attribute.Integer;
+    exp: Schema.Attribute.BigInteger & Schema.Attribute.DefaultTo<'0'>;
+    friendships: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::friendship.friendship'
+    >;
+    gold: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::guild.guild'> &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    scraps: Schema.Attribute.Integer;
+    quests: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
+    runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
+    scrap: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+    visits: Schema.Attribute.Relation<'oneToMany', 'api::visit.visit'>;
   };
 }
 
@@ -561,21 +597,62 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
   };
   attributes: {
     character: Schema.Attribute.Relation<
-      'oneToOne',
+      'manyToOne',
       'api::character.character'
     >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
-    index_damage: Schema.Attribute.Integer;
-    level: Schema.Attribute.Integer;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    index_damage: Schema.Attribute.Integer & Schema.Attribute.Required;
+    isScrapped: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    level: Schema.Attribute.Integer & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::item.item'> &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    rarity: Schema.Attribute.Relation<'oneToOne', 'api::rarity.rarity'>;
+    rarity: Schema.Attribute.Relation<'manyToOne', 'api::rarity.rarity'>;
+    runs: Schema.Attribute.Relation<'manyToMany', 'api::run.run'>;
+    slot: Schema.Attribute.Enumeration<['weapon', 'helmet', 'charm']> &
+      Schema.Attribute.Required;
+    tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    visits: Schema.Attribute.Relation<'manyToMany', 'api::visit.visit'>;
+  };
+}
+
+export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
+  collectionName: 'museums';
+  info: {
+    displayName: 'Museum';
+    pluralName: 'museums';
+    singularName: 'museum';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    geohash: Schema.Attribute.String;
+    latitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::museum.museum'
+    > &
+      Schema.Attribute.Private;
+    longitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
+    tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -596,15 +673,26 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    entries: Schema.Attribute.Relation<'oneToMany', 'api::entry.entry'>;
-    firstname: Schema.Attribute.String;
-    lastname: Schema.Attribute.String;
+    dialogs: Schema.Attribute.Relation<'oneToMany', 'api::dialog.dialog'>;
+    expedition_entry_available: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    firstname: Schema.Attribute.String & Schema.Attribute.Required;
+    friendships: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::friendship.friendship'
+    >;
+    lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::npc.npc'> &
       Schema.Attribute.Private;
-    professions: Schema.Attribute.String;
-    pronouns: Schema.Attribute.String;
+    pronouns: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    quests: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
+    quests_entry_available: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -625,15 +713,62 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    geohash: Schema.Attribute.String;
+    latitude: Schema.Attribute.Float & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::poi.poi'> &
       Schema.Attribute.Private;
-    location: Schema.Attribute.JSON;
-    name: Schema.Attribute.String;
+    longitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    quests_a: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
+    quests_b: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    visits: Schema.Attribute.Relation<'oneToMany', 'api::visit.visit'>;
+  };
+}
+
+export interface ApiQuestQuest extends Struct.CollectionTypeSchema {
+  collectionName: 'quests';
+  info: {
+    displayName: 'Quest';
+    pluralName: 'quests';
+    singularName: 'quest';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date_end: Schema.Attribute.DateTime;
+    date_start: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    gold_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    is_poi_a_completed: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    is_poi_b_completed: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'> &
+      Schema.Attribute.Private;
+    npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
+    poi_a: Schema.Attribute.Relation<'manyToOne', 'api::poi.poi'>;
+    poi_b: Schema.Attribute.Relation<'manyToOne', 'api::poi.poi'>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    xp_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
   };
 }
 
@@ -651,13 +786,14 @@ export interface ApiRarityRarity extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::rarity.rarity'
     > &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -680,18 +816,30 @@ export interface ApiRunRun extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     date_end: Schema.Attribute.DateTime;
-    date_start: Schema.Attribute.DateTime;
-    dps: Schema.Attribute.Integer;
-    gold_earned: Schema.Attribute.Integer;
-    guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
+    date_start: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    dps: Schema.Attribute.Integer & Schema.Attribute.Required;
+    entry_unlocked: Schema.Attribute.Boolean;
+    gold_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    items: Schema.Attribute.Relation<'manyToMany', 'api::item.item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::run.run'> &
       Schema.Attribute.Private;
-    poi: Schema.Attribute.Relation<'oneToOne', 'api::poi.poi'>;
+    museum: Schema.Attribute.Relation<'manyToOne', 'api::museum.museum'>;
+    npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
     publishedAt: Schema.Attribute.DateTime;
+    target_threshold: Schema.Attribute.Integer;
+    threshold_reached: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    xp_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
   };
 }
 
@@ -709,11 +857,50 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    items: Schema.Attribute.Relation<'manyToMany', 'api::item.item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::tag.tag'> &
       Schema.Attribute.Private;
-    name: Schema.Attribute.String;
+    museums: Schema.Attribute.Relation<'manyToMany', 'api::museum.museum'>;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiVisitVisit extends Struct.CollectionTypeSchema {
+  collectionName: 'visits';
+  info: {
+    displayName: 'Visit';
+    pluralName: 'visits';
+    singularName: 'visit';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    items: Schema.Attribute.Relation<'manyToMany', 'api::item.item'>;
+    last_opened_at: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::visit.visit'> &
+      Schema.Attribute.Private;
+    open_count: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    poi: Schema.Attribute.Relation<'manyToOne', 'api::poi.poi'>;
+    publishedAt: Schema.Attribute.DateTime;
+    total_exp_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    total_gold_earned: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1232,15 +1419,18 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::character.character': ApiCharacterCharacter;
-      'api::entry.entry': ApiEntryEntry;
+      'api::dialog.dialog': ApiDialogDialog;
       'api::friendship.friendship': ApiFriendshipFriendship;
       'api::guild.guild': ApiGuildGuild;
       'api::item.item': ApiItemItem;
+      'api::museum.museum': ApiMuseumMuseum;
       'api::npc.npc': ApiNpcNpc;
       'api::poi.poi': ApiPoiPoi;
+      'api::quest.quest': ApiQuestQuest;
       'api::rarity.rarity': ApiRarityRarity;
       'api::run.run': ApiRunRun;
       'api::tag.tag': ApiTagTag;
+      'api::visit.visit': ApiVisitVisit;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;

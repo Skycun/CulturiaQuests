@@ -11,22 +11,63 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "experience": {
-      "type": "biginteger"
-    },
     "name": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "gold": {
-      "type": "integer"
+      "type": "integer",
+      "default": 0,
+      "required": true
     },
-    "scraps": {
-      "type": "integer"
+    "exp": {
+      "type": "biginteger",
+      "default": "0"
+    },
+    "scrap": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
     },
     "characters": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::character.character",
+      "mappedBy": "guild"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::item.item",
+      "mappedBy": "guild"
+    },
+    "visits": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::visit.visit",
+      "mappedBy": "guild"
+    },
+    "runs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::run.run",
+      "mappedBy": "guild"
+    },
+    "friendships": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::friendship.friendship",
+      "mappedBy": "guild"
+    },
+    "quests": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quest.quest",
       "mappedBy": "guild"
     }
   }

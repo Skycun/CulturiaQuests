@@ -46,13 +46,13 @@ export default {
 
     // Seed NPC data
     const npcData = [
-      { firstname: 'Malori', lastname: 'Marnett', professions: 'Postière', pronouns: 'she', entry_count: 3 },
-      { firstname: 'Garen', lastname: 'Fouldier', professions: 'Chasseur', pronouns: 'he', entry_count: 3 },
-      { firstname: 'Toben', lastname: 'Montivert', professions: 'Meunier', pronouns: 'he', entry_count: 3 },
-      { firstname: 'Denrick', lastname: 'Largent', professions: 'Forgeron', pronouns: 'he', entry_count: 3 },
-      { firstname: 'Marn', lastname: 'Thobas', professions: 'Pécheur', pronouns: 'he', entry_count: 3 },
-      { firstname: 'Bram', lastname: 'Thobas', professions: 'Boucher', pronouns: 'he', entry_count: 3 },
-      { firstname: 'Toren', lastname: 'Brauvin', professions: 'Architecte', pronouns: 'he', entry_count: 3 },
+      { firstname: 'Malori', lastname: 'Marnett', pronouns: 'she', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Garen', lastname: 'Fouldier', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Toben', lastname: 'Montivert', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Denrick', lastname: 'Largent', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Marn', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Bram', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Toren', lastname: 'Brauvin', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
     ];
 
     for (const npc of npcData) {

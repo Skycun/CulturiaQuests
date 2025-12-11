@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "dialogs",
+  "info": {
+    "singularName": "dialog",
+    "pluralName": "dialogs",
+    "displayName": "Dialog"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "text_type": {
+      "type": "enumeration",
+      "enum": [
+        "quest_description",
+        "expedition_appear",
+        "expedition_fail",
+        "quest_complete",
+        "journal_entries"
+      ],
+      "required": true
+    },
+    "dialogues": {
+      "type": "json",
+      "required": true
+    },
+    "npc": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::npc.npc",
+      "inversedBy": "dialogs"
+    }
+  }
+}
