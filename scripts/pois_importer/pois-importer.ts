@@ -151,7 +151,7 @@ async function transformToPOIs(places: any[]) {
           place.vicinity
         );
         
-        const isMuseum = place.types.some(t => 
+        const isMuseum = place.types.some((t: string) => 
           ['museum', 'art_gallery', 'aquarium', 'zoo'].includes(t)
         );
         
@@ -173,7 +173,8 @@ async function transformToPOIs(places: any[]) {
           console.log(`   ⏳ Réessai (${3 - retries}/3)...`);
           await new Promise(resolve => setTimeout(resolve, 1000));
         } else {
-          console.error(`❌ Échec définitif pour ${place.name}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`❌ Échec définitif pour ${place.name}: ${errorMessage}`);
         }
       }
     }
