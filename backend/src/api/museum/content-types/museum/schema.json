@@ -1,10 +1,10 @@
 {
   "kind": "collectionType",
-  "collectionName": "pois",
+  "collectionName": "museums",
   "info": {
-    "singularName": "poi",
-    "pluralName": "pois",
-    "displayName": "POI"
+    "singularName": "museum",
+    "pluralName": "museums",
+    "displayName": "Museum"
   },
   "options": {
     "draftAndPublish": true
@@ -26,23 +26,17 @@
     "geohash": {
       "type": "string"
     },
-    "visits": {
+    "tags": {
       "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::visit.visit",
-      "mappedBy": "poi"
+      "relation": "manyToMany",
+      "target": "api::tag.tag",
+      "inversedBy": "museums"
     },
-    "quests_a": {
+    "runs": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::quest.quest",
-      "mappedBy": "poi_a"
-    },
-    "quests_b": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::quest.quest",
-      "mappedBy": "poi_b"
+      "target": "api::run.run",
+      "mappedBy": "museum"
     }
   }
 }

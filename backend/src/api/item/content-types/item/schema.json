@@ -12,28 +12,62 @@
   "pluginOptions": {},
   "attributes": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "required": true
+    },
+    "level": {
+      "type": "integer",
+      "required": true
+    },
+    "index_damage": {
+      "type": "integer",
+      "required": true
+    },
+    "slot": {
+      "type": "enumeration",
+      "enum": ["weapon", "helmet", "charm"],
+      "required": true
+    },
+    "isScrapped": {
+      "type": "boolean",
+      "default": false,
+      "required": true
     },
     "rarity": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::rarity.rarity"
-    },
-    "level": {
-      "type": "integer"
+      "relation": "manyToOne",
+      "target": "api::rarity.rarity",
+      "inversedBy": "items"
     },
     "guild": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::guild.guild"
-    },
-    "index_damage": {
-      "type": "integer"
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "items"
     },
     "character": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::character.character"
+      "relation": "manyToOne",
+      "target": "api::character.character",
+      "inversedBy": "items"
+    },
+    "tags": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tag.tag",
+      "inversedBy": "items"
+    },
+    "runs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::run.run",
+      "inversedBy": "items"
+    },
+    "visits": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::visit.visit",
+      "inversedBy": "items"
     }
   }
 }

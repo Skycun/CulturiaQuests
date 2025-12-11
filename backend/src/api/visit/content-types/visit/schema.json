@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "visits",
+  "info": {
+    "singularName": "visit",
+    "pluralName": "visits",
+    "displayName": "Visit"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "open_count": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "last_opened_at": {
+      "type": "datetime"
+    },
+    "total_gold_earned": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "total_exp_earned": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "guild": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "visits"
+    },
+    "poi": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::poi.poi",
+      "inversedBy": "visits"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::item.item",
+      "inversedBy": "visits"
+    }
+  }
+}

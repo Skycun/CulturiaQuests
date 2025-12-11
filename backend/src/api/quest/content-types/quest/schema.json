@@ -1,18 +1,24 @@
 {
   "kind": "collectionType",
-  "collectionName": "runs",
+  "collectionName": "quests",
   "info": {
-    "singularName": "run",
-    "pluralName": "runs",
-    "displayName": "Run"
+    "singularName": "quest",
+    "pluralName": "quests",
+    "displayName": "Quest"
   },
   "options": {
     "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {
-    "dps": {
-      "type": "integer",
+    "is_poi_a_completed": {
+      "type": "boolean",
+      "default": false,
+      "required": true
+    },
+    "is_poi_b_completed": {
+      "type": "boolean",
+      "default": false,
       "required": true
     },
     "date_start": {
@@ -32,40 +38,29 @@
       "default": 0,
       "required": true
     },
-    "threshold_reached": {
-      "type": "integer",
-      "default": 0,
-      "required": true
-    },
-    "target_threshold": {
-      "type": "integer"
-    },
-    "entry_unlocked": {
-      "type": "boolean"
-    },
     "guild": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::guild.guild",
-      "inversedBy": "runs"
-    },
-    "museum": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::museum.museum",
-      "inversedBy": "runs"
+      "inversedBy": "quests"
     },
     "npc": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::npc.npc",
-      "inversedBy": "runs"
+      "inversedBy": "quests"
     },
-    "items": {
+    "poi_a": {
       "type": "relation",
-      "relation": "manyToMany",
-      "target": "api::item.item",
-      "inversedBy": "runs"
+      "relation": "manyToOne",
+      "target": "api::poi.poi",
+      "inversedBy": "quests_a"
+    },
+    "poi_b": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::poi.poi",
+      "inversedBy": "quests_b"
     }
   }
 }

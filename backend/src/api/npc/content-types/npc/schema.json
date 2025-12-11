@@ -12,21 +12,49 @@
   "pluginOptions": {},
   "attributes": {
     "firstname": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "lastname": {
-      "type": "string"
-    },
-    "professions": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
     "pronouns": {
-      "type": "string"
+      "type": "string",
+      "required": true
     },
-    "entries": {
+    "quests_entry_available": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "expedition_entry_available": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "friendships": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::entry.entry",
+      "target": "api::friendship.friendship",
+      "mappedBy": "npc"
+    },
+    "quests": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quest.quest",
+      "mappedBy": "npc"
+    },
+    "dialogs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::dialog.dialog",
+      "mappedBy": "npc"
+    },
+    "runs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::run.run",
       "mappedBy": "npc"
     }
   }

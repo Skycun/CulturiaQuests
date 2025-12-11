@@ -12,7 +12,20 @@
   "pluginOptions": {},
   "attributes": {
     "name": {
-      "type": "string"
+      "type": "string",
+      "required": true
+    },
+    "items": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::item.item",
+      "inversedBy": "tags"
+    },
+    "museums": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::museum.museum",
+      "inversedBy": "tags"
     }
   }
 }

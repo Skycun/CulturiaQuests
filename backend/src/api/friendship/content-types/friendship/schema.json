@@ -11,18 +11,27 @@
   },
   "pluginOptions": {},
   "attributes": {
+    "quests_entry_unlocked": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "expedition_entry_unlocked": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
     "npc": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::npc.npc"
+      "relation": "manyToOne",
+      "target": "api::npc.npc",
+      "inversedBy": "friendships"
     },
     "guild": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::guild.guild"
-    },
-    "entry_count_unlocked": {
-      "type": "integer"
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "friendships"
     }
   }
 }
