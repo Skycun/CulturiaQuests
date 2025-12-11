@@ -1,0 +1,701 @@
+[
+  {
+    "name": "Museum of Modern Art Richard Anacreon",
+    "description": "La Haute-Ville Place de l'Isthme, 84 Rue Notre Dame, Granville - Le nom 'Museum of Modern Art' et le type Google 'museum' indiquent clairement un musée d'art moderne.",
+    "latitude": 48.838468,
+    "longitude": -1.600608,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Atelier AMATICE",
+    "description": "7 Allée des Bichetières, Granville - Le terme «Atelier» et le type Google «museum» indiquent un atelier-musée/atelier d'artiste : correspond à la fois à l'art (atelier/galerie) et au savoir‑faire (atelier/musée d'artisanat).",
+    "latitude": 48.8353407,
+    "longitude": -1.5925525,
+    "type": "museum",
+    "categories": [
+      "Art",
+      "Savoir-faire"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Musée Christian Dior",
+    "description": "1 Rue d'Estouteville, Granville - Musée de mode présentant les créations de Christian Dior (dimension artistique) et le savoir-faire de la haute couture (dimension artisanale).",
+    "latitude": 48.8429433,
+    "longitude": -1.5925289,
+    "type": "museum",
+    "categories": [
+      "Art",
+      "Savoir-faire"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Museum of Art and History of Granville",
+    "description": "2 Rue Lecarpentier, Granville - Musée dédié à l'art et à l'histoire de Granville : collections artistiques et patrimoine historique exposés.",
+    "latitude": 48.8371417,
+    "longitude": -1.6026231,
+    "type": "museum",
+    "categories": [
+      "Art",
+      "Histoire"
+    ],
+    "rating": 4.2
+  },
+  {
+    "name": "Salle du Jardin du Roc",
+    "description": "1B Rue Saint-Jean, Granville - Type Google inclut 'museum' et 'Salle' suggère espace d'exposition (Art) ; le nom 'Jardin du Roc' indique un lien avec un jardin (Nature).",
+    "latitude": 48.8372305,
+    "longitude": -1.6052453,
+    "type": "museum",
+    "categories": [
+      "Art",
+      "Nature"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Musée de la Batterie du Roc",
+    "description": "Bunker de la Pointe du Roc, Rue du Roc, Granville - Musée installé dans un bunker de batterie côtière — site et musée à caractère historique militaire.",
+    "latitude": 48.8348758,
+    "longitude": -1.6116239,
+    "type": "museum",
+    "categories": [
+      "Histoire"
+    ],
+    "rating": 4.7
+  },
+  {
+    "name": "Atelier - Galerie Emmanuel Di Ceglie",
+    "description": "43 Rue des Juifs, Granville - Lieu indiqué comme « art_gallery » et atelier/galerie — correspond à Art (galeries, musées d'art).",
+    "latitude": 48.8377952,
+    "longitude": -1.6008463,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Galerie Flamme et Art SARL",
+    "description": "764 Avenue de l'Europe, Yquelon - Nom et type Google (art_gallery) indiquent une galerie d'art, correspondant à la catégorie Art.",
+    "latitude": 48.83899820000001,
+    "longitude": -1.5606272,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 1
+  },
+  {
+    "name": "Galerie Du Crabe antiquités Débarras de maison",
+    "description": "22 Rue du Docteur Letourneur, Granville - Désignation 'Galerie' et type Google 'art_gallery' et 'antiquités' indiquent un lieu d'exposition/vente d'objets d'art.",
+    "latitude": 48.83817370000001,
+    "longitude": -1.5978477,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Slow Concept Store Granville Mode & Galerie d'Art",
+    "description": "25 Rue Couraye, Granville - Lieu identifié comme galerie d'art (art_gallery) — correspond à la catégorie Art.",
+    "latitude": 48.837145,
+    "longitude": -1.5962241,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.9
+  },
+  {
+    "name": "Atelier Galerie \"Valérie Bertoni\"",
+    "description": "6 Rue du Docteur Letourneur, Granville - Atelier-galerie : lieu de création et d'exposition artistique, correspond à la catégorie Art (galerie d'art).",
+    "latitude": 48.838595,
+    "longitude": -1.5976965,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Galerie BOISIVON",
+    "description": "25 Rue Lecampion, Granville - Mention «art_gallery» et le nom Galerie indiquent clairement une galerie d'art, correspondant à la catégorie Art.",
+    "latitude": 48.8374551,
+    "longitude": -1.5991539,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "De sable et d'écume",
+    "description": "101 Rue des Juifs, Granville - Le type Google 'art_gallery' et le nom indiquent une galerie/musée d'art.",
+    "latitude": 48.8383391,
+    "longitude": -1.5995129,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Valérie Le Merrer",
+    "description": "52 Rue des Juifs, Granville - Type Google 'art_gallery' indique une galerie d'art, qui relève de la catégorie Art.",
+    "latitude": 48.8379649,
+    "longitude": -1.5999491,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Galerie de l'os",
+    "description": "46 ter Rue des Juifs, Granville - Nom et type Google (art_gallery) indiquent une galerie d'art, donc catégorie Art.",
+    "latitude": 48.8378968,
+    "longitude": -1.6001744,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.8
+  },
+  {
+    "name": "L’envolée",
+    "description": "10 Place Cambernon, Granville - Type Google 'art_gallery' indique une galerie d'art — correspond à la catégorie Art.",
+    "latitude": 48.837537,
+    "longitude": -1.6034538,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "L'Atelier de la Haute Ville (Peinture - Exposition)",
+    "description": "2 Rue Cambernon, Granville - Galerie/exposition de peinture (art_gallery) correspond clairement à la catégorie Art — lieu d'exposition artistique.",
+    "latitude": 48.8373236,
+    "longitude": -1.6034667,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Hissez Haut galerie boutique",
+    "description": "24 Rue Notre Dame, Granville - Identifié comme galerie d'art (type Google: art_gallery) ; correspond aux galeries/musées d'art de la catégorie Art.",
+    "latitude": 48.8372821,
+    "longitude": -1.6036233,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Galerie Ar'Tan",
+    "description": "33 Rue Saint-Jean, Granville - Galerie d'art (type Google: art_gallery) correspond parfaitement à la catégorie Art — galerie d'exposition artistique.",
+    "latitude": 48.83768629999999,
+    "longitude": -1.6038994,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Galerie du Belvédère",
+    "description": "263 Rue de Scissy, Saint-Pair-sur-Mer - Lieu identifié comme galerie d'art (type Google: art_gallery) ; correspond à la catégorie Art selon les règles.",
+    "latitude": 48.8131955,
+    "longitude": -1.5710996,
+    "type": "museum",
+    "categories": [
+      "Art"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Casino Club Granville",
+    "description": "Place Maréchal Foch, Granville - Établissement de divertissement et lieu de réunion sociale (casino, bar, restaurant) — ne correspond pas aux catégories Art, Nature, Science, Histoire ou Savoir‑faire.",
+    "latitude": 48.8393172,
+    "longitude": -1.5988256,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3.8
+  },
+  {
+    "name": "JOA Casino St. Pair",
+    "description": "2 Rue de la Plage, Saint-Pair-sur-Mer - Casino et attraction touristique : lieu public de sociabilité et divertissement, plus proche d'un espace social/centre culturel que des autres catégories.",
+    "latitude": 48.81498209999999,
+    "longitude": -1.572191,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Le Roc des Curiosités Musée & Aquarium",
+    "description": "1 Boulevard Vaufleury, Granville - Présence d'un aquarium → Nature ; la partie «Musée» de curiosités suggère une dimension muséale/scientifique (collections/naturaliste) → Science.",
+    "latitude": 48.8344444,
+    "longitude": -1.6105556,
+    "type": "poi",
+    "categories": [
+      "Nature",
+      "Science"
+    ],
+    "rating": 3.9
+  },
+  {
+    "name": "Plat Gousset Beach",
+    "description": "Granville - Plage côtière, espace naturel et de plein air lié au milieu marin.",
+    "latitude": 48.83996990000001,
+    "longitude": -1.5976892,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Festival des voiles d'atelier",
+    "description": "Granville - Festival maritime à Granville valorisant le patrimoine et les techniques artisanales de construction et de navigation (savoir‑faire).",
+    "latitude": 48.8364644,
+    "longitude": -1.6012292,
+    "type": "poi",
+    "categories": [
+      "Savoir-faire"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Le Plat Gousset",
+    "description": "Promenade du Plat Gousset, Granville - Promenade côtière et bord de mer (espace paysager/plage), correspond à un lieu naturel/paysager.",
+    "latitude": 48.84076899999999,
+    "longitude": -1.5963358,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Plage Hérel",
+    "description": "Granville - Plage en bord de mer, lieu naturel récréatif correspondant à la catégorie Nature.",
+    "latitude": 48.8340723,
+    "longitude": -1.5929335,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Notre-Dame du Cap Lihou Church",
+    "description": "Place du Parvis Notre Dame, Granville - Église (lieu de culte) — correspond à la catégorie Société selon les règles.",
+    "latitude": 48.83668460000001,
+    "longitude": -1.6053913,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Jetée du port",
+    "description": "port de plaisance, Granville - Jetée portuaire principalement site naturel et récréatif en bord de mer (promenade, observation du littoral).",
+    "latitude": 48.8315107,
+    "longitude": -1.5990727,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Phare vert",
+    "description": "Granville - Un phare est un repère/monument maritime et relève des monuments historiques ou sites d'intérêt patrimonial.",
+    "latitude": 48.8322016,
+    "longitude": -1.6033304,
+    "type": "poi",
+    "categories": [
+      "Histoire"
+    ],
+    "rating": 4.7
+  },
+  {
+    "name": "Jaguar, avion de chasse",
+    "description": "16 Route de Coutances, Donville-les-Bains - Avion de chasse exposé en lieu public, relevant du patrimoine historique/militaire et du patrimoine industriel/aéronautique.",
+    "latitude": 48.84370819999999,
+    "longitude": -1.5867305,
+    "type": "poi",
+    "categories": [
+      "Histoire",
+      "Savoir-faire"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Aussichtspunkt",
+    "description": "Granville - Le nom et les types indiquent un point de vue/ belvédère touristique — lieu lié au paysage et à l'environnement naturel.",
+    "latitude": 48.8351612,
+    "longitude": -1.6121061,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Phare du cap Lihou",
+    "description": "Granville - Phare maritime de caractère patrimonial, assimilable à un monument historique du littoral.",
+    "latitude": 48.8345095,
+    "longitude": -1.6130138,
+    "type": "poi",
+    "categories": [
+      "Histoire"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Pointe du Roc",
+    "description": "Pointe du Roc, Granville - Promontoire côtier et site naturel/point d'observation à Granville, typiquement classé comme attraction en plein air et lieu naturel.",
+    "latitude": 48.8340637,
+    "longitude": -1.6143204,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.8
+  },
+  {
+    "name": "Plage de Donville-les-Bains",
+    "description": "Rue de la Plage, Donville-les-Bains - Plage : site naturel côtier et espace de plein air/loisir, correspond à la catégorie Nature.",
+    "latitude": 48.8498933,
+    "longitude": -1.5842012,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Homegraf fresque graffiti",
+    "description": "544 Rue Robinet, Granville - Fresque graffiti (œuvre de street art) constitue une production artistique publique, donc classée en Art.",
+    "latitude": 48.8325919,
+    "longitude": -1.5751138,
+    "type": "poi",
+    "categories": [
+      "Art"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Plage Ermitage",
+    "description": "Rue de l'Ermitage, Donville-les-Bains - Plage naturelle et site touristique en plein air, correspond à la catégorie Nature.",
+    "latitude": 48.8520116,
+    "longitude": -1.5803027,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Plage du fourneau",
+    "description": "Granville - Plage en bord de mer, site naturel et attraction touristique — correspond à Nature.",
+    "latitude": 48.82126539999999,
+    "longitude": -1.5742005,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Boite à lire",
+    "description": "225 Allée de la Plage, Saint-Pair-sur-Mer - Le nom 'Boite à lire' indique une bibliothèque/point d'échange de livres ; selon les règles, les bibliothèques relèvent de la catégorie Société.",
+    "latitude": 48.81478160000001,
+    "longitude": -1.5723548,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Plage de Bréville-sur-mer",
+    "description": "Impasse des Dunes, Bréville-sur-Mer - Plage naturelle et site touristique en plein air, correspond à la catégorie Nature.",
+    "latitude": 48.8642092,
+    "longitude": -1.57761,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.5
+  },
+  {
+    "name": "Plage de la Grâce de Dieu",
+    "description": "Saint-Pair-sur-Mer - Plage côtière et espace naturel/ touristique correspondant à la catégorie Nature.",
+    "latitude": 48.81004060000001,
+    "longitude": -1.5718916,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Fontaine Saint-Hélier",
+    "description": "Bréville-sur-Mer - Fontaine historique et monumentale, typiquement considérée comme patrimoine local et relevant de la catégorie « Histoire ».",
+    "latitude": 48.8635738,
+    "longitude": -1.557835,
+    "type": "poi",
+    "categories": [
+      "Histoire"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Promenade piétonne de Kairon-plage",
+    "description": "Kairon Plage, Saint-Pair-sur-Mer - Promenade côtière et espace public en plein air lié au milieu naturel (plage et paysage côtier).",
+    "latitude": 48.7996704,
+    "longitude": -1.5699036,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Plage de Granville",
+    "description": "Route de la Mer, Bréville-sur-Mer - Plage, site naturel/espace côtier — correspond à la catégorie Nature.",
+    "latitude": 48.8788298,
+    "longitude": -1.5736483,
+    "type": "poi",
+    "categories": [
+      "Nature"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Médiathèque",
+    "description": "2 Rue de la Passardière, Donville-les-Bains - Médiathèque = bibliothèque publique, correspond à la catégorie Société selon les règles.",
+    "latitude": 48.8459934,
+    "longitude": -1.5757894,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "The Library Charles De La Morandière",
+    "description": "4 Rue Clément Desmaisons, Granville - Il s'agit d'une bibliothèque (The Library Charles De La Morandière) ; les bibliothèques sont classées dans la catégorie Société selon les règles.",
+    "latitude": 48.83651380000001,
+    "longitude": -1.5982912,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Antenne - Bibliothèque CASI",
+    "description": "1 Place Pierre Semard, Granville - Il s'agit d'une bibliothèque (Antenne - Bibliothèque CASI) ; les bibliothèques sont classées dans la catégorie Société selon les règles.",
+    "latitude": 48.8382965,
+    "longitude": -1.5874171,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": null
+  },
+  {
+    "name": "Médiathèque",
+    "description": "Médiathèque, 40 Place de la Gare, Saint-Pair-sur-Mer - Médiathèque = bibliothèque; selon les règles, les bibliothèques relèvent de la catégorie Société.",
+    "latitude": 48.81328140000001,
+    "longitude": -1.5657802,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Maison Paroissiale",
+    "description": "384 Rue Saint-Nicolas, Granville - Lieu lié à une paroisse et au culte (types Google: church, place_of_worship) — correspond à la catégorie Société (lieux de culte).",
+    "latitude": 48.8328441,
+    "longitude": -1.5672944,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Presbytère",
+    "description": "7 Rue du Commandant Godart, Donville-les-Bains - Presbytère lié à un lieu de culte (types Google : church, place_of_worship), correspond à la catégorie 'Société'.",
+    "latitude": 48.8481233,
+    "longitude": -1.5755624,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Le temple protestant",
+    "description": "115 Avenue de la Libération, Granville - Temple protestant → lieu de culte, correspond à la catégorie Société (lieux de culte, bibliothèques, centres culturels).",
+    "latitude": 48.8415351,
+    "longitude": -1.5920156,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 5
+  },
+  {
+    "name": "Presbytère de Saint Nicolas",
+    "description": "424 Rue Saint-Nicolas, Granville - Presbytère = bâtiment lié au culte / résidence ecclésiastique (types Google : church, place_of_worship) => catégorie Lieux de culte = Société.",
+    "latitude": 48.83329980000001,
+    "longitude": -1.5674888,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.1
+  },
+  {
+    "name": "Église Saint Paul",
+    "description": "19 Parvis Saint-Paul, Granville - Église = lieu de culte, correspond directement à la catégorie «Société» selon les règles.",
+    "latitude": 48.8366451,
+    "longitude": -1.5937629,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3.6
+  },
+  {
+    "name": "Eglise Protestante Evangelique",
+    "description": "Rue de la Brasserie, Granville - Il s'agit d'un lieu de culte (église), qui correspond à la catégorie \"Société\" selon les règles.",
+    "latitude": 48.8377001,
+    "longitude": -1.5930191,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 3.8
+  },
+  {
+    "name": "Église Notre-Dame-de-Lourdes",
+    "description": "Rue Jacques Prévert, Donville-les-Bains - Église / lieu de culte (types Google: church, place_of_worship) — correspond à la catégorie Société selon les règles.",
+    "latitude": 48.84885869999999,
+    "longitude": -1.5766418,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.1
+  },
+  {
+    "name": "Église Saint-Nicolas",
+    "description": "Rue Saint-Nicolas, Granville - Église — lieu de culte (types Google: church, place_of_worship), correspond à la catégorie Société.",
+    "latitude": 48.8338139,
+    "longitude": -1.568297,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Église Saint-Clair",
+    "description": "Rue de la Vieille Église, Donville-les-Bains - Église — lieu de culte; correspond à la catégorie Société selon les règles.",
+    "latitude": 48.85545,
+    "longitude": -1.5686927,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.9
+  },
+  {
+    "name": "Église Saint-Paterne",
+    "description": "Route de Granville, Saint-Pair-sur-Mer - Église = lieu de culte, correspond à la catégorie Société selon les règles.",
+    "latitude": 48.8157021,
+    "longitude": -1.5709498,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.6
+  },
+  {
+    "name": "Presbytère",
+    "description": "75 Rue Saint-Michel, Saint-Pair-sur-Mer - Un presbytère est un lieu lié au culte/activité ecclésiastique ; il correspond à la catégorie Société (lieux de culte).",
+    "latitude": 48.8156876,
+    "longitude": -1.5694271,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  },
+  {
+    "name": "Maison Paroissiale",
+    "description": "117 Rue Charles Mathurin, Saint-Pair-sur-Mer - Maison paroissiale associée à une église et identifiée comme lieu de culte/place_of_worship, donc classée en Société.",
+    "latitude": 48.8124966,
+    "longitude": -1.5696421,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.4
+  },
+  {
+    "name": "Eglise Longueville",
+    "description": "32 Rue du Pont Ce, Longueville - Lieu de culte (église) — correspond à la catégorie Société selon les règles.",
+    "latitude": 48.85300399999999,
+    "longitude": -1.5513903,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Eglise Notre-Dame de Bréville-sur-Mer",
+    "description": "12 Rue de l'Église, Bréville-sur-Mer - Il s'agit d'une église / lieu de culte, qui correspond à la catégorie Société selon les règles.",
+    "latitude": 48.8635251,
+    "longitude": -1.558235,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4.3
+  },
+  {
+    "name": "Église Saint-Martin",
+    "description": "Place de la Mairie, Anctoville-sur-Boscq - Église identifiée comme lieu de culte → correspond à la catégorie Société selon les règles.",
+    "latitude": 48.8436185,
+    "longitude": -1.5325332,
+    "type": "poi",
+    "categories": [
+      "Société"
+    ],
+    "rating": 4
+  }
+]

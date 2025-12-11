@@ -15,11 +15,11 @@
       "type": "string",
       "required": true
     },
-    "latitude": {
+    "lat": {
       "type": "float",
       "required": true
     },
-    "longitude": {
+    "lng": {
       "type": "float",
       "required": true
     },
@@ -43,6 +43,13 @@
       "relation": "oneToMany",
       "target": "api::quest.quest",
       "mappedBy": "poi_b"
+    },
+    "location": {
+      "type": "customField",
+      "customField": "plugin::geodata.geojson",
+      "options": {
+        "info": true
+      }
     }
   }
 }

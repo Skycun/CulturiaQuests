@@ -641,14 +641,21 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     geohash: Schema.Attribute.String;
-    latitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    lat: Schema.Attribute.Float & Schema.Attribute.Required;
+    lng: Schema.Attribute.Float & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::museum.museum'
     > &
       Schema.Attribute.Private;
-    longitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    location: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<
+        'plugin::geodata.geojson',
+        {
+          info: true;
+        }
+      >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
@@ -714,11 +721,18 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     geohash: Schema.Attribute.String;
-    latitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    lat: Schema.Attribute.Float & Schema.Attribute.Required;
+    lng: Schema.Attribute.Float & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::poi.poi'> &
       Schema.Attribute.Private;
-    longitude: Schema.Attribute.Float & Schema.Attribute.Required;
+    location: Schema.Attribute.JSON &
+      Schema.Attribute.CustomField<
+        'plugin::geodata.geojson',
+        {
+          info: true;
+        }
+      >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     quests_a: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
