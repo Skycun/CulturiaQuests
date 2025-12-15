@@ -4,10 +4,10 @@ Ce projet est une application web full-stack comprenant un back-end (API headles
 
 ## ✨ Stack Technique
 
--   **Frontend**: [Nuxt.js](https://nuxt.com/) (Framework Vue.js)
--   **Backend**: [Strapi](https://strapi.io/) (Headless CMS Node.js)
--   **Base de données**: [PostgreSQL](https://www.postgresql.org/)
--   **Conteneurisation**: [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+- **Frontend**: [Nuxt.js](https://nuxt.com/) (Framework Vue.js)
+- **Backend**: [Strapi](https://strapi.io/) (Headless CMS Node.js)
+- **Base de données**: [PostgreSQL](https://www.postgresql.org/)
+- **Conteneurisation**: [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
 
 ---
 
@@ -18,9 +18,9 @@ Suivez ces étapes rigoureusement pour installer le projet et éviter les erreur
 ### Prérequis
 
 Assurez-vous d'avoir installé sur votre machine :
--   [Node.js](https://nodejs.org/) (Version 20 ou supérieure recommandée)
--   [Docker](https://docs.docker.com/get-docker/)
--   [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) (Version 20 ou supérieure recommandée)
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ### 1. Cloner le Dépôt
 
@@ -29,11 +29,7 @@ git clone <URL_DU_DEPOT>
 cd CulturiaQuests
 ```
 
-### 2\. Configuration des Variables d'Environnement
-
-```
-node -e "const crypto=require('crypto');const g=()=>crypto.randomBytes(32).toString('base64').replace(/[=+/]/g,'').substring(0,32);const k=[g(),g(),g(),g()];console.log('APP_KEYS='+k.join(',')+'\nAPI_TOKEN_SALT='+g()+'\nADMIN_JWT_SECRET='+g()+'\nTRANSFER_TOKEN_SALT='+g()+'\nJWT_SECRET='+g())" >> .env
-```
+### 2. Configuration des Variables d'Environnement
 
 Le projet nécessite deux fichiers de configuration `.env` (un à la racine pour Docker, un dans le backend pour Strapi).
 
@@ -54,31 +50,31 @@ cp .env.example .env
 
 > **Note :** Pour la production, modifiez impérativement les clés secrètes (`APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, etc.) dans ces fichiers.
 
-### 3\. Installation et Construction Manuelle (Important)
+### 3. Installation et Construction Manuelle (Important)
 
 Pour éviter des erreurs d'interface lors du premier lancement (ex: *TypeError: reading 'tours'*), il est nécessaire de construire l'admin panel manuellement une première fois.
 
 Toujours dans le dossier `backend/` :
 
-1.  Installez les dépendances :
+1. Installez les dépendances :
 
-    ```bash
-    npm install
-    ```
+```bash
+npm install
+```
 
-2.  **Étape Cruciale :** Reconstruisez l'admin panel pour générer les fichiers correctement :
+2. **Étape Cruciale :** Reconstruisez l'admin panel pour générer les fichiers correctement :
 
-    ```bash
-    npm run build
-    ```
+```bash
+npm run build
+```
 
-3.  Revenez à la racine du projet :
+3. Revenez à la racine du projet :
 
-    ```bash
-    cd ..
-    ```
+```bash
+cd ..
+```
 
-### 4\. Lancer l'Application avec Docker
+### 4. Lancer l'Application avec Docker
 
 Une fois la préparation terminée, lancez l'ensemble des services :
 
@@ -90,41 +86,95 @@ docker-compose up --build
 
 Les services suivants seront démarrés :
 
-  - `database`: Le serveur PostgreSQL.
-  - `backend`: L'application Strapi (démarre sur le port 1337).
-  - `frontend`: L'application Nuxt.js (démarre sur le port 3000).
+- `database`: Le serveur PostgreSQL.
+- `backend`: L'application Strapi (démarre sur le port 1337).
+- `frontend`: L'application Nuxt.js (démarre sur le port 3000).
 
-### 5\. Accéder à l'Application
+### 5. Accéder à l'Application
 
-  - 🌍 **Frontend (Nuxt)** : [http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)
-  - ⚙️ **Backend (API Strapi)** : [http://localhost:1337/api](https://www.google.com/search?q=http://localhost:1337/api)
-  - 🔐 **Panneau d'Administration Strapi** : [http://localhost:1337/admin](https://www.google.com/search?q=http://localhost:1337/admin)
+- 🌍 **Frontend (Nuxt)** : [http://localhost:3000](http://localhost:3000)
+- ⚙️ **Backend (API Strapi)** : [http://localhost:1337/api](http://localhost:1337/api)
+- 🔐 **Panneau d'Administration Strapi** : [http://localhost:1337/admin](http://localhost:1337/admin)
 
 > **Premier lancement :** Vous devrez créer le premier compte administrateur ("Super Admin") lors de votre première connexion au panneau d'administration.
 
------
-
-## 🛠 Dépannage Courant
-
-**Erreur "reading 'tours' undefined" sur Strapi :**
-Si vous rencontrez cette erreur au lancement, c'est que le build de l'admin est corrompu.
-
-1.  Arrêtez les conteneurs.
-2.  Allez dans le dossier `backend`.
-3.  Supprimez les dossiers `.strapi`, `dist` et `node_modules`.
-4.  Relancez `npm install` puis `npm run build`.
-
------
+---
 
 ## 📂 Structure du Projet
 
 ```
 .
 ├── backend/         # Contient l'application Strapi (API)
-│   ├── .env         # Config Strapi (à créer)
+│   ├── config/      # Configuration Strapi
+│   ├── src/         # Code source
+│   ├── public/      # Fichiers statiques
 │   └── ...
 ├── frontend/        # Contient l'application Nuxt.js (Client)
+│   ├── app/         # Pages et composants
+│   ├── public/      # Fichiers statiques
+│   └── ...
+├── scripts/         # Scripts utilitaires
+│   ├── pois_importer/ # Script d'import de POI
+│   └── ai_reviewer.py # Script de revue de code
 ├── .env             # Config Docker (à créer)
 ├── .env.exemple     # Modèle de config racine
 └── docker-compose.yml # Orchestration des conteneurs
 ```
+
+---
+
+## 🛠 Dépannage Courant
+
+**Erreur "reading 'tours' undefined" sur Strapi :**
+Si vous rencontrez cette erreur au lancement, c'est que le build de l'admin est corrompu.
+
+1. Arrêtez les conteneurs.
+2. Allez dans le dossier `backend`.
+3. Supprimez les dossiers `.strapi`, `dist` et `node_modules`.
+4. Relancez `npm install` puis `npm run build`.
+
+**Problèmes de connexion à la base de données :**
+Vérifiez que :
+1. Le conteneur PostgreSQL est bien démarré
+2. Les variables d'environnement dans `.env` sont correctes
+3. Les ports ne sont pas en conflit
+
+---
+
+## 🔧 Scripts Utilitaires
+
+Le projet inclut plusieurs scripts utilitaires :
+
+1. **POI Importer** : Script pour importer des Points d'Intérêt depuis Google Maps
+   - Localisation : `scripts/pois_importer/`
+   - Fichiers de sortie : `pois-output-*.json`
+
+2. **AI Reviewer** : Script pour analyser les changements de code
+   - Localisation : `scripts/ai_reviewer.py`
+   - Utilisé dans le workflow GitHub Actions
+
+---
+
+## 📝 Notes de Développement
+
+- **Strapi v5** : Ce projet utilise Strapi v5 qui introduit des changements significatifs par rapport aux versions précédentes.
+- **TypeScript** : Le backend utilise TypeScript pour une meilleure typage et maintenabilité.
+- **Docker** : Tous les services sont conteneurisés pour une meilleure portabilité.
+
+---
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
+
+1. Fork le projet
+2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`)
+3. Commitez vos changements (`git commit -m 'Add some AmazingFeature'`)
+4. Poussez sur la branche (`git push origin feature/AmazingFeature`)
+5. Ouvrez une Pull Request
+
+---
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.

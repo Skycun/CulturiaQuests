@@ -1,0 +1,51 @@
+[
+  {
+    "firstname": "Malori",
+    "lastname": "Marnett",
+    "pronouns": "Elle/Elle",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Garen",
+    "lastname": "Fouldier",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Toben",
+    "lastname": "Montivert",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Denrick",
+    "lastname": "Largent",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Marn",
+    "lastname": "Thobas",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Bram",
+    "lastname": "Thobas",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  },
+  {
+    "firstname": "Toren",
+    "lastname": "Brauvin",
+    "pronouns": "Il/Lui",
+    "quests_entry_available": 0,
+    "expedition_entry_available": 0
+  }
+]
