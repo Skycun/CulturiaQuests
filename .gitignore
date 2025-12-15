@@ -1,3 +1,5 @@
 .env
 scripts/pois_importer/.env
 scripts/pois_importer/node_modules
+scripts/populate_db/node_modules
+scripts/populate_db/.env
