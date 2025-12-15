@@ -658,6 +658,7 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
       >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    radius: Schema.Attribute.Integer;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
     tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     updatedAt: Schema.Attribute.DateTime;
