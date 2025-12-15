@@ -4,7 +4,14 @@ import { resolve } from 'path';
 import { StrapiClient } from './strapi-client.js';
 import { DialogPopulator } from './populators/dialog-populator.js';
 import { NpcPopulator } from './populators/npc-populator.js';
-import { NpcEntriesArraySchema, NpcCreateInputArraySchema, type CLIOptions, type PopulationResult } from './types.js';
+import { PoiPopulator } from './populators/poi-populator.js';
+import { 
+  NpcEntriesArraySchema, 
+  NpcCreateInputArraySchema, 
+  PoiInputArraySchema,
+  type CLIOptions, 
+  type PopulationResult 
+} from './types.js';
 
 // ============================================
 // CLI Argument Parsing
@@ -38,6 +45,7 @@ function parseArgs(): CLIOptions {
   if (!input) {
     if (type === 'npc') input = './data/npcs.json';
     else if (type === 'dialog') input = './data/npc_entries.json';
+    else if (type === 'poi') input = './data/pois.json';
     else input = './data/npc_entries.json'; // Fallback
   }
 
@@ -49,7 +57,7 @@ function printHelp(): void {
 Usage: npx tsx src/index.ts [options]
 
 Options:
-  -t, --type <type>     Content type to populate (dialog, npc)
+  -t, --type <type>     Content type to populate (dialog, npc, poi)
   -i, --input <file>    Input JSON file path (defaults based on type)
   -d, --dry-run         Run without making changes
   -v, --verbose         Show detailed output
@@ -58,6 +66,7 @@ Options:
 Examples:
   npx tsx src/index.ts --type npc
   npx tsx src/index.ts --type dialog --input ./data/npc_entries.json
+  npx tsx src/index.ts --type poi
 `);
 }
 
@@ -160,9 +169,21 @@ async function main(): Promise<void> {
       break;
     }
 
+    case 'poi': {
+      const parseResult = PoiInputArraySchema.safeParse(rawData);
+      if (!parseResult.success) {
+        console.error('ERROR: Input validation failed:');
+        console.error(parseResult.error.format());
+        process.exit(1);
+      }
+      const populator = new PoiPopulator(client, options.dryRun, options.verbose);
+      result = await populator.populate(parseResult.data);
+      break;
+    }
+
     default:
       console.error(`ERROR: Unknown content type: ${options.type}`);
-      console.error('Available types: npc, dialog');
+      console.error('Available types: npc, dialog, poi');
       process.exit(1);
   }
 

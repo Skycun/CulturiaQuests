@@ -31,11 +31,11 @@ export class StrapiClient {
   }
 
   /**
-   * Find a single entry by ID
+   * Find a single entry by ID or Document ID
    */
   async findOne<T>(
     contentType: string,
-    id: number,
+    id: number | string,
     params?: Record<string, unknown>
   ): Promise<StrapiResponse<StrapiEntity<T>>> {
     try {
@@ -66,7 +66,7 @@ export class StrapiClient {
    */
   async update<T, P>(
     contentType: string,
-    id: number,
+    id: number | string,
     payload: P
   ): Promise<StrapiResponse<StrapiEntity<T>>> {
     try {
@@ -80,7 +80,7 @@ export class StrapiClient {
   /**
    * Delete an entry
    */
-  async delete(contentType: string, id: number): Promise<void> {
+  async delete(contentType: string, id: number | string): Promise<void> {
     try {
       await this.client.delete(`/api/${contentType}/${id}`);
     } catch (error) {

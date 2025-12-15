@@ -36,6 +36,22 @@ export type NpcCreateInput = z.infer<typeof NpcCreateInputSchema>;
 
 export const NpcCreateInputArraySchema = z.array(NpcCreateInputSchema);
 
+export const PoiInputSchema = z.object({
+  name: z.string(),
+  description: z.string().optional().nullable(),
+  latitude: z.number(),
+  longitude: z.number(),
+  type: z.string(),
+  categories: z.array(z.string()).optional().nullable(),
+  rating: z.number().optional().nullable(),
+  accessType: z.string().optional().nullable(),
+  radiusMeters: z.number().optional().nullable(),
+  openingHours: z.array(z.string()).optional().nullable(),
+});
+
+export type PoiInput = z.infer<typeof PoiInputSchema>;
+export const PoiInputArraySchema = z.array(PoiInputSchema);
+
 // ============================================
 // Strapi API Types
 // ============================================
@@ -74,6 +90,35 @@ export interface DialogAttributes {
   npc?: StrapiEntity<NpcAttributes> | null;
 }
 
+export interface LocationInput {
+  lat: number;
+  lng: number;
+}
+
+export interface TagAttributes {
+  name: string;
+}
+
+export interface MuseumAttributes {
+  name: string;
+  lat: number;
+  lng: number;
+  geohash?: string;
+  radius?: number;
+  location?: LocationInput | GeoJsonPoint;
+  tags?: {
+    data: StrapiEntity<TagAttributes>[];
+  };
+}
+
+export interface PoiAttributes {
+  name: string;
+  lat: number;
+  lng: number;
+  geohash?: string;
+  location?: LocationInput | GeoJsonPoint;
+}
+
 // ============================================
 // Strapi API Payloads
 // ============================================
@@ -96,6 +141,37 @@ export interface NpcCreatePayload {
     pronouns: string;
     quests_entry_available: number;
     expedition_entry_available: number;
+    publishedAt: string;
+  };
+}
+
+export interface MuseumCreatePayload {
+  data: {
+    name: string;
+    lat: number;
+    lng: number;
+    location: LocationInput;
+    radius?: number;
+    tags?: {
+      connect: number[];
+    };
+    publishedAt: string;
+  };
+}
+
+export interface TagCreatePayload {
+  data: {
+    name: string;
+    publishedAt: string;
+  };
+}
+
+export interface PoiCreatePayload {
+  data: {
+    name: string;
+    lat: number;
+    lng: number;
+    location: LocationInput;
     publishedAt: string;
   };
 }

@@ -44,6 +44,9 @@
       "options": {
         "info": true
       }
+    },
+    "radius": {
+      "type": "integer"
     }
   }
 }
