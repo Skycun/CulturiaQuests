@@ -41,18 +41,18 @@ export default {
     await seedData('api::rarity.rarity', rarityNames, 'rarity');
 
     // Seed tag data
-    const tagNames = ['Histoire', 'Art', 'Sciences', 'Nature', 'Société', 'Savoir Faire'];
+    const tagNames = ['Histoire', 'Art', 'Sciences', 'Nature', 'Société', 'Savoir-Faire'];
     await seedData('api::tag.tag', tagNames, 'tag');
 
     // Seed NPC data
     const npcData = [
-      { firstname: 'Malori', lastname: 'Marnett', pronouns: 'she', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Garen', lastname: 'Fouldier', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Toben', lastname: 'Montivert', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Denrick', lastname: 'Largent', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Marn', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Bram', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
-      { firstname: 'Toren', lastname: 'Brauvin', pronouns: 'he', quests_entry_available: 3, expedition_entry_available: 3 },
+      { firstname: 'Malori', lastname: 'Marnett', pronouns: 'she', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Garen', lastname: 'Fouldier', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Toben', lastname: 'Montivert', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Denrick', lastname: 'Largent', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Marn', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Bram', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
+      { firstname: 'Toren', lastname: 'Brauvin', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
     ];
 
     for (const npc of npcData) {

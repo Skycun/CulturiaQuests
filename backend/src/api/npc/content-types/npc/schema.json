@@ -20,8 +20,10 @@
       "required": true
     },
     "pronouns": {
-      "type": "string",
-      "required": true
+      "type": "enumeration",
+      "enum": ["he", "she", "they"],
+      "required": true,
+      "default": "they"
     },
     "quests_entry_available": {
       "type": "integer",

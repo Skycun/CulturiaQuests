@@ -14,6 +14,9 @@ export const TextTypeEnum = z.enum([
 
 export type TextType = z.infer<typeof TextTypeEnum>;
 
+export const PronounEnum = z.enum(['he', 'she', 'they']);
+export type PronounType = z.infer<typeof PronounEnum>;
+
 export const NpcEntrySchema = z.object({
   npc_name: z.string().min(1, 'NPC name is required'),
   type: TextTypeEnum,
@@ -27,7 +30,7 @@ export const NpcEntriesArraySchema = z.array(NpcEntrySchema);
 export const NpcCreateInputSchema = z.object({
   firstname: z.string().min(1),
   lastname: z.string().min(1),
-  pronouns: z.string().min(1),
+  pronouns: PronounEnum,
   quests_entry_available: z.number().default(0),
   expedition_entry_available: z.number().default(0),
 });
@@ -79,7 +82,7 @@ export type StrapiEntity<T> = T & {
 export interface NpcAttributes {
   firstname: string;
   lastname: string;
-  pronouns: string;
+  pronouns: PronounType;
   quests_entry_available: number;
   expedition_entry_available: number;
 }
@@ -138,7 +141,7 @@ export interface NpcCreatePayload {
   data: {
     firstname: string;
     lastname: string;
-    pronouns: string;
+    pronouns: PronounType;
     quests_entry_available: number;
     expedition_entry_available: number;
     publishedAt: string;
