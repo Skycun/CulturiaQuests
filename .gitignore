@@ -6,3 +6,5 @@ scripts/populate_db/.env
 
 # Database backups
 backups/
+.gemini/
+gha-creds-*.json

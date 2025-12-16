@@ -1,6 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
+  future: {
+    compatibilityVersion: 4,
+  },
   devtools: { enabled: true },
   modules: [
     '@nuxt/eslint',
@@ -10,5 +13,22 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@hypernym/nuxt-anime',
     '@nuxtjs/strapi',
+    '@nuxtjs/device',
+    // 'pinia-plugin-persistedstate/nuxt', // Disabled to prevent potential conflict
   ],
+
+  // Configuration Strapi
+  strapi: {
+    url: 'http://localhost:1337',
+    prefix: '/api',
+    admin: '/admin',
+    version: 'v5',
+    cookie: {
+      path: '/',
+      maxAge: 14 * 24 * 60 * 60, // 14 jours
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    },
+    cookieName: 'culturia_jwt',
+  },
 })
