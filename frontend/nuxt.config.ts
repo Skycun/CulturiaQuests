@@ -18,8 +18,17 @@ export default defineNuxtConfig({
   ],
 
   // Configuration Strapi
+  runtimeConfig: {
+    strapi: {
+      url: 'http://backend:1337', // Internal Docker URL for SSR
+    },
+    public: {
+      strapi: {
+        url: 'http://localhost:1337', // Public URL for Client
+      },
+    },
+  },
   strapi: {
-    url: 'http://localhost:1337',
     prefix: '/api',
     admin: '/admin',
     version: 'v5',
