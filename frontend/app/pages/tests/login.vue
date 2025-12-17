@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { useGuildStore } from '~/stores/guild'
+
 const { login } = useStrapiAuth()
+const user = useStrapiUser()
 const router = useRouter()
+const guildStore = useGuildStore()
 
 const form = ref({
   identifier: '',
@@ -19,6 +23,11 @@ const handleSubmit = async () => {
       identifier: form.value.identifier,
       password: form.value.password,
     })
+
+    // Fetch user's guild after login
+    if (user.value?.id) {
+      await guildStore.fetchGuild()
+    }
     
     // Redirect to the user info page
     await router.push('/tests/userinfo')
