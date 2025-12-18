@@ -97,5 +97,36 @@ export default {
         strapi.log.info('Granted register permission to Public role');
       }
     }
+
+    // Grant custom permissions to Authenticated role
+    const authenticatedRole = await strapi.db.query('plugin::users-permissions.role').findOne({
+      where: { type: 'authenticated' },
+    });
+
+    if (authenticatedRole) {
+      const actions = [
+        'api::guild.guild.setup',
+        'api::item.item.getItemIcons'
+      ];
+
+      for (const action of actions) {
+        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
+          where: {
+            action,
+            role: authenticatedRole.id,
+          },
+        });
+
+        if (!permission) {
+          await strapi.db.query('plugin::users-permissions.permission').create({
+            data: {
+              action,
+              role: authenticatedRole.id,
+            },
+          });
+          strapi.log.info(`Granted ${action} permission to Authenticated role`);
+        }
+      }
+    }
   },
 };
