@@ -19,11 +19,6 @@
       "type": "string",
       "required": true
     },
-    "job": {
-      "type": "enumeration",
-      "enum": ["hero", "mage", "archer", "soldier"],
-      "required": true
-    },
     "guild": {
       "type": "relation",
       "relation": "manyToOne",
@@ -35,6 +30,16 @@
       "relation": "oneToMany",
       "target": "api::item.item",
       "mappedBy": "character"
+    },
+    "icon": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   }
 }
