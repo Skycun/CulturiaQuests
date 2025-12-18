@@ -21,7 +21,12 @@
     },
     "job": {
       "type": "enumeration",
-      "enum": ["hero", "mage", "archer", "soldier"],
+      "enum": [
+        "hero",
+        "mage",
+        "archer",
+        "soldier"
+      ],
       "required": true
     },
     "guild": {
