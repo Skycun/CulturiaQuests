@@ -31,6 +31,7 @@ class ReviewDetails(BaseModel):
     SOLID: int = Field(ge=0, le=20)
     Clarte: int = Field(ge=0, le=20)
     Securite: int = Field(ge=0, le=20)
+    Performance: int = Field(ge=0, le=20)
 
 class ReviewReport(BaseModel):
     score_global: int = Field(ge=0, le=20)
@@ -183,6 +184,15 @@ CRITÈRES D'ÉVALUATION (sur 20) :
    - Pas de dépendances vulnérables ?
    - NOTE : 0-5=Dangereuses vulnérabilités, 6-10=Risques significatifs, 11-14=Basique, 15-17=Sécurisé, 18-20=Niveau production
 
+4. **Performance** (0-20) - Efficacité et optimisation :
+   - Complexité algorithmique appropriée (O(n) vs O(n²), etc.) ?
+   - Utilisation efficace de la mémoire (pas de fuites, copies inutiles) ?
+   - Requêtes base de données optimisées (N+1 queries, indexation) ?
+   - Mise en cache pertinente ?
+   - Pas de calculs redondants ou boucles inutiles ?
+   - Chargement lazy/eager approprié ?
+   - NOTE : 0-5=Très inefficace, 6-10=Problèmes notables, 11-14=Acceptable, 15-17=Optimisé, 18-20=Hautement performant
+
 **SCORE GLOBAL** : Moyenne pondérée (pas juste la moyenne arithmétique).
 - Pénalise fortement les scores <10 dans une catégorie
 - Un excellent code peut avoir 16-18/20
@@ -203,7 +213,8 @@ RETOURNE UNIQUEMENT CE JSON (sans ```json, sans texte avant/après) :
     "details": {{
         "SOLID": <nombre 0-20>,
         "Clarte": <nombre 0-20>,
-        "Securite": <nombre 0-20>
+        "Securite": <nombre 0-20>,
+        "Performance": <nombre 0-20>
     }},
     "resume": "<phrase courte résumant l'analyse>",
     "points_forts": ["<point fort 1>", "<point fort 2>"],
@@ -323,6 +334,7 @@ def send_discord_notification(report_json: str, commit_hash: str, commit_message
                 {"name": "🧠 SOLID", "value": f"{data['details']['SOLID']}/20", "inline": True},
                 {"name": "👀 Clarté", "value": f"{data['details']['Clarte']}/20", "inline": True},
                 {"name": "🛡️ Sécurité", "value": f"{data['details']['Securite']}/20", "inline": True},
+                {"name": "⚡ Performance", "value": f"{data['details']['Performance']}/20", "inline": True},
                 {"name": "✅ Top", "value": points_forts_text, "inline": False},
                 {"name": "⚠️ Flop", "value": points_faibles_text, "inline": False},
                 {"name": "💡 Conseil", "value": data['conseil_mentor'][:300], "inline": False}
