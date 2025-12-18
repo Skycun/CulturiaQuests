@@ -52,6 +52,11 @@ export const useCharacterStore = defineStore('character', () => {
     try {
       const response = await client<any>('/characters', {
         method: 'GET',
+        params: {
+          populate: {
+            icon: { fields: ['url'] },
+          },
+        },
       })
 
       const data = response.data || response
