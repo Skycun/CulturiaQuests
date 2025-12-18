@@ -1,13 +1,18 @@
 # CulturiaQuests
 
-Ce projet est une application web full-stack comprenant un back-end (API headless) développé avec Strapi et un front-end développé avec Nuxt.js. Le tout est conteneurisé à l'aide de Docker pour un développement et un déploiement simplifiés.
+Ce projet est une application web full-stack de type RPG géolocalisé, comprenant un back-end (API headless) développé avec Strapi et un front-end développé avec Nuxt. Le tout est conteneurisé à l'aide de Docker pour un développement et un déploiement simplifiés.
 
 ## ✨ Stack Technique
 
-- **Frontend**: [Nuxt.js](https://nuxt.com/) (Framework Vue.js)
-- **Backend**: [Strapi](https://strapi.io/) (Headless CMS Node.js)
+- **Frontend**: [Nuxt 4](https://nuxt.com/) (Vue.js 3 + TypeScript)
+- **Backend**: [Strapi v5](https://strapi.io/) (Headless CMS Node.js + TypeScript)
 - **Base de données**: [PostgreSQL](https://www.postgresql.org/)
 - **Conteneurisation**: [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+
+## 🚧 État du Développement
+
+**⚠️ Refonte en cours :** Le projet subit actuellement une refonte majeure de ses types de contenu (Content-Types) Strapi.
+Pour plus de détails sur l'architecture de la base de données et le plan d'implémentation, voir le fichier [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
 
 ---
 
@@ -88,7 +93,7 @@ Les services suivants seront démarrés :
 
 - `database`: Le serveur PostgreSQL.
 - `backend`: L'application Strapi (démarre sur le port 1337).
-- `frontend`: L'application Nuxt.js (démarre sur le port 3000).
+- `frontend`: L'application Nuxt (démarre sur le port 3000).
 
 ### 5. Accéder à l'Application
 
@@ -104,21 +109,23 @@ Les services suivants seront démarrés :
 
 ```
 .
-├── backend/         # Contient l'application Strapi (API)
+├── backend/         # Contient l'application Strapi v5 (API)
 │   ├── config/      # Configuration Strapi
-│   ├── src/         # Code source
+│   ├── src/         # Code source (Content-Types, API, Extensions)
 │   ├── public/      # Fichiers statiques
 │   └── ...
-├── frontend/        # Contient l'application Nuxt.js (Client)
-│   ├── app/         # Pages et composants
+├── frontend/        # Contient l'application Nuxt 4 (Client)
+│   ├── app/         # Pages, composants, stores (Pinia)
 │   ├── public/      # Fichiers statiques
 │   └── ...
 ├── scripts/         # Scripts utilitaires
-│   ├── pois_importer/ # Script d'import de POI
-│   └── ai_reviewer.py # Script de revue de code
+│   ├── pois_importer/ # Script d'import de POI (Google Maps)
+│   ├── populate_db/   # Script de seeding de la base de données
+│   └── ai_reviewer.py # Script de revue de code (CI/CD)
 ├── .env             # Config Docker (à créer)
 ├── .env.exemple     # Modèle de config racine
-└── docker-compose.yml # Orchestration des conteneurs
+├── docker-compose.yml # Orchestration des conteneurs
+└── IMPLEMENTATION_PLAN.md # Plan détaillé des Content-Types
 ```
 
 ---
@@ -143,22 +150,26 @@ Vérifiez que :
 
 ## 🔧 Scripts Utilitaires
 
-Le projet inclut plusieurs scripts utilitaires :
+Le projet inclut plusieurs scripts utilitaires situés dans le dossier `scripts/` :
 
-1. **POI Importer** : Script pour importer des Points d'Intérêt depuis Google Maps
-   - Localisation : `scripts/pois_importer/`
-   - Fichiers de sortie : `pois-output-*.json`
+1. **POI Importer** (`scripts/pois_importer/`) :
+   - Importe des Points d'Intérêt depuis des sources externes (ex: Google Maps).
+   - Génère des fichiers JSON utilisés ensuite pour le seeding.
 
-2. **AI Reviewer** : Script pour analyser les changements de code
-   - Localisation : `scripts/ai_reviewer.py`
-   - Utilisé dans le workflow GitHub Actions
+2. **Populate DB** (`scripts/populate_db/`) :
+   - Remplit la base de données Strapi avec des données initiales (NPCs, Items, POIs, Dialogues).
+   - Utile pour initialiser un environnement de développement cohérent.
+
+3. **AI Reviewer** (`scripts/ai_reviewer.py`) :
+   - Analyse les changements de code dans les Pull Requests.
+   - Utilisé par le workflow GitHub Actions.
 
 ---
 
 ## 📝 Notes de Développement
 
-- **Strapi v5** : Ce projet utilise Strapi v5 qui introduit des changements significatifs par rapport aux versions précédentes.
-- **TypeScript** : Le backend utilise TypeScript pour une meilleure typage et maintenabilité.
+- **Strapi v5** : Ce projet utilise Strapi v5 qui introduit des changements significatifs par rapport aux versions précédentes (Factory Pattern, Document Service API).
+- **TypeScript** : Le backend et le frontend utilisent strictement TypeScript pour un meilleur typage et maintenabilité.
 - **Docker** : Tous les services sont conteneurisés pour une meilleure portabilité.
 
 ---

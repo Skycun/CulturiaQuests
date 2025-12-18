@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     '@hypernym/nuxt-anime',
     '@nuxtjs/strapi',
     '@nuxtjs/device',
-    // 'pinia-plugin-persistedstate/nuxt', // Disabled to prevent potential conflict
+    'pinia-plugin-persistedstate/nuxt',
   ],
 
   // Configuration Strapi
