@@ -446,9 +446,8 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     firstname: Schema.Attribute.String & Schema.Attribute.Required;
     guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    icon: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     items: Schema.Attribute.Relation<'oneToMany', 'api::item.item'>;
-    job: Schema.Attribute.Enumeration<['hero', 'mage', 'archer', 'soldier']> &
-      Schema.Attribute.Required;
     lastname: Schema.Attribute.String & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -604,6 +603,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    icon: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     index_damage: Schema.Attribute.Integer & Schema.Attribute.Required;
     isScrapped: Schema.Attribute.Boolean &
       Schema.Attribute.Required &

@@ -39,6 +39,12 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+
+// Layout de test
+definePageMeta({
+  layout: 'test',
+})
+
 </script>
 
 <template>

@@ -25,13 +25,17 @@
     },
     "slot": {
       "type": "enumeration",
-      "enum": ["weapon", "helmet", "charm"],
-      "required": true
+      "required": true,
+      "enum": [
+        "weapon",
+        "helmet",
+        "charm"
+      ]
     },
     "isScrapped": {
       "type": "boolean",
-      "default": false,
-      "required": true
+      "required": true,
+      "default": false
     },
     "rarity": {
       "type": "relation",
@@ -68,6 +72,16 @@
       "relation": "manyToMany",
       "target": "api::visit.visit",
       "inversedBy": "items"
+    },
+    "icon": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   }
 }

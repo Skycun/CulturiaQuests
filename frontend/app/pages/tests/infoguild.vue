@@ -7,17 +7,25 @@ const { logout } = useStrapiAuth()
 const router = useRouter()
 
 const isAuthenticated = computed(() => !!user.value)
-const guild = computed(() => guildStore.getGuild())
+const guild = computed(() => guildStore.guild)
+const loading = computed(() => guildStore.loading)
 
 // Fetch guild if not already present (e.g., page refresh)
-if (isAuthenticated.value && !guild.value && user.value?.id) {
-  guildStore.fetchGuild()
-}
+onMounted(async () => {
+  if (isAuthenticated.value && !guildStore.guild && user.value?.id) {
+    await guildStore.fetchGuild()
+  }
+})
 
 const handleLogout = async () => {
   await logout()
   router.push('/tests/login')
 }
+
+// Layout de test
+definePageMeta({
+  layout: 'test',
+})
 </script>
 
 <template>
@@ -50,10 +58,17 @@ const handleLogout = async () => {
         </div>
       </div>
 
-      <!-- Loading/No Guild State -->
-      <div v-else class="bg-blue-50 border-l-4 border-blue-400 p-4">
+      <!-- Loading State -->
+      <div v-else-if="loading" class="bg-blue-50 border-l-4 border-blue-400 p-4">
         <p class="text-sm text-blue-700">
-          Loading guild data or no guild associated with this user...
+          Loading guild data...
+        </p>
+      </div>
+
+      <!-- No Guild State -->
+      <div v-else class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <p class="text-sm text-yellow-700">
+          No guild associated with this user.
         </p>
       </div>
 
