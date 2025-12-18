@@ -85,9 +85,18 @@ export const useGuildStore = defineStore('guild', () => {
         method: 'GET',
         params: {
           populate: {
-            characters: true,
+            characters: {
+              populate: {
+                icon: { fields: ['url'] },
+              },
+            },
             items: {
-              populate: ['rarity', 'tags', 'character'],
+              populate: {
+                rarity: true,
+                tags: true,
+                character: true,
+                icon: { fields: ['url'] },
+              },
             },
             quests: {
               populate: ['npc', 'poi_a', 'poi_b'],

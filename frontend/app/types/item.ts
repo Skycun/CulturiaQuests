@@ -4,6 +4,7 @@ import type { Character } from './character'
 import type { Tag } from './tag'
 import type { Run } from './run'
 import type { Visit } from './visit'
+import type { StrapiMedia } from './strapi'
 
 export interface ItemAttributes {
   name: string
@@ -11,6 +12,7 @@ export interface ItemAttributes {
   index_damage: number
   slot: 'weapon' | 'helmet' | 'charm'
   isScrapped: boolean
+  icon?: { data: StrapiMedia | null }
   rarity?: { data: Rarity }
   guild?: { data: Guild }
   character?: { data: Character }
@@ -32,4 +34,6 @@ export interface Item {
   index_damage?: number
   slot?: 'weapon' | 'helmet' | 'charm'
   isScrapped?: boolean
+  icon?: StrapiMedia | null
+  rarity?: Rarity | null
 }

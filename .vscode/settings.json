@@ -1,0 +1,7 @@
+{
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Génère un message de commit Git en français, très court, selon ce format exact :\n[EMOJI] [SCOPE] | [DESCRIPTION]\n\nEMOJI : Un seul gitmoji au début selon la nature du commit :\n- ✨ nouvelle fonctionnalité\n- 🐛 correction de bug\n- ♻️ refactorisation\n- 🎨 amélioration du style/format du code\n- 🔧 configuration\n- 📝 documentation\n- ✅ tests\n- 🚀 déploiement\n- 🔥 suppression de code/fichiers\n- 🩹 correctif simple\n- ⬆️ mise à jour de dépendances\n\nSCOPE : Indique la portée selon les fichiers modifiés :\n- \"Back\" si uniquement backend/\n- \"Front\" si uniquement frontend/\n- \"Back & Front\" si les deux\n\nDESCRIPTION : Une phrase courte décrivant le changement, en français."
+    }
+  ]
+}
