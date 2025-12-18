@@ -21,6 +21,11 @@ const handleLogout = async () => {
   await logout()
   router.push('/tests/login')
 }
+
+// Layout de test
+definePageMeta({
+  layout: 'test',
+})
 </script>
 
 <template>
