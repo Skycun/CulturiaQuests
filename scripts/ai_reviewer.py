@@ -193,11 +193,12 @@ CRITÈRES D'ÉVALUATION (sur 20) :
    - Chargement lazy/eager approprié ?
    - NOTE : 0-5=Très inefficace, 6-10=Problèmes notables, 11-14=Acceptable, 15-17=Optimisé, 18-20=Hautement performant
 
-**SCORE GLOBAL** : Moyenne pondérée (pas juste la moyenne arithmétique).
+**SCORE GLOBAL** : Moyenne pondérée des 4 critères (pas juste la moyenne arithmétique).
 - Pénalise fortement les scores <10 dans une catégorie
 - Un excellent code peut avoir 16-18/20
 - 20/20 est exceptionnel et très rare (code production parfait)
 - Un code médiocre doit avoir 8-12/20, pas 15/20
+- Considère SOLID, Clarté, Sécurité ET Performance dans le calcul
 
 CONSIGNES STRICTES :
 - Sois OBJECTIF et EXIGEANT dans ta notation
