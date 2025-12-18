@@ -4,14 +4,20 @@ import type { Guild } from '~/types/guild'
 export const useGuildStore = defineStore('guild', () => {
   // State
   const guild = ref<Guild | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  // Getters
+  const hasGuild = computed(() => guild.value !== null)
 
   // Actions
   function setGuild(data: Guild) {
     guild.value = data
   }
 
-  function getGuild(): Guild | null {
-    return guild.value
+  function clearGuild() {
+    guild.value = null
+    error.value = null
   }
 
   /**
@@ -19,31 +25,38 @@ export const useGuildStore = defineStore('guild', () => {
    */
   async function fetchGuild() {
     const client = useStrapiClient()
-    
+    loading.value = true
+    error.value = null
+
     try {
-      // Using the custom endpoint /guilds/me
       const response = await client<any>('/guilds/me', {
         method: 'GET',
       })
-      
-      // Strapi custom controllers usually return { data: ... } or just the object depending on serialization
-      // Using standard Strapi response structure handling
+
       const guildData = response.data || response
 
       if (guildData) {
         setGuild(guildData)
       }
-    } catch (error) {
-      console.error('Failed to fetch guild:', error)
+    } catch (e: any) {
+      console.error('Failed to fetch guild:', e)
+      error.value = e?.message || 'Failed to fetch guild'
+    } finally {
+      loading.value = false
     }
   }
 
   return {
     guild,
+    loading,
+    error,
+    hasGuild,
     setGuild,
-    getGuild,
+    clearGuild,
     fetchGuild,
   }
 }, {
-  persist: true,
+  persist: {
+    pick: ['guild'],
+  },
 })
