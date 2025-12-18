@@ -74,7 +74,12 @@ export const useInventoryStore = defineStore('inventory', () => {
       const response = await client<any>('/items', {
         method: 'GET',
         params: {
-          populate: ['rarity', 'tags', 'character'],
+          populate: {
+            rarity: true,
+            tags: true,
+            character: true,
+            icon: { fields: ['url'] },
+          },
         },
       })
 

@@ -65,14 +65,29 @@ function getJobBadgeColor(job: string) {
   return colors[job] || 'bg-gray-500'
 }
 
-function getRarityColor(rarity: string) {
-  const colors: Record<string, string> = {
-    Common: 'text-gray-400',
-    Rare: 'text-blue-400',
-    Epic: 'text-purple-400',
-    Legendary: 'text-yellow-400',
+function getIconUrl(icon: Record<string, unknown> | null | undefined): string | null {
+  if (!icon) return null
+  const iconObj = icon as { url?: string; attributes?: { url?: string }; data?: { attributes?: { url?: string } } }
+  const url = iconObj.url || iconObj.attributes?.url || iconObj.data?.attributes?.url
+  if (!url) return null
+  // Si l'URL est relative, ajouter l'URL de base Strapi
+  if (url.startsWith('/')) {
+    const config = useRuntimeConfig()
+    return `${config.public.strapi.url}${url}`
   }
-  return colors[rarity] || 'text-gray-400'
+  return url
+}
+
+function getItemRarity(item: Record<string, unknown>): string {
+  const itemObj = item as { rarity?: { name?: string }; attributes?: { rarity?: { name?: string; data?: { attributes?: { name?: string } } } } }
+  const rarity = itemObj.rarity?.name || itemObj.attributes?.rarity?.data?.attributes?.name || itemObj.attributes?.rarity?.name || 'common'
+  return rarity.toLowerCase()
+}
+
+function getItemTags(item: Record<string, unknown>): string[] {
+  const itemObj = item as { tags?: { name?: string }[]; attributes?: { tags?: { name?: string }[] | { data?: { name?: string; attributes?: { name?: string } }[] } } }
+  const tags = itemObj.tags || (itemObj.attributes?.tags as { name?: string; attributes?: { name?: string } }[] | undefined) || []
+  return (tags as { name?: string; attributes?: { name?: string } }[]).map((tag) => tag.name || tag.attributes?.name || '').filter(Boolean)
 }
 
 // Layout de test
@@ -87,7 +102,7 @@ definePageMeta({
     <h1 class="text-3xl font-bold mb-6">Stores Debug Dashboard</h1>
 
     <!-- User Info -->
-    <div class="mb-4 p-3 bg-gray-800 rounded-lg">
+    <div class="mb-4 p-3 bg-gray-100 rounded-lg">
       <span class="text-gray-400">User: </span>
       <span v-if="user" class="text-green-400">{{ user.username || user.email }} (ID: {{ user.id }})</span>
       <span v-else class="text-red-400">Not authenticated</span>
@@ -119,7 +134,7 @@ definePageMeta({
     <!-- Guild Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('guild')"
       >
         <h2 class="text-xl font-semibold">
@@ -136,19 +151,19 @@ definePageMeta({
       <div v-if="expandedSections.guild" class="p-4 bg-gray-900">
         <div v-if="guildStore.hasGuild" class="space-y-2">
           <div class="grid grid-cols-4 gap-4">
-            <div class="p-3 bg-gray-800 rounded">
+            <div class="p-3 bg-gray-100 rounded">
               <div class="text-gray-400 text-sm">Gold</div>
               <div class="text-yellow-400 text-xl font-bold">{{ guildStore.gold }}</div>
             </div>
-            <div class="p-3 bg-gray-800 rounded">
+            <div class="p-3 bg-gray-100 rounded">
               <div class="text-gray-400 text-sm">Exp</div>
               <div class="text-blue-400 text-xl font-bold">{{ guildStore.exp }}</div>
             </div>
-            <div class="p-3 bg-gray-800 rounded">
+            <div class="p-3 bg-gray-100 rounded">
               <div class="text-gray-400 text-sm">Scrap</div>
               <div class="text-gray-300 text-xl font-bold">{{ guildStore.scrap }}</div>
             </div>
-            <div class="p-3 bg-gray-800 rounded">
+            <div class="p-3 bg-gray-100 rounded">
               <div class="text-gray-400 text-sm">ID</div>
               <div class="text-gray-300 text-xl font-bold">{{ guildStore.guild?.id }}</div>
             </div>
@@ -159,7 +174,7 @@ definePageMeta({
           >
             {{ showJsonView.guild ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.guild" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(guildStore.guild, null, 2) }}</pre>
+          <pre v-if="showJsonView.guild" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(guildStore.guild, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No guild data</div>
       </div>
@@ -168,7 +183,7 @@ definePageMeta({
     <!-- Characters Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('characters')"
       >
         <h2 class="text-xl font-semibold">
@@ -190,8 +205,17 @@ definePageMeta({
           <div
             v-for="char in characterStore.characters"
             :key="char.id"
-            class="flex items-center gap-3 p-2 bg-gray-800 rounded"
+            class="flex items-center gap-3 p-2 bg-gray-100 rounded"
           >
+            <img
+              v-if="getIconUrl(char.icon || char.attributes?.icon)"
+              :src="getIconUrl(char.icon || char.attributes?.icon)!"
+              :alt="char.firstname || char.attributes?.firstname"
+              class="w-10 h-10 rounded-full object-cover border border-gray-600"
+            >
+            <div v-else class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-500 text-xs">
+              ?
+            </div>
             <span
               :class="getJobBadgeColor(char.job || char.attributes?.job || '')"
               class="px-2 py-1 rounded text-xs text-white uppercase"
@@ -207,7 +231,7 @@ definePageMeta({
           >
             {{ showJsonView.characters ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.characters" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(characterStore.characters, null, 2) }}</pre>
+          <pre v-if="showJsonView.characters" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(characterStore.characters, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No characters</div>
       </div>
@@ -216,7 +240,7 @@ definePageMeta({
     <!-- Inventory Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('inventory')"
       >
         <h2 class="text-xl font-semibold">
@@ -234,22 +258,18 @@ definePageMeta({
         </div>
       </div>
       <div v-if="expandedSections.inventory" class="p-4 bg-gray-900">
-        <div v-if="inventoryStore.hasItems" class="space-y-2">
-          <div
-            v-for="item in inventoryStore.items"
-            :key="item.id"
-            class="flex items-center gap-3 p-2 bg-gray-800 rounded"
-          >
-            <span
-              :class="getRarityColor(item.rarity?.name || item.attributes?.rarity?.data?.attributes?.name || '')"
-              class="font-semibold"
-            >
-              [{{ item.rarity?.name || item.attributes?.rarity?.data?.attributes?.name || 'Unknown' }}]
-            </span>
-            <span>{{ item.name || item.attributes?.name }}</span>
-            <span class="text-gray-500 text-sm">({{ item.slot || item.attributes?.slot }})</span>
-            <span v-if="item.isScrapped || item.attributes?.isScrapped" class="text-red-400 text-sm">SCRAPPED</span>
-            <span class="text-gray-500 text-sm ml-auto">Lvl {{ item.level || item.attributes?.level }}</span>
+        <div v-if="inventoryStore.hasItems" class="space-y-4">
+          <!-- Items Grid -->
+          <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+            <Items
+              v-for="item in inventoryStore.items"
+              :key="item.id"
+              :level="item.level || item.attributes?.level || 1"
+              :rarity="getItemRarity(item)"
+              :image="getIconUrl(item.icon || item.attributes?.icon) || '/placeholder-item.png'"
+              :types="getItemTags(item)"
+              :category="item.slot || item.attributes?.slot || 'weapon'"
+            />
           </div>
           <button
             class="text-sm text-blue-400 hover:underline"
@@ -257,7 +277,7 @@ definePageMeta({
           >
             {{ showJsonView.inventory ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.inventory" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(inventoryStore.items, null, 2) }}</pre>
+          <pre v-if="showJsonView.inventory" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(inventoryStore.items, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No items</div>
       </div>
@@ -266,7 +286,7 @@ definePageMeta({
     <!-- Quests Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('quests')"
       >
         <h2 class="text-xl font-semibold">
@@ -289,7 +309,7 @@ definePageMeta({
           <div
             v-for="quest in questStore.quests"
             :key="quest.id"
-            class="p-2 bg-gray-800 rounded"
+            class="p-2 bg-gray-100 rounded"
           >
             <div class="flex items-center gap-2">
               <span
@@ -312,7 +332,7 @@ definePageMeta({
           >
             {{ showJsonView.quests ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.quests" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(questStore.quests, null, 2) }}</pre>
+          <pre v-if="showJsonView.quests" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(questStore.quests, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No quests</div>
       </div>
@@ -321,7 +341,7 @@ definePageMeta({
     <!-- Visits Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('visits')"
       >
         <h2 class="text-xl font-semibold">
@@ -346,7 +366,7 @@ definePageMeta({
           <div
             v-for="visit in visitStore.visits"
             :key="visit.id"
-            class="p-2 bg-gray-800 rounded text-sm"
+            class="p-2 bg-gray-100 rounded text-sm"
           >
             Visit #{{ visit.id }} - Opens: {{ visit.open_count || visit.attributes?.open_count || 0 }}
           </div>
@@ -356,7 +376,7 @@ definePageMeta({
           >
             {{ showJsonView.visits ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.visits" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(visitStore.visits, null, 2) }}</pre>
+          <pre v-if="showJsonView.visits" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(visitStore.visits, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No visits</div>
       </div>
@@ -365,7 +385,7 @@ definePageMeta({
     <!-- Runs Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('runs')"
       >
         <h2 class="text-xl font-semibold">
@@ -391,7 +411,7 @@ definePageMeta({
           <div
             v-for="run in runStore.runs"
             :key="run.id"
-            class="p-2 bg-gray-800 rounded text-sm"
+            class="p-2 bg-gray-100 rounded text-sm"
           >
             <span :class="(run.date_end || run.attributes?.date_end) ? 'text-green-400' : 'text-yellow-400'">
               {{ (run.date_end || run.attributes?.date_end) ? '[DONE]' : '[ACTIVE]' }}
@@ -404,7 +424,7 @@ definePageMeta({
           >
             {{ showJsonView.runs ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.runs" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(runStore.runs, null, 2) }}</pre>
+          <pre v-if="showJsonView.runs" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(runStore.runs, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No runs</div>
       </div>
@@ -413,7 +433,7 @@ definePageMeta({
     <!-- Friendships Section -->
     <div class="mb-4 border border-gray-700 rounded-lg overflow-hidden">
       <div
-        class="flex justify-between items-center p-4 bg-gray-800 cursor-pointer"
+        class="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
         @click="toggleSection('friendships')"
       >
         <h2 class="text-xl font-semibold">
@@ -438,7 +458,7 @@ definePageMeta({
           <div
             v-for="friendship in friendshipStore.friendships"
             :key="friendship.id"
-            class="p-2 bg-gray-800 rounded text-sm"
+            class="p-2 bg-gray-100 rounded text-sm"
           >
             Friendship #{{ friendship.id }} -
             Quests: {{ friendship.quests_entry_unlocked ?? friendship.attributes?.quests_entry_unlocked ?? 0 }} |
@@ -450,7 +470,7 @@ definePageMeta({
           >
             {{ showJsonView.friendships ? 'Hide' : 'Show' }} Raw JSON
           </button>
-          <pre v-if="showJsonView.friendships" class="mt-2 p-3 bg-gray-800 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(friendshipStore.friendships, null, 2) }}</pre>
+          <pre v-if="showJsonView.friendships" class="mt-2 p-3 bg-gray-100 rounded text-xs overflow-auto max-h-64">{{ JSON.stringify(friendshipStore.friendships, null, 2) }}</pre>
         </div>
         <div v-else class="text-gray-500">No friendships</div>
       </div>
