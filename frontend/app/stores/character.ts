@@ -52,6 +52,14 @@ export const useCharacterStore = defineStore('character', () => {
     try {
       const response = await client<any>('/characters', {
         method: 'GET',
+        params: {
+          populate: {
+            avatar: true, // L'image du perso
+            items: {      // La relation avec les items
+              populate: ['image', 'rarity', 'tags'] // Les détails de l'item
+            }
+          },
+        },
       })
 
       const data = response.data || response

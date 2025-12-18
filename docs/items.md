@@ -50,7 +50,7 @@ Un objet simple, non sélectionné, avec un seul type.
   :level="12" 
   rarity="common" 
   category="Weapon"
-  image="/assets/axe_iron.png" 
+  image="/assets/weapon3.png" 
   :types="['science']"
 />
 ```
@@ -76,7 +76,7 @@ Un objet de rareté intermédiaire.
   :level="45" 
   rarity="epic" 
   category="Helmet"
-  image="/assets/helmet_iron.png" 
+  image="/assets/helmet1.png" 
   :types="['art']" 
 />
 ```
