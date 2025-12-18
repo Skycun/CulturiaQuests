@@ -175,6 +175,33 @@ export const useGuildStore = defineStore('guild', () => {
     }
   }
 
+  async function createGuildSetup(payload: { guildName: string; characterName: string; iconId: number }) {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await client<any>('/guilds/setup', {
+        method: 'POST',
+        body: payload
+      })
+      
+      const data = response.data || response
+      setGuild(data)
+      // Hydrate characters if returned populated
+      if (data.characters) {
+          useCharacterStore().setCharacters(data.characters.data || data.characters || [])
+      }
+      return data
+    } catch (e: any) {
+      console.error('Failed to setup guild:', e)
+      error.value = e?.message || 'Failed to setup guild'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     guild,
@@ -193,6 +220,7 @@ export const useGuildStore = defineStore('guild', () => {
     fetchGuild,
     fetchAll,
     refetchStats,
+    createGuildSetup,
   }
 }, {
   persist: {
