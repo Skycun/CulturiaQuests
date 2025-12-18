@@ -604,6 +604,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    icon: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     index_damage: Schema.Attribute.Integer & Schema.Attribute.Required;
     isScrapped: Schema.Attribute.Boolean &
       Schema.Attribute.Required &
