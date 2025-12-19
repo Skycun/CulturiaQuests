@@ -1,13 +1,22 @@
-// tailwind.config.js
+import type { Config } from 'tailwindcss'
+
 export default {
+  content: [
+    './app/components/**/*.{js,vue,ts}',
+    './app/layouts/**/*.vue',
+    './app/pages/**/*.vue',
+    './app/plugins/**/*.{js,ts}',
+    './app/app.vue',
+    './app/error.vue',
+  ],
   theme: {
     extend: {
       fontFamily: {
-        // Ici, on fait le lien. Nuxt Fonts verra "Jersey 10" et la chargera auto.
-        'pixel': ['"Jersey 10"', 'sans-serif'], 
-        'onest': ['"Onest"', 'sans-serif'],
+        pixel: ['var(--font-pixel)'],
+        onest: ['var(--font-onest)'],
+        power: ['var(--font-power)'],
       },
     },
   },
   plugins: [],
-}
+} satisfies Config
