@@ -17,6 +17,33 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
   ],
 
+  // CSS principal
+  css: ['~/assets/css/main.css'],
+
+  // Configuration des fonts avec @nuxt/fonts
+  fonts: {
+    families: [
+      // Google Fonts
+      {
+        name: 'Onest',
+        provider: 'google',
+        weights: [400, 500, 600, 700],
+      },
+      {
+        name: 'Jersey 10',
+        provider: 'google',
+        weights: [400],
+      },
+      // Neue Power est gérée via @font-face dans main.css
+    ],
+  },
+
+  // Configuration Tailwind CSS
+  tailwindcss: {
+    cssPath: '~/assets/css/main.css',
+    configPath: 'tailwind.config.ts',
+  },
+
   // Configuration Strapi
   runtimeConfig: {
     strapi: {
