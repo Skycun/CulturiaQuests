@@ -10,3 +10,7 @@ backups/*
 
 .gemini/
 gha-creds-*.json
+
+# Python cache
+__pycache__/
+*.pyc
