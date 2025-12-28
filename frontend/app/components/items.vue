@@ -49,10 +49,11 @@ const props = defineProps({
 
 const gradientClass = computed(() => {
   switch (props.rarity) {
-    case 'legendary': return 'bg-gradient-to-b from-[#fcd34d] to-[#fbbf24]'; 
+    case 'legendary': return 'bg-gradient-to-b from-[#fcd34d] to-[#fbbf24]';
     case 'epic': return 'bg-gradient-to-b from-[#e879f9] to-[#a855f7]'; 
     case 'common': return 'bg-gradient-to-b from-[#4ade80] to-[#22c55e]'; 
     case 'rare': return 'bg-gradient-to-b from-[#38bdf8] to-[#3b82f6]';
+    case 'common': return 'bg-gradient-to-b from-[#4ade80] to-[#22c55e]';
     default: return 'bg-gray-400';
   }
 });

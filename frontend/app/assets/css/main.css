@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================
+   FONTS CONFIGURATION
+   ================================ */
+
+/* Font custom : Neue Power */
+@font-face {
+  font-family: 'Neue Power';
+  src: local('Neue Power'),
+       local('NeuePower'),
+       url('/fonts/NeuePower.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ================================
+   CUSTOM LAYERS
+   ================================ */
+
+@layer base {
+  :root {
+    --font-pixel: "Jersey 10", sans-serif;
+    --font-onest: "Onest", sans-serif;
+    --font-power: "Neue Power", sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Pixel art rendering */
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  /* Text shadow pour lisibilité sur fonds colorés */
+  .text-shadow-outline {
+    text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000, 1px 1px #000, -1px -1px #000;
+  }
+
+  @media (min-width: 640px) {
+    .text-shadow-outline {
+      text-shadow: -2px 0 #000, 0 2px #000, 2px 0 #000, 0 -2px #000, 2px 2px #000, -2px -2px #000;
+    }
+  }
+}
