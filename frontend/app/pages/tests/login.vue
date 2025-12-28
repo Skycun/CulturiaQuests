@@ -83,6 +83,13 @@ definePageMeta({
       >
         {{ loading ? 'Logging in...' : 'Login' }}
       </button>
+
+      <div class="text-center mt-4">
+        <p class="text-sm">
+          Don't have an account? 
+          <NuxtLink to="/tests/register" class="text-blue-600 hover:underline">Register here</NuxtLink>
+        </p>
+      </div>
     </form>
   </div>
 </template>

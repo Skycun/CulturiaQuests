@@ -5,7 +5,9 @@ scripts/populate_db/node_modules
 scripts/populate_db/.env
 
 # Database backups
-backups/
+backups/*
+!backups/initial_data.tar.gz
+
 .gemini/
 gha-creds-*.json
 

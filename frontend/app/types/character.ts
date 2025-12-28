@@ -5,7 +5,6 @@ import type { StrapiMedia } from './strapi'
 export interface CharacterAttributes {
   firstname: string
   lastname: string
-  job: 'hero' | 'mage' | 'archer' | 'soldier'
   icon?: { data: StrapiMedia | null }
   guild?: { data: Guild }
   items?: { data: Item[] }
@@ -21,6 +20,12 @@ export interface Character {
   // Flattened
   firstname?: string
   lastname?: string
-  job?: 'hero' | 'mage' | 'archer' | 'soldier'
   icon?: StrapiMedia | null
+}
+
+// Type for form data when creating/editing characters
+export interface CharacterFormData {
+  firstname: string
+  lastname: string
+  iconId?: number | null
 }

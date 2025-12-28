@@ -59,4 +59,47 @@ export default factories.createCoreController('api::item.item', ({ strapi }) => 
     const sanitizedEntity = await this.sanitizeOutput(document, ctx);
     return this.transformResponse(sanitizedEntity);
   },
+
+  /**
+   * Get item icons from media library
+   * Filters image files from "weapons", "helmets", and "charms" folders
+   */
+  async getItemIcons(ctx) {
+    try {
+      // Find the folders
+      const folders = await strapi.db.query('plugin::upload.folder').findMany({
+        where: { 
+          name: { $in: ['weapons', 'helmets', 'charms'] } 
+        },
+        select: ['id'],
+      });
+
+      if (!folders || folders.length === 0) {
+        return ctx.send({
+          data: [],
+          meta: { total: 0 },
+        });
+      }
+
+      const folderIds = folders.map(f => f.id);
+
+      // Get files in those folders
+      const files = await strapi.db.query('plugin::upload.file').findMany({
+        where: {
+          folder: { id: { $in: folderIds } },
+          mime: { $startsWith: 'image/' },
+        },
+        select: ['id', 'documentId', 'name', 'url', 'width', 'height'],
+        orderBy: { name: 'asc' },
+      });
+
+      return ctx.send({
+        data: files,
+        meta: { total: files.length },
+      });
+    } catch (error) {
+      strapi.log.error('Error fetching item icons:', error);
+      return ctx.internalServerError('Failed to fetch item icons');
+    }
+  },
 }));
