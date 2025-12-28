@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   // If user is not logged in, we do nothing and let other guards handle it
   // EXCEPTION: We now allow /tests/create-guild because it handles registration too
   if (!user.value) {
-    if (to.path === '/tests/create-guild') {
+    if (to.path === '/tests/create-guild' || to.path === '/account/login' || to.path === '/account/register') {
       return // Allow access
     }
     return

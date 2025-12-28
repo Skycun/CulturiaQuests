@@ -147,27 +147,27 @@ export default factories.createCoreController('api::guild.guild', ({ strapi }) =
       return file ? file.id : null;
     };
 
-    const swordIconId = await findIcon('weapons', 'weapon1');
-    const helmetIconId = await findIcon('helmets', 'helmet1');
-    const charmIconId = await findIcon('charms', 'charm1');
+    const swordIconId = await findIcon('weapons', 'basic_sword');
+    const helmetIconId = await findIcon('helmets', 'basic_helmet');
+    const charmIconId = await findIcon('charms', 'basic_charm');
 
     const starterItems = [
       {
-        name: 'Basic Sword',
+        name: 'Épée classique',
         slot: 'weapon' as const,
         index_damage: 10,
         level: 1,
         icon: swordIconId
       },
       {
-        name: 'Basic Helmet',
+        name: 'Casque classique',
         slot: 'helmet' as const,
         index_damage: 10,
         level: 1,
         icon: helmetIconId
       },
       {
-        name: 'Basic Charm',
+        name: 'Bague classique',
         slot: 'charm' as const,
         index_damage: 10,
         level: 1,
