@@ -4,7 +4,9 @@ import type { Item } from '~/types/item'
 export const useInventoryStore = defineStore('inventory', () => {
   // State
   const items = ref<Item[]>([])
+  const availableIcons = ref<any[]>([])
   const loading = ref(false)
+  const iconsLoading = ref(false)
   const error = ref<string | null>(null)
 
   // Getters
@@ -93,10 +95,25 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
   }
 
+  async function fetchItemIcons() {
+    const client = useStrapiClient()
+    iconsLoading.value = true
+    try {
+      const response = await client<any>('/item-icons')
+      availableIcons.value = response.data || []
+    } catch (e: any) {
+      console.error('Failed to fetch item icons:', e)
+    } finally {
+      iconsLoading.value = false
+    }
+  }
+
   return {
     // State
     items,
+    availableIcons,
     loading,
+    iconsLoading,
     error,
     // Getters
     hasItems,
@@ -112,6 +129,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     removeItem,
     updateItem,
     fetchItems,
+    fetchItemIcons,
   }
 }, {
   persist: {

@@ -5,6 +5,7 @@ CONTAINER_NAME="postgres_db"
 DB_USER="strapi"
 DB_NAME="strapi"
 BACKUP_DIR="$(dirname "$0")/../backups"
+UPLOADS_DIR="$(dirname "$0")/../backend/public/uploads"
 
 # Couleurs pour les messages
 RED='\033[0;31m'
@@ -28,7 +29,8 @@ else
     echo -e "${CYAN}Backups disponibles:${NC}"
     echo ""
 
-    BACKUPS=($(ls -1t "$BACKUP_DIR"/*.sql 2>/dev/null))
+    # Chercher les deux formats: .tar.gz (nouveaux) et .sql (anciens)
+    BACKUPS=($(ls -1t "$BACKUP_DIR"/backup_*.{tar.gz,sql} 2>/dev/null | sort -r))
 
     if [ ${#BACKUPS[@]} -eq 0 ]; then
         echo -e "${RED}Aucun backup trouvé dans $BACKUP_DIR${NC}"
@@ -40,7 +42,15 @@ else
         FILE_NAME=$(basename "$FILE")
         FILE_SIZE=$(du -h "$FILE" | cut -f1)
         FILE_DATE=$(echo "$FILE_NAME" | grep -oP '\d{8}_\d{6}' | sed 's/_/ /' | sed 's/\(....\)\(..\)\(..\) \(..\)\(..\)\(..\)/\1-\2-\3 \4:\5:\6/')
-        echo "  [$i] $FILE_NAME ($FILE_SIZE) - $FILE_DATE"
+
+        # Indiquer le type de backup
+        if [[ "$FILE_NAME" == *.tar.gz ]]; then
+            TYPE="${GREEN}[Complet: DB+Uploads]${NC}"
+        else
+            TYPE="${YELLOW}[DB seulement]${NC}"
+        fi
+
+        echo -e "  [$i] $FILE_NAME ($FILE_SIZE) - $FILE_DATE $TYPE"
     done
 
     echo ""
@@ -65,8 +75,19 @@ if [ ! -f "$BACKUP_FILE" ]; then
     exit 1
 fi
 
+# Déterminer le type de backup
+IS_ARCHIVE=false
+if [[ "$BACKUP_FILE" == *.tar.gz ]]; then
+    IS_ARCHIVE=true
+fi
+
 echo ""
 echo -e "${YELLOW}ATTENTION: Cette opération va écraser toutes les données actuelles!${NC}"
+if [ "$IS_ARCHIVE" = true ]; then
+    echo -e "${YELLOW}           Base de données ET fichiers uploadés seront restaurés.${NC}"
+else
+    echo -e "${YELLOW}           Base de données uniquement (ancien format sans uploads).${NC}"
+fi
 read -p "Confirmer la restauration de $(basename "$BACKUP_FILE")? [y/N]: " CONFIRM
 
 if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
@@ -75,21 +96,92 @@ if [ "$CONFIRM" != "y" ] && [ "$CONFIRM" != "Y" ]; then
 fi
 
 echo ""
-echo -e "${YELLOW}Restauration en cours...${NC}"
+echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║  Restauration en cours...              ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
+echo ""
+
+# Créer un dossier temporaire si c'est une archive
+if [ "$IS_ARCHIVE" = true ]; then
+    TEMP_DIR="$BACKUP_DIR/temp_restore_$$"
+    mkdir -p "$TEMP_DIR"
+
+    echo -e "${YELLOW}[1/4] Extraction de l'archive...${NC}"
+    if tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR" 2>/dev/null; then
+        echo -e "${GREEN}      ✓ Archive extraite${NC}"
+        SQL_FILE="$TEMP_DIR/database.sql"
+    else
+        echo -e "${RED}      ✗ Erreur lors de l'extraction${NC}"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+else
+    SQL_FILE="$BACKUP_FILE"
+    echo -e "${YELLOW}[1/3] Backup SQL détecté (ancien format)${NC}"
+fi
 
 # Supprimer et recréer le schema public
-echo "  - Nettoyage de la base..."
-docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" > /dev/null 2>&1
-
-# Restaurer le backup
-echo "  - Importation des données..."
-if docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" < "$BACKUP_FILE" > /dev/null 2>&1; then
-    echo ""
-    echo -e "${GREEN}Restauration terminée avec succès!${NC}"
-    echo ""
-    echo -e "${YELLOW}Note: Redémarre Strapi pour prendre en compte les changements:${NC}"
-    echo "  docker-compose restart backend"
+if [ "$IS_ARCHIVE" = true ]; then
+    echo -e "${YELLOW}[2/4] Nettoyage de la base de données...${NC}"
 else
-    echo -e "${RED}Erreur lors de la restauration.${NC}"
+    echo -e "${YELLOW}[2/3] Nettoyage de la base de données...${NC}"
+fi
+
+if docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" > /dev/null 2>&1; then
+    echo -e "${GREEN}      ✓ Base nettoyée${NC}"
+else
+    echo -e "${RED}      ✗ Erreur lors du nettoyage${NC}"
+    [ "$IS_ARCHIVE" = true ] && rm -rf "$TEMP_DIR"
     exit 1
 fi
+
+# Restaurer le backup SQL
+if [ "$IS_ARCHIVE" = true ]; then
+    echo -e "${YELLOW}[3/4] Restauration de la base de données...${NC}"
+else
+    echo -e "${YELLOW}[3/3] Restauration de la base de données...${NC}"
+fi
+
+if docker exec -i "$CONTAINER_NAME" psql -U "$DB_USER" -d "$DB_NAME" < "$SQL_FILE" > /dev/null 2>&1; then
+    echo -e "${GREEN}      ✓ Base de données restaurée${NC}"
+else
+    echo -e "${RED}      ✗ Erreur lors de la restauration SQL${NC}"
+    [ "$IS_ARCHIVE" = true ] && rm -rf "$TEMP_DIR"
+    exit 1
+fi
+
+# Restaurer les fichiers uploadés si c'est une archive
+if [ "$IS_ARCHIVE" = true ]; then
+    echo -e "${YELLOW}[4/4] Restauration des fichiers uploadés...${NC}"
+
+    if [ -d "$TEMP_DIR/uploads" ]; then
+        # Sauvegarder les uploads actuels (au cas où)
+        if [ -d "$UPLOADS_DIR" ] && [ "$(ls -A "$UPLOADS_DIR" 2>/dev/null)" ]; then
+            BACKUP_UPLOADS="$UPLOADS_DIR.backup_$(date +%Y%m%d_%H%M%S)"
+            mv "$UPLOADS_DIR" "$BACKUP_UPLOADS"
+            echo -e "${CYAN}      ℹ Anciens uploads sauvegardés dans: $(basename "$BACKUP_UPLOADS")${NC}"
+        fi
+
+        # Créer le dossier parent si nécessaire
+        mkdir -p "$(dirname "$UPLOADS_DIR")"
+
+        # Restaurer les nouveaux uploads
+        cp -r "$TEMP_DIR/uploads" "$UPLOADS_DIR"
+        UPLOAD_COUNT=$(find "$UPLOADS_DIR" -type f 2>/dev/null | wc -l)
+        echo -e "${GREEN}      ✓ $UPLOAD_COUNT fichier(s) restauré(s)${NC}"
+    else
+        echo -e "${YELLOW}      ⚠ Aucun fichier uploadé dans cette archive${NC}"
+    fi
+
+    # Nettoyage
+    rm -rf "$TEMP_DIR"
+fi
+
+echo ""
+echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║  Restauration terminée avec succès!    ║${NC}"
+echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${YELLOW}⚠️  IMPORTANT: Redémarre Strapi pour prendre en compte les changements:${NC}"
+echo -e "   ${CYAN}docker-compose restart backend${NC}"
+echo ""
