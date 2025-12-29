@@ -1,30 +1,14 @@
 <!-- filepath: /home/skycun/cours/CulturiaQuests/frontend/app/pages/index.vue -->
 <template>
-  <div class="min-h-screen bg-white p-8">
-    <div v-if="user" class="max-w-2xl mx-auto">
-      <h1 class="text-3xl font-bold font-pixel text-indigo-600 mb-6">
-        Bienvenue, {{ user.username }} !
+  <div class="min-h-screen bg-white flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+      <h1 class="text-4xl font-bold font-power text-center mb-6 text-indigo-600">
+        Culturia Quests
       </h1>
 
-      <div class="bg-gray-50 p-6 rounded-lg mb-6">
-        <p class="text-lg mb-2">
-          <span class="font-medium">Email :</span> {{ user.email }}
-        </p>
-      </div>
-
-      <PixelButton
-        @click="handleLogout"
-        variant="filled"
-        color="red"
-      >
-        Se déconnecter
-      </PixelButton>
-    </div>
-
-    <div v-else class="max-w-md mx-auto text-center">
-      <h1 class="text-3xl font-bold font-pixel text-indigo-600 mb-6">
-        Vous n'êtes pas connecté
-      </h1>
+      <p class="text-center text-gray-700 font-onest mb-8 text-lg leading-relaxed">
+        Bienvenue dans une aventure épique ! Connectez-vous ou inscrivez-vous pour commencer votre quête de découverte culturelle.
+      </p>
 
       <div class="space-y-4">
         <NuxtLink to="/account/login">
@@ -44,22 +28,18 @@
 </template>
 
 <script setup lang="ts">
-import { useGuildStore } from '~/stores/guild'
 import PixelButton from '~/components/form/PixelButton.vue'
 
 const user = useStrapiUser()
-const { logout } = useStrapiAuth()
-const router = useRouter()
-const guildStore = useGuildStore()
 
-const handleLogout = async () => {
-  // Clear all stores
-  guildStore.clearAll()
+onMounted(() => {
+  // Redirect authenticated users to map page
+  if (user.value) {
+    navigateTo('/map')
+  }
+})
 
-  // Logout from Strapi
-  await logout()
-
-  // Redirect to login page
-  await router.push('/account/login')
-}
+definePageMeta({
+  layout: 'blank',
+})
 </script>

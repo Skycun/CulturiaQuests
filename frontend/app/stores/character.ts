@@ -45,18 +45,31 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
-  async function fetchCharacters() {
+  async function fetchCharacters(withItems: boolean = false) {
     const client = useStrapiClient()
     loading.value = true
     error.value = null
 
     try {
+      // Construct populate object conditionally
+      const populateConfig: any = {
+        icon: { fields: ['id', 'documentId', 'url', 'name'] },
+      }
+
+      if (withItems) {
+        populateConfig.items = {
+          populate: {
+            rarity: true,
+            tags: true,
+            icon: { fields: ['url'] },
+          },
+        }
+      }
+
       const response = await client<any>('/characters', {
         method: 'GET',
         params: {
-          populate: {
-            icon: { fields: ['id', 'documentId', 'url', 'name'] },
-          },
+          populate: populateConfig,
         },
       })
 
