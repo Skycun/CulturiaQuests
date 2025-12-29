@@ -2,24 +2,10 @@
   <div class="min-h-screen bg-white flex items-center justify-center p-8">
     <div class="max-w-2xl mx-auto text-center">
       <div class="mb-8">
-        <svg
-          class="w-32 h-32 mx-auto text-red-500 mb-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-          />
-          <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
-          <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
-        </svg>
+        <Icon name="bx:x" class="w-64 h-64 bg-red-600" />
       </div>
 
-      <h1 class="text-4xl font-bold font-pixel text-red-600 mb-6">
+      <h1 class="text-3xl font-power text-red-600 mb-6">
         Application Mobile Uniquement
       </h1>
 

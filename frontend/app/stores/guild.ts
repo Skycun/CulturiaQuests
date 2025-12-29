@@ -21,6 +21,17 @@ export const useGuildStore = defineStore('guild', () => {
   const scrap = computed(() => guild.value?.scrap ?? guild.value?.attributes?.scrap ?? 0)
   const name = computed(() => guild.value?.name ?? guild.value?.attributes?.name ?? '')
 
+  /**
+   * Calcule le niveau de la guilde à partir de l'XP
+   * Formule : XP_total = 75 × Niveau²
+   * Donc : Niveau = √(XP_total / 75) + 1
+   * Le niveau minimum est 1 (avec 0 XP)
+   */
+  const level = computed(() => {
+    const currentExp = exp.value
+    return Math.floor(Math.sqrt(currentExp / 75)) + 1
+  })
+
   // Actions
   function setGuild(data: Guild) {
     guild.value = data
@@ -213,6 +224,7 @@ export const useGuildStore = defineStore('guild', () => {
     exp,
     scrap,
     name,
+    level,
     // Actions
     setGuild,
     clearGuild,
