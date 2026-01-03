@@ -206,14 +206,14 @@ Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
-## Premier pas
-# Pour lancer :
+## 🦶​ Premier pas
+**Pour lancer :**
 Avoir lancé docker desktop
 docker compose up --build -d
 
-# Pour restaurer la base de données avec les données initiales :
+**Pour restaurer la base de données avec les données initiales :**
 (avoir déjà lancé les conteneurs)
 bash scripts/restore-db.sh backups/initial_data.tar.gz
 
-# pour faire une sauvegarde de la base de données :
+**Pour faire une sauvegarde de la base de données :**
 bash scripts/backup
