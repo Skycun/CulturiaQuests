@@ -15,7 +15,7 @@ Ce projet est une application web full-stack de type RPG géolocalisé, comprena
 - [📝 Notes de Développement](#-notes-de-développement)
 - [🤝 Contribution](#-contribution)
 - [📄 Licence](#-licence)
-- [## Premier pas](#-premier-pas)
+- [🦶​ Premier pas](#-premier-pas)
 ---
 
 ## ✨ Stack Technique
