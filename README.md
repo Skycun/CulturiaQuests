@@ -2,6 +2,22 @@
 
 Ce projet est une application web full-stack de type RPG géolocalisé, comprenant un back-end (API headless) développé avec Strapi et un front-end développé avec Nuxt. Le tout est conteneurisé à l'aide de Docker pour un développement et un déploiement simplifiés.
 
+---
+
+## Table des matières
+
+- [✨ Stack Technique](#-stack-technique)
+- [🚧 État du Développement](#-état-du-développement)
+- [🚀 Démarrage Rapide](#-démarrage-rapide)
+- [📂 Structure du Projet](#-structure-du-projet)
+- [🛠 Dépannage Courant](#-dépannage-courant)
+- [🔧 Scripts Utilitaires](#-scripts-utilitaires)
+- [📝 Notes de Développement](#-notes-de-développement)
+- [🤝 Contribution](#-contribution)
+- [📄 Licence](#-licence)
+- [## Premier pas](#-premier-pas)
+---
+
 ## ✨ Stack Technique
 
 - **Frontend**: [Nuxt 4](https://nuxt.com/) (Vue.js 3 + TypeScript)
@@ -190,6 +206,7 @@ Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
+## Premier pas
 # Pour lancer :
 Avoir lancé docker desktop
 docker compose up --build -d
