@@ -212,7 +212,6 @@ Avoir lancé docker desktop
 docker compose up --build -d
 
 **Pour restaurer la base de données avec les données initiales :**
-(avoir déjà lancé les conteneurs)
 bash scripts/restore-db.sh backups/initial_data.tar.gz
 
 **Pour faire une sauvegarde de la base de données :**
