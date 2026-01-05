@@ -58,6 +58,7 @@ services:
       - PORT=${NUXT_PORT:-3000}
       - NUXT_STRAPI_URL=http://backend:1337
       - NUXT_PUBLIC_STRAPI_URL=http://localhost:${PORT:-1337}
+      - NUXT_PUBLIC_ALLOW_DESKTOP=${NUXT_PUBLIC_ALLOW_DESKTOP:-false}
     volumes:
       - ./frontend:/src
       - frontend_node_modules:/src/node_modules

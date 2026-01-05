@@ -4,7 +4,8 @@ export default defineNuxtRouteMiddleware((to) => {
   const user = useStrapiUser()
 
   // Allow desktop access if ALLOW_DESKTOP is set to true in .env
-  const allowDesktop = config.public.allowDesktop === 'true' || config.public.allowDesktop === true
+  // Handle both string 'true' and boolean true
+  const allowDesktop = String(config.public.allowDesktop) === 'true'
 
   // Check if user is on desktop and desktop access is not allowed
   if (!allowDesktop && device.isDesktop) {
