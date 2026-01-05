@@ -10,6 +10,9 @@ const isAuthenticated = computed(() => !!user.value)
 const guild = computed(() => guildStore.guild)
 const loading = computed(() => guildStore.loading)
 
+const showDeleteConfirm = ref(false)
+const deleteError = ref<string | null>(null)
+
 // Fetch guild if not already present (e.g., page refresh)
 onMounted(async () => {
   if (isAuthenticated.value && !guildStore.guild && user.value?.id) {
@@ -20,6 +23,20 @@ onMounted(async () => {
 const handleLogout = async () => {
   await logout()
   router.push('/tests/login')
+}
+
+const handleDeleteGuild = async () => {
+  deleteError.value = null
+  try {
+    await guildStore.deleteGuild()
+    showDeleteConfirm.value = false
+    // Redirect to login after successful deletion
+    await logout()
+    router.push('/tests/login')
+  } catch (error: any) {
+    deleteError.value = error?.message || 'Failed to delete guild'
+    console.error('Delete guild error:', error)
+  }
 }
 
 // Layout de test
@@ -73,13 +90,68 @@ definePageMeta({
       </div>
 
       <!-- Actions -->
-      <div class="bg-white shadow rounded-lg p-6">
-        <button 
-          @click="handleLogout"
-          class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Logout
-        </button>
+      <div class="bg-white shadow rounded-lg p-6 space-y-4">
+        <div class="flex gap-4">
+          <button
+            @click="handleLogout"
+            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Logout
+          </button>
+          <button
+            v-if="guild"
+            @click="showDeleteConfirm = true"
+            class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded"
+          >
+            Delete Guild
+          </button>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <h2 class="text-xl font-bold mb-4 text-red-600">Confirm Deletion</h2>
+          <p class="mb-4 text-gray-700">
+            Are you sure you want to delete your guild "<strong>{{ guild?.name }}</strong>"?
+          </p>
+          <p class="mb-6 text-sm text-red-600">
+            This will permanently delete:
+          </p>
+          <ul class="mb-6 text-sm text-gray-600 list-disc pl-5 space-y-1">
+            <li>All characters</li>
+            <li>All items</li>
+            <li>All friendships</li>
+            <li>All runs</li>
+            <li>All visits</li>
+            <li>All quests</li>
+            <li>The guild itself</li>
+          </ul>
+          <p class="mb-6 text-sm font-bold text-red-700">
+            This action cannot be undone!
+          </p>
+
+          <div v-if="deleteError" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
+            {{ deleteError }}
+          </div>
+
+          <div class="flex gap-3 justify-end">
+            <button
+              @click="showDeleteConfirm = false"
+              :disabled="loading"
+              class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-semibold disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              @click="handleDeleteGuild"
+              :disabled="loading"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold disabled:opacity-50"
+            >
+              {{ loading ? 'Deleting...' : 'Yes, Delete Everything' }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Debug -->

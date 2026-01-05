@@ -17,62 +17,6 @@ export default {
    * run jobs, or perform some special logic.
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
-    // Helper function to seed data
-    const seedData = async (contentType: string, names: string[], typeName: string) => {
-      for (const name of names) {
-        const existing = await strapi.db.query(contentType).findOne({
-          where: { name },
-        });
-
-        if (!existing) {
-          await (strapi.entityService as any).create(contentType, {
-            data: {
-              name,
-              publishedAt: new Date(),
-            },
-          });
-          strapi.log.info(`Created ${typeName}: ${name}`);
-        }
-      }
-    };
-
-    // Seed rarity data
-    const rarityNames = ['Commun', 'Rare', 'Épique', 'Légendaire'];
-    await seedData('api::rarity.rarity', rarityNames, 'rarity');
-
-    // Seed tag data
-    const tagNames = ['Histoire', 'Art', 'Sciences', 'Nature', 'Société', 'Savoir-Faire'];
-    await seedData('api::tag.tag', tagNames, 'tag');
-
-    // Seed NPC data
-    const npcData = [
-      { firstname: 'Malori', lastname: 'Marnett', pronouns: 'she', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Garen', lastname: 'Fouldier', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Toben', lastname: 'Montivert', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Denrick', lastname: 'Largent', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Marn', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Bram', lastname: 'Thobas', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-      { firstname: 'Toren', lastname: 'Brauvin', pronouns: 'he', quests_entry_available: 2, expedition_entry_available: 2 },
-    ];
-
-    for (const npc of npcData) {
-      const existing = await strapi.db.query('api::npc.npc').findOne({
-        where: { firstname: npc.firstname, lastname: npc.lastname },
-      });
-
-      if (!existing) {
-        await (strapi.entityService as any).create('api::npc.npc', {
-          data: {
-            ...npc,
-            publishedAt: new Date(),
-          },
-        });
-        strapi.log.info(`Created NPC: ${npc.firstname} ${npc.lastname}`);
-      }
-    }
-
-    strapi.log.info('Data seeding completed');
-
     // Grant permissions to Public role (unauthenticated users)
     const publicRole = await strapi.db.query('plugin::users-permissions.role').findOne({
       where: { type: 'public' },

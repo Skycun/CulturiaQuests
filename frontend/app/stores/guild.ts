@@ -186,17 +186,22 @@ export const useGuildStore = defineStore('guild', () => {
     }
   }
 
-  async function createGuildSetup(payload: { guildName: string; characterName: string; iconId: number }) {
+  async function createGuildSetup(payload: {
+    guildName: string
+    firstname: string
+    lastname: string
+    iconId: number
+  }) {
     const client = useStrapiClient()
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await client<any>('/guilds/setup', {
         method: 'POST',
         body: payload
       })
-      
+
       const data = response.data || response
       setGuild(data)
       // Hydrate characters if returned populated
@@ -207,6 +212,37 @@ export const useGuildStore = defineStore('guild', () => {
     } catch (e: any) {
       console.error('Failed to setup guild:', e)
       error.value = e?.message || 'Failed to setup guild'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Delete the current guild and all associated data
+   */
+  async function deleteGuild() {
+    if (!guild.value) {
+      throw new Error('No guild to delete')
+    }
+
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+
+    try {
+      const guildId = guild.value.documentId || guild.value.id
+      await client(`/guilds/${guildId}`, {
+        method: 'DELETE',
+      })
+
+      // Clear all stores after successful deletion
+      clearAll()
+
+      return { success: true }
+    } catch (e: any) {
+      console.error('Failed to delete guild:', e)
+      error.value = e?.message || 'Failed to delete guild'
       throw e
     } finally {
       loading.value = false
@@ -233,6 +269,7 @@ export const useGuildStore = defineStore('guild', () => {
     fetchAll,
     refetchStats,
     createGuildSetup,
+    deleteGuild,
   }
 }, {
   persist: {
