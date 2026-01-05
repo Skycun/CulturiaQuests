@@ -117,7 +117,7 @@ export default factories.createCoreController('api::character.character', ({ str
   },
 
   /**
-   * Create character - automatically assigns to user's guild
+   * Create character - automatically assigns to user's guild and creates starter items
    */
   async create(ctx) {
     const user = ctx.state.user;
@@ -143,14 +143,29 @@ export default factories.createCoreController('api::character.character', ({ str
       publishedAt: new Date(),
     };
 
+    // Create the character
     const entity = await strapi.documents('api::character.character').create({
       data: characterData,
-      populate: {
-        icon: { fields: ['id', 'url', 'name'] },
-      },
     });
 
-    const sanitizedEntity = await this.sanitizeOutput(entity, ctx);
+    // Create starter items automatically
+    await strapi.service('api::character.character').createStarterItems(
+      entity.documentId,
+      userGuild.documentId
+    );
+
+    // Fetch character with populated items and icon
+    const populatedCharacter = await strapi.documents('api::character.character').findOne({
+      documentId: entity.documentId,
+      populate: {
+        icon: { fields: ['id', 'url', 'name'] },
+        items: {
+          populate: ['icon', 'rarity']
+        }
+      }
+    });
+
+    const sanitizedEntity = await this.sanitizeOutput(populatedCharacter, ctx);
     return this.transformResponse(sanitizedEntity);
   },
 }));
