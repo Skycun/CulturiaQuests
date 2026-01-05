@@ -73,28 +73,34 @@ export default {
 
     strapi.log.info('Data seeding completed');
 
-    // Grant 'register' permission to Public role to allow sign-up
+    // Grant permissions to Public role (unauthenticated users)
     const publicRole = await strapi.db.query('plugin::users-permissions.role').findOne({
       where: { type: 'public' },
     });
 
     if (publicRole) {
-      const action = 'plugin::users-permissions.auth.register';
-      const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
-        where: {
-          action,
-          role: publicRole.id,
-        },
-      });
+      const actions = [
+        'plugin::users-permissions.auth.register',
+        'api::character.character.getCharacterIcons'
+      ];
 
-      if (!permission) {
-        await strapi.db.query('plugin::users-permissions.permission').create({
-          data: {
+      for (const action of actions) {
+        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
+          where: {
             action,
             role: publicRole.id,
           },
         });
-        strapi.log.info('Granted register permission to Public role');
+
+        if (!permission) {
+          await strapi.db.query('plugin::users-permissions.permission').create({
+            data: {
+              action,
+              role: publicRole.id,
+            },
+          });
+          strapi.log.info(`Granted ${action} permission to Public role`);
+        }
       }
     }
 
