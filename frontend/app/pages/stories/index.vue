@@ -9,37 +9,42 @@
                 Journaux
             </h1>
 
-            <div class="flex items-center gap-2 mb-8 text-slate-900 font-bold text-sm cursor-pointer hover:opacity-70">
+            <button @click="toggleSort"
+                class="flex items-center gap-2 mb-8 text-slate-900 font-bold text-sm cursor-pointer hover:opacity-70 transition-opacity mx-auto">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="4" x2="20" y1="12" y2="12" />
                     <line x1="4" x2="10" y1="6" y2="6" />
                     <line x1="4" x2="16" y1="18" y2="18" />
                 </svg>
-                <span>Tri par nombre d'entrées</span>
+                <span>
+                    {{ sortMethod === 'alpha' ? "Tri alphabétique (A-Z)" : "Tri par nombre d'entrées" }}
+                </span>
+            </button>
+
+            <div v-if="loading" class="text-center py-10 font-pixel text-xl text-gray-500">
+                Chargement de la collection...
             </div>
 
-            <div v-if="friendshipStore.loading" class="text-center py-10 font-pixel text-xl text-gray-500">
-                Chargement des amitiés...
-            </div>
-
-            <div v-else-if="friendshipStore.error" class="text-center py-10 text-red-500 font-bold">
-                {{ friendshipStore.error }}
+            <div v-else-if="error" class="text-center py-10 text-red-500 font-bold">
+                {{ error }}
             </div>
 
             <div v-else class="grid grid-cols-3 gap-y-10 gap-x-2">
-                <NuxtLink 
-                    v-for="journal in formattedJournals" 
-                    :key="journal.id"
-                    :to="`/stories/${journal.id}`" 
-                    class="block"
-                >
-                    <JournalCard :name="journal.name" :image="journal.image" :current-level="journal.level"
-                        :max-level="journal.maxLevel" :is-unknown="journal.isUnknown" />
-                </NuxtLink>
-                <div v-if="formattedJournals.length === 0" class="col-span-3 text-center text-gray-400 mt-10">
-                    Vous n'avez rencontré personne pour le moment.
-                </div>
+                <template v-for="item in sortedJournals" :key="item.id">
+
+                    <NuxtLink v-if="!item.isUnknown" :to="`/stories/${item.friendshipId}`"
+                        class="block group cursor-pointer transition-transform hover:scale-105">
+                        <JournalCard :name="item.name" :image="item.image" :current-level="item.level"
+                            :max-level="item.maxLevel" :is-unknown="false" />
+                    </NuxtLink>
+
+                    <div v-else class="block opacity-100 cursor-default">
+                        <JournalCard :name="item.name" :image="item.image" :current-level="item.level"
+                            :max-level="item.maxLevel" :is-unknown="true" />
+                    </div>
+
+                </template>
             </div>
 
         </main>
@@ -47,70 +52,135 @@
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue';
-import { useFriendshipStore } from '~/stores/friendship';
+import { onMounted, ref, computed } from 'vue';
+import { useStrapiClient } from '#imports';
 import { useGuildStore } from '~/stores/guild';
 
-const friendshipStore = useFriendshipStore();
+// Stores & Clients
 const guildStore = useGuildStore();
+const client = useStrapiClient();
+
+// États
+const loading = ref(true);
+const error = ref(null);
+const sortMethod = ref('alpha'); // 'alpha' (par défaut) ou 'entries'
+
+// Données brutes
+const allNpcs = ref([]);
+const myFriendships = ref([]);
 
 onMounted(async () => {
-    if (!guildStore.hasGuild) await guildStore.fetchGuild();
-    await friendshipStore.fetchFriendships();
+    loading.value = true;
+    try {
+        if (!guildStore.hasGuild) await guildStore.fetchGuild();
+
+        // 1. On lance les deux requêtes en parallèle pour aller plus vite
+        const [npcsRes, friendshipsRes] = await Promise.all([
+            // Récupérer TOUS les NPCs de la base
+            client('/npcs', { params: { pagination: { limit: 100 } } }),
+            // Récupérer MES amitiés
+            client('/friendships', { params: { populate: ['npc'] } })
+        ]);
+
+        // Extraction des données (Compatible v4/v5)
+        allNpcs.value = Array.isArray(npcsRes.data) ? npcsRes.data : (npcsRes || []);
+        myFriendships.value = Array.isArray(friendshipsRes.data) ? friendshipsRes.data : (friendshipsRes || []);
+
+    } catch (e) {
+        console.error('Erreur chargement journaux:', e);
+        error.value = "Impossible de charger les journaux.";
+    } finally {
+        loading.value = false;
+    }
 });
 
-// --- Transformation des données ---
-const formattedJournals = computed(() => {
-    const journals = friendshipStore.friendships.map(f => {
-        // Gestion de la structure Strapi (attributes ou direct)
-        const npc = f.npc?.attributes || f.npc;
+// --- LOGIQUE DE FUSION ET DE TRI ---
+const sortedJournals = computed(() => {
+    if (allNpcs.value.length === 0) return [];
 
-        // Récupération des noms
-        const firstName = npc?.firstname || 'Inconnu';
-        const lastName = npc?.lastname || '';
-        const fullName = `${firstName} ${lastName}`.trim();
+    const journals = allNpcs.value.map(npcObj => {
+        // 1. On récupère les données proprement
+        const npc = npcObj.attributes || npcObj;
 
-        // Calcul des niveaux (comme vu précédemment)
-        const maxEntries = (npc?.quests_entry_available || 0) + (npc?.expedition_entry_available || 0);
-        const finalMaxLevel = maxEntries > 0 ? maxEntries : 4;
-        const currentEntries = (f.quests_entry_unlocked || 0) + (f.expedition_entry_unlocked || 0);
+        // Au lieu de l'ID numérique instable, on utilise le documentId
+        const npcDocId = npcObj.documentId || npc.documentId;
+
+        // 2. Recherche de l'amitié correspondante via documentId
+        const linkedFriendship = myFriendships.value.find(f => {
+            const fData = f.attributes || f;
+            const fNpc = fData.npc?.data || fData.npc;
+
+            if (!fNpc) return false;
+
+            // LA CLEF DU SUCCÈS EST ICI 🗝️
+            // On compare les chaînes de caractères documentId (ex: "nlivv26...")
+            // Si documentId n'existe pas (vieux Strapi), on se rabat sur l'id classique
+            if (fNpc.documentId && npcDocId) {
+                return fNpc.documentId === npcDocId;
+            }
+            return fNpc.id == npc.id;
+        });
+
+        // --- Le reste ne change pas ---
+        const friendshipData = linkedFriendship ? (linkedFriendship.attributes || linkedFriendship) : null;
+
+        const maxEntries = (npc.quests_entry_available || 0) + (npc.expedition_entry_available || 0);
+        const finalMax = maxEntries > 0 ? maxEntries : 4;
+
+        const currentEntries = friendshipData
+            ? (friendshipData.quests_entry_unlocked || 0) + (friendshipData.expedition_entry_unlocked || 0)
+            : 0;
+
+        const isUnlocked = !!linkedFriendship && currentEntries > 0;
+
+        // 1. On récupère les infos de base
+        const firstName = npc.firstname || npc.firstName || npc.first_name || 'Inconnu';
+        const lastName = npc.lastname || npc.lastName || npc.last_name || '';
+        const realName = `${firstName} ${lastName}`.trim();
+        const realImage = getLocalImage(firstName);
+
+        // 2. On décide quoi afficher selon l'état
+        let displayName = "???";
+        let displayImage = realImage;
+
+        if (isUnlocked) {
+            // Si débloqué, on affiche le vrai nom
+            displayName = realName;
+        }
 
         return {
-            id: f.id,
-            name: fullName,
+            id: npc.id,
+            friendshipId: linkedFriendship?.id,
+            name: displayName,
             level: currentEntries,
-            maxLevel: finalMaxLevel,
-            // C'est ICI que ça change : on appelle la fonction locale
-            image: getLocalImage(firstName),
-            isUnknown: false
+            maxLevel: finalMax,
+            image: displayImage,
+            isUnknown: !isUnlocked
         };
     });
-    return journals;
-});
 
-// --- Nouvelle fonction pour les images locales ---
-const getLocalImage = (firstName) => {
-    if (!firstName || firstName === 'Inconnu') {
-        return '/assets/default-avatar.png'; // Image de repli
+    // Tri
+    const unlocked = journals.filter(j => !j.isUnknown);
+    const locked = journals.filter(j => j.isUnknown);
+
+    if (sortMethod.value === 'alpha') {
+        unlocked.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+        unlocked.sort((a, b) => b.level - a.level);
     }
 
-    // Nettoyage du nom pour éviter les erreurs (ex: espaces accidentels)
-    // On suppose que le nom du dossier est exactement le Prénom (ex: "Malori")
-    const safeName = firstName.trim();
+    return [...unlocked, ...locked];
+});
 
-    // Construction du chemin: /assets/npc/[Nom]/[Nom].png
+// Fonction utilitaire pour changer le tri
+const toggleSort = () => {
+    sortMethod.value = sortMethod.value === 'alpha' ? 'entries' : 'alpha';
+};
+
+// Fonction image (inchangée)
+const getLocalImage = (name) => {
+    if (!name || name === 'Inconnu') return '/assets/default-avatar.png';
+    const safeName = name.trim();
     return `/assets/npc/${safeName}/${safeName}.png`;
 };
 </script>
-
-<style scoped>
-/* Import des polices spécifiques si elles ne sont pas globales */
-.font-power {
-    font-family: 'Power Grotesk', 'Arial Black', sans-serif;
-    /* Exemple, à adapter selon ton CSS global */
-}
-
-.font-pixel {
-    font-family: 'Jersey 10', sans-serif;
-}
-</style>
