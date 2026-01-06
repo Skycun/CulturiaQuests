@@ -8,6 +8,7 @@ export const useNpcStore = defineStore('npc', () => {
   const npcs = ref<Npc[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const storiesSortMethod = ref<'alpha' | 'entries'>('alpha')
 
   // Getters
   const hasNpcs = computed(() => npcs.value.length > 0)
@@ -126,6 +127,10 @@ export const useNpcStore = defineStore('npc', () => {
     error.value = null
   }
 
+  function toggleSortMethod() {
+    storiesSortMethod.value = storiesSortMethod.value === 'alpha' ? 'entries' : 'alpha'
+  }
+
   /**
    * Fetch tous les NPCs avec leurs relations optionnelles
    * @param withRelations - Inclure les relations (friendships, quests, dialogs, runs)
@@ -205,6 +210,7 @@ export const useNpcStore = defineStore('npc', () => {
     npcs,
     loading,
     error,
+    storiesSortMethod,
     // Getters
     hasNpcs,
     npcCount,
@@ -219,11 +225,12 @@ export const useNpcStore = defineStore('npc', () => {
     // Actions
     setNpcs,
     clearNpcs,
+    toggleSortMethod,
     fetchNpcs,
     fetchNpcByDocumentId,
   }
 }, {
   persist: {
-    pick: ['npcs'],
+    pick: ['npcs', 'storiesSortMethod'],
   },
 })
