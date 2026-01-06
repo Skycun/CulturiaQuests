@@ -592,7 +592,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     singularName: 'item';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     character: Schema.Attribute.Relation<
