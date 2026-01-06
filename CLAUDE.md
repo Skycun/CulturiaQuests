@@ -81,7 +81,7 @@ Core entities:
 - **visit** - User museum visit tracking
 - **friendship** - Character relationships
 - **run** - Game sessions
-- **rarity** - Item rarity levels (Common, Rare, Epic, Legendary)
+- **rarity** - Item rarity levels (basic, common, rare, epic, legendary)
 - **tag** - Content categorization (Histoire, Art, Sciences, Nature, Société, Savoir Faire)
 
 **Custom Controllers**:

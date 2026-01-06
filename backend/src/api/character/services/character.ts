@@ -39,13 +39,13 @@ export default factories.createCoreService('api::character.character', ({ strapi
    * @returns Array of created items
    */
   async createStarterItems(characterDocumentId: string, guildDocumentId: string) {
-    // 1. Fetch Common Rarity
-    const commonRarity = await strapi.db.query('api::rarity.rarity').findOne({
-      where: { name: 'Common' },
+    // 1. Fetch Basic Rarity (for starter items only)
+    const basicRarity = await strapi.db.query('api::rarity.rarity').findOne({
+      where: { name: 'basic' },
     });
 
-    if (!commonRarity) {
-      strapi.log.warn('Rarity "Common" not found. Items will be created without rarity.');
+    if (!basicRarity) {
+      strapi.log.warn('Rarity "basic" not found. Items will be created without rarity.');
     }
 
     // 2. Find icons for each item type
@@ -87,7 +87,7 @@ export default factories.createCoreService('api::character.character', ({ strapi
           isScrapped: false,
           guild: guildDocumentId,
           character: characterDocumentId,
-          rarity: commonRarity ? commonRarity.documentId : null,
+          rarity: basicRarity ? basicRarity.documentId : null,
           publishedAt: new Date(),
         },
       });
