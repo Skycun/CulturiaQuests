@@ -10,12 +10,18 @@
     </div>
 
     <div class="flex gap-2 sm:gap-4 overflow-x-auto p-2 scrollbar-hide">
-      <div v-for="(item, index) in sortedItems" :key="index" class="w-16 sm:w-20 flex-shrink-0">
+      <div 
+        v-for="(item, index) in sortedItems" 
+        :key="index" 
+        class="w-16 sm:w-20 flex-shrink-0 cursor-pointer transition-transform active:scale-95"
+        @click="$emit('click-item', item)" 
+      >
         <Items 
           :level="item.level"
           :rarity="item.rarity"
           :image="item.image"
           :category="item.category"
+          :index_damage="item.index_damage || 0" 
           :types="item.types"
           :selected="false" 
         />
@@ -28,6 +34,8 @@
 <script setup>
 import { computed } from 'vue';
 
+const emit = defineEmits(['click-item']);
+
 const props = defineProps({
   characterName: { type: String, required: true },
   characterImage: { type: String, required: true },
@@ -39,7 +47,7 @@ const sortedItems = computed(() => {
   // 1. On définit l'ordre exact souhaité
   const order = ['weapon', 'helmet', 'charm'];
 
-  // 2. On crée une copie du tableau ([...props.items]) pour éviter de modifier la prop directement
+  // 2. On crée une copie du tableau pour éviter de modifier la prop directement
   // 3. On trie
   return [...props.items].sort((a, b) => {
     // On récupère la catégorie en minuscule pour éviter les soucis (Weapon vs weapon)
@@ -47,7 +55,6 @@ const sortedItems = computed(() => {
     const catB = (b.category || '').toLowerCase();
 
     // On compare les index dans notre tableau 'order'
-    // Si 'weapon' est index 0 et 'helmet' index 1 -> 0 - 1 = négatif, donc 'weapon' passe avant.
     return order.indexOf(catA) - order.indexOf(catB);
   });
 });
@@ -58,7 +65,7 @@ const sortedItems = computed(() => {
   image-rendering: pixelated;
 }
 
-/* --- MAGIE CSS POUR CACHER LA SCROLLBAR --- */
+/* --- CACHER LA SCROLLBAR --- */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
 }
