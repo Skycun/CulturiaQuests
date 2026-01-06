@@ -48,13 +48,26 @@ const props = defineProps({
 });
 
 const gradientClass = computed(() => {
-  switch (props.rarity) {
-    case 'legendary': return 'bg-gradient-to-b from-[#fcd34d] to-[#fbbf24]';
-    case 'epic': return 'bg-gradient-to-b from-[#e879f9] to-[#a855f7]'; 
-    case 'common': return 'bg-gradient-to-b from-[#4ade80] to-[#22c55e]'; 
-    case 'rare': return 'bg-gradient-to-b from-[#38bdf8] to-[#3b82f6]';
-    case 'common': return 'bg-gradient-to-b from-[#4ade80] to-[#22c55e]';
-    default: return 'bg-gray-400';
+  // On met en minuscule pour éviter les problèmes de casse (Legendary vs legendary)
+  switch (props.rarity?.toLowerCase()) {
+    
+    case 'legendary': 
+      return 'bg-gradient-to-b from-yellow-300 to-amber-500';
+
+    case 'epic': 
+      return 'bg-gradient-to-b from-fuchsia-400 to-purple-600'; 
+
+    case 'rare': 
+      return 'bg-gradient-to-b from-sky-400 to-blue-600';
+
+    case 'common': 
+      return 'bg-gradient-to-b from-green-400 to-emerald-600';
+
+    case 'basic': 
+      return 'bg-gradient-to-b from-gray-300 to-gray-500';
+
+    default: 
+      return 'bg-gray-400';
   }
 });
 
