@@ -1,7 +1,7 @@
 <template>
   <span 
     :class="[
-      'inline-block rounded-full px-6 py-1.5 text-base font-bold transition-colors border-2 text-center select-none',
+      'inline-block rounded-full px-4 py-1 text-xs font-onest font-semibold transition-colors border-2 text-center select-none',
       computedClasses
     ]"
   >

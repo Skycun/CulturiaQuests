@@ -11,10 +11,10 @@
     <Transition name="slide-up">
       <div 
         v-if="modelValue" 
-        class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-xl z-[2000] max-h-[80vh] overflow-y-auto p-6 pb-10"
+        class="fixed bottom-0 left-0 right-0 bg-gray-100 rounded-t-2xl shadow-xl z-[2000] max-h-[80vh] overflow-y-auto p-4 pb-10"
       >
         <!-- Drag handle visual -->
-        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-6"></div>
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-2"></div>
         
         <!-- Content -->
         <slot />

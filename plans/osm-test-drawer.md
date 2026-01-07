@@ -69,6 +69,10 @@
           selectedItem.value = item
           isDrawerOpen.value = true
         }
+
+        function isMuseum(item: LocationItem): item is Museum {
+          return 'radius' in item || (!!item.attributes && 'radius' in item.attributes)
+        }
         ```
     *   Template Updates:
         *   Update `<LMarker>` tags:
