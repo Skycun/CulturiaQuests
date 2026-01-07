@@ -100,7 +100,7 @@ const handleEquipItem = async (newItemMapped) => {
   const charData = characterRaw.attributes || characterRaw;
   let charItemsArray = Array.isArray(charData.items) ? charData.items : (charData.items?.data || []);
 
-  // 3. Identifier l'ANCIEN item (celui à déséquiper)
+  // 3. Identifier l'ANCIEN item sur le personnage
   const categoryToSwap = newItemMapped.category.toLowerCase();
   const oldItemIndex = charItemsArray.findIndex(i => {
      const iAttr = i.attributes || i;
@@ -113,24 +113,23 @@ const handleEquipItem = async (newItemMapped) => {
     oldItemRaw = charItemsArray[oldItemIndex];
   }
 
-  // --- MISE À JOUR VISUELLE IMMÉDIATE (Store Local) ---
+  // --- MISE À JOUR VISUELLE (Store Local) ---
   
-  // A. Retirer le nouvel item de l'inventaire global
-  inventoryStore.items.splice(newItemIndex, 1);
-
-  // B. Gestion de l'ancien item
-  if (oldItemRaw) {
-    // Note: On ne le push PAS dans inventoryStore.items ici pour éviter les doublons visuels,
-    // car le fetchItems ou la logique backend s'en chargera (ou au prochain reload).
-    
-    // On le retire du personnage localement
+  // A. Mise à jour du PERSONNAGE (C'est le plus important)
+  // On retire l'ancien item du perso et on met le nouveau.
+  if (oldItemIndex !== -1) {
     charItemsArray.splice(oldItemIndex, 1);
   }
-
-  // C. Ajouter le nouvel item au personnage localement
   charItemsArray.push(newItemRaw);
   
-  // D. Appliquer les changements à la structure Pinia (pour la réactivité)
+  // B. IMPORTANT : On ne touche PAS à inventoryStore.items !
+  // L'inventaire contient TOUS les items. C'est le computed 'filteredItems' dans l'overlay
+  // qui décide d'afficher ou masquer un item selon s'il est équipé par le perso sélectionné.
+  // En mettant à jour le perso (étape A), le filtre va automatiquement :
+  // - Masquer le nouvel item (car désormais équipé)
+  // - Afficher l'ancien item (car désormais libre)
+
+  // C. Appliquer les changements à la structure Pinia (Réactivité)
   if (characterRaw.attributes) {
       if (characterRaw.attributes.items && characterRaw.attributes.items.data) {
           characterRaw.attributes.items.data = charItemsArray;
@@ -141,58 +140,47 @@ const handleEquipItem = async (newItemMapped) => {
       characterRaw.items = charItemsArray;
   }
 
-  // E. Mettre à jour `selectedCharacter` pour que l'overlay se rafraîchisse
+  // D. Rafraîchir l'overlay
   const updatedCharUI = formattedCharacters.value.find(c => c.id === selectedCharacter.value.id);
   if (updatedCharUI) {
     selectedCharacter.value = updatedCharUI;
   }
 
   // --- SAUVEGARDE EN BASE DE DONNÉES (API) ---
-  await saveEquipmentChange(characterRaw.id, newItemRaw.id, oldItemRaw?.id);
+  const characterApiId = characterRaw.documentId || characterRaw.id;
+  const newItemApiId = newItemRaw.documentId || newItemRaw.id;
+  const oldItemApiId = oldItemRaw ? (oldItemRaw.documentId || oldItemRaw.id) : null;
+
+  await saveEquipmentChange(characterApiId, newItemApiId, oldItemApiId);
 };
 
-// Fonction pour envoyer les requêtes PUT à Strapi
+// --- FONCTION API (Utilisation de useStrapiClient) ---
 const saveEquipmentChange = async (characterId, newItemId, oldItemId) => {
+  // Le client Strapi gère automatiquement l'URL API et le Token d'auth
+  const client = useStrapiClient();
+
   try {
-    // 1. Récupération du Token (Gestion compatible Cookie ou Module Strapi)
-    let token = useCookie('strapi_jwt').value; 
-    // Si tu utilises le module @nuxtjs/strapi, décommente la ligne suivante :
-    // const { token: moduleToken } = useStrapiToken() || {}; if(moduleToken) token = moduleToken;
+    console.log(`💾 Sauvegarde équipement en cours...`);
 
-    const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-    };
-
-    console.log(`💾 Sauvegarde équipement... Token: ${!!token}`);
-
-    // 2. DÉSÉQUIPER l'ancien objet (si il existe) -> character: null
+    // 1. DÉSÉQUIPER l'ancien objet (si il existe)
     if (oldItemId) {
-      const resOld = await fetch(`${strapiUrl}/api/items/${oldItemId}`, {
+      await client(`/items/${oldItemId}`, {
         method: 'PUT',
-        headers,
-        body: JSON.stringify({ data: { character: null } })
+        body: { data: { character: null } }
       });
-      if (!resOld.ok) console.error("Erreur déséquipement", await resOld.json());
     }
 
-    // 3. ÉQUIPER le nouvel objet -> character: ID du perso
-    const resNew = await fetch(`${strapiUrl}/api/items/${newItemId}`, {
+    // 2. ÉQUIPER le nouvel objet
+    await client(`/items/${newItemId}`, {
       method: 'PUT',
-      headers,
-      body: JSON.stringify({ data: { character: characterId } })
+      body: { data: { character: characterId } }
     });
-    
-    if (!resNew.ok) {
-        const err = await resNew.json();
-        console.error("❌ Erreur API (403 probable) :", err);
-        // alert("Erreur de sauvegarde : Vérifie tes permissions Strapi");
-    } else {
-        console.log("✅ Équipement sauvegardé en BDD !");
-    }
+
+    console.log("✅ Équipement sauvegardé avec succès !");
 
   } catch (error) {
-    console.error("💥 Erreur réseau sauvegarde :", error);
+    console.error("❌ Erreur API Strapi :", error);
+    if (error.error) console.error("Détail Strapi :", error.error);
   }
 };
 
@@ -220,13 +208,15 @@ const mapSingleItem = (itemObj) => {
 
    return {
      id: item.id,
+     documentId: item.documentId, 
      level: item.level || 1,
-     // 🔥 CORRECTION ICI : Ajout du mapping des dégâts
      index_damage: item.index_damage || 0,
      rarity: String(rarityVal).toLowerCase(),
      category: item.slot || 'weapon',
      image: getImageUrl(item.icon),
-     types: tagList
+     types: tagList,
+     // IMPORTANT POUR LE RECYCLAGE
+     isScrapped: item.isScrapped || false
    };
 };
 
@@ -240,6 +230,7 @@ const formattedCharacters = computed(() => {
     const c = char.attributes || char;
     return {
       id: char.id,
+      documentId: c.documentId,
       name: `${c.firstname || ''} ${c.lastname || ''}`.trim(),
       avatar: getImageUrl(c.icon),
       equippedItems: mapItems(c.items)

@@ -2,134 +2,67 @@
   <transition name="slide-up">
     <div v-if="isOpen" class="fixed inset-0 z-[100] flex flex-col">
       
-      <div class="absolute inset-0 bg-gray-100/95 backdrop-blur-sm" @click="$emit('close')"></div>
+      <div class="absolute inset-0 bg-gray-100/95 backdrop-blur-sm" @click="closeModal"></div>
 
       <div class="relative flex flex-col h-full w-full max-w-lg mx-auto pointer-events-none">
         
-        <div class="pointer-events-auto px-6 pt-safe-top pb-2 flex justify-between items-center mt-4">
-          <h2 class="text-3xl font-bold font-power text-black">Équipement</h2>
-          <button @click="$emit('close')" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-500 hover:text-black transition-colors">
-            <span class="text-2xl font-bold">✕</span>
-          </button>
-        </div>
+        <OverlayHeader :title="headerTitle" @close="closeModal" />
 
-        <div class="pointer-events-auto px-4 py-4">
-          <div class="bg-white rounded-[25px] p-4 flex items-center justify-between shadow-lg mx-auto w-full">
-            <div class="flex-shrink-0 mr-4">
-              <img v-if="character?.avatar" :src="character.avatar" alt="Character" class="w-20 h-20 object-contain pixelated" />
-            </div>
-
-            <div class="flex gap-2">
-              <div 
-                v-for="slot in ['weapon', 'helmet', 'charm']" 
-                :key="slot"
-                @click="changeSlot(slot)"
-                :class="[
-                  'w-16 h-16 sm:w-20 sm:h-20 rounded-xl transition-all duration-200 cursor-pointer border-2 relative overflow-hidden',
-                  activeSlot === slot ? 'border-black scale-105 shadow-md z-10' : 'border-transparent hover:bg-gray-50'
-                ]"
-              >
-                <Items 
-                  v-if="getEquippedItem(slot)"
-                  v-bind="getEquippedItem(slot)"
-                  :selected="activeSlot === slot"
-                />
-                <div v-else class="w-full h-full bg-gray-200/50 flex items-center justify-center">
-                   <div class="w-3 h-3 rounded-full bg-gray-300"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="pointer-events-auto flex-1 bg-white rounded-t-[35px] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden mt-2">
+        <div class="pointer-events-auto px-4 py-2">
           
-          <div class="flex flex-col border-b border-gray-100">
-            <div class="px-6 pt-6 pb-2 flex items-center justify-between">
-              <div class="flex items-center gap-4">
-                <span class="text-gray-400 font-bold text-sm uppercase tracking-wider hidden sm:inline">Trier par</span>
-                
-                <button @click="sortBy = 'level'" :class="['text-sm font-bold transition-colors', sortBy === 'level' ? 'text-black underline decoration-2 underline-offset-4' : 'text-gray-400 hover:text-gray-600']">
-                  Niveau
-                </button>
-                
-                <button @click="sortBy = 'damage'" :class="['text-sm font-bold transition-colors', sortBy === 'damage' ? 'text-black underline decoration-2 underline-offset-4' : 'text-gray-400 hover:text-gray-600']">
-                  Dégâts
-                </button>
+          <TopPanelEquip 
+            v-if="currentMode === 'normal'"
+            :character="character"
+            :activeSlot="activeSlot"
+            @change-slot="changeSlot"
+          />
 
-                <button @click="sortBy = 'rarity'" :class="['text-sm font-bold transition-colors', sortBy === 'rarity' ? 'text-black underline decoration-2 underline-offset-4' : 'text-gray-400 hover:text-gray-600']">
-                  Rareté
-                </button>
-              </div>
-              <span v-if="!loading" class="text-sm text-gray-400 font-bold">{{ filteredItems.length }} items</span>
-            </div>
+          <TopPanelRecycle 
+            v-else-if="currentMode === 'recycle'"
+            :count="itemsToRecycle.size"
+            :gain="totalScrapGain"
+          />
 
-            <div class="px-6 pb-4 overflow-x-auto scrollbar-hide flex gap-2">
-              <button 
-                v-for="tag in availableTags" 
-                :key="tag"
-                @click="toggleTag(tag)"
-                :class="[
-                  'px-3 py-1.5 rounded-full text-xs font-bold border transition-all whitespace-nowrap capitalize',
-                  activeTag === tag ? 'bg-black text-white border-black' : 'bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-400'
-                ]"
-              >
-                {{ tag }}
-              </button>
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto p-4 pb-48 relative">
-            <div v-if="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-20">
-              <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mb-2"></div>
-              <p class="text-gray-400 font-bold text-sm">Récupération du butin...</p>
-            </div>
-
-            <div v-else-if="filteredItems.length > 0" class="grid grid-cols-4 gap-3 sm:gap-4 content-start">
-              <div 
-                v-for="item in filteredItems" 
-                :key="item.id" 
-                class="aspect-square cursor-pointer transition-transform active:scale-95"
-                @click="selectNewItem(item)"
-              >
-                <Items v-bind="item" :selected="selectedItemId === item.id" />
-              </div>
-            </div>
-
-            <div v-else class="flex flex-col items-center justify-center h-48 text-gray-400 text-center px-4">
-               <p class="font-bold text-lg mb-1">Aucun objet trouvé</p>
-               <p class="text-sm">Essaie de changer de filtre ou de catégorie.</p>
-            </div>
-          </div>
-
-          <div class="absolute bottom-0 left-0 w-full bg-white/95 backdrop-blur px-4 py-4 border-t border-gray-100 z-30 flex flex-col gap-3">
-            
-            <transition name="fade">
-              <button 
-                v-if="selectedItemId"
-                @click="handleEquip"
-                class="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl shadow-lg shadow-green-200 transition-all active:scale-95 text-xl uppercase font-power flex items-center justify-center gap-2"
-              >
-                <span>Équiper</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
-              </button>
-            </transition>
-
-            <div class="flex gap-3 w-full">
-              <div class="flex-1">
-                <PxButton variant="filled" color="indigo" class="!mt-0 w-full h-14 text-lg">
-                  Recycler
-                </PxButton>
-              </div>
-              <div class="flex-1">
-                <PxButton variant="filled" color="indigo" class="!mt-0 w-full h-14 text-lg">
-                  Améliorer
-                </PxButton>
-              </div>
-            </div>
-          </div>
-
+          <TopPanelUpgrade 
+            v-else-if="currentMode === 'upgrade'"
+            :item="selectedItemObject"
+            :userGold="guildStore.gold"
+            :userScrap="guildStore.scrap"
+            :cost="upgradeCost"
+            :stats="projectedStats"
+            :increment="upgradeIncrement"
+            :canAfford="canAffordUpgrade"
+            @set-increment="setUpgradeIncrement"
+            @set-max="setMaxUpgrade"
+          />
         </div>
+
+        <InventoryGrid 
+          :items="filteredItems"
+          :loading="loading"
+          v-model:sortBy="sortBy"
+          :activeTag="activeTag"
+          :availableTags="availableTags"
+          :isRecycleMode="currentMode === 'recycle'"
+          :selectedId="selectedItemId"
+          :selectedRecycleIds="itemsToRecycle"
+          @toggle-tag="toggleTag"
+          @item-click="handleItemClick"
+        />
+
+        <ActionFooter 
+          :mode="currentMode"
+          :hasSelection="!!selectedItemId"
+          :canRecycle="itemsToRecycle.size > 0"
+          :canAffordUpgrade="canAffordUpgrade"
+          :newLevel="projectedStats.newLevel"
+          @equip="handleEquip"
+          @toggle-recycle="toggleRecycleMode"
+          @confirm-recycle="confirmRecycle"
+          @toggle-upgrade="toggleUpgradeMode"
+          @confirm-upgrade="confirmUpgrade"
+        />
+
       </div>
     </div>
   </transition>
@@ -137,8 +70,18 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import PxButton from './form/PixelButton.vue';
+import { useGuildStore } from '~/stores/guild';
+import { useInventoryStore } from '~/stores/inventory';
 
+// Import des nouveaux composants
+import OverlayHeader from './equipment/OverlayHeader.vue';
+import InventoryGrid from './equipment/InventoryGrid.vue';
+import ActionFooter from './equipment/ActionFooter.vue';
+import TopPanelEquip from './equipment/TopPanelEquip.vue';
+import TopPanelRecycle from './equipment/TopPanelRecycle.vue';
+import TopPanelUpgrade from './equipment/TopPanelUpgrade.vue';
+
+// --- PROPS & EMITS ---
 const props = defineProps({
   isOpen: Boolean,
   character: Object,
@@ -146,120 +89,234 @@ const props = defineProps({
   allInventory: Array,
   loading: Boolean
 });
-
 const emit = defineEmits(['close', 'equip']);
 
-// --- ÉTAT ---
+// --- CONFIG ---
+const guildStore = useGuildStore();
+const inventoryStore = useInventoryStore();
+const client = useStrapiClient();
+
+// --- STATE ---
 const activeSlot = ref('weapon');
 const selectedItemId = ref(null);
-const sortBy = ref('level');
+const sortBy = ref('rarity');
 const activeTag = ref(null);
+const isRecycleMode = ref(false);
+const itemsToRecycle = ref(new Set()); 
+const isUpgradeMode = ref(false);
+const upgradeIncrement = ref(1);
 
 const availableTags = ['nature', 'history', 'science', 'art', 'make', 'society'];
 const rarityWeight = { legendary: 4, epic: 3, rare: 2, common: 1, basic: 0 };
+
+// --- COMPUTED HELPERS ---
+const currentMode = computed(() => {
+    if (isRecycleMode.value) return 'recycle';
+    if (isUpgradeMode.value) return 'upgrade';
+    return 'normal';
+});
+
+const headerTitle = computed(() => {
+    if (currentMode.value === 'recycle') return 'Recyclage';
+    if (currentMode.value === 'upgrade') return 'Amélioration';
+    return 'Équipement';
+});
 
 // --- WATCHERS ---
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     if (props.initialSlot) activeSlot.value = props.initialSlot;
-    selectedItemId.value = null;
+    resetAllModes();
   }
 });
 
+// --- ACTIONS UI ---
+const closeModal = () => { resetAllModes(); emit('close'); };
+const resetAllModes = () => {
+    selectedItemId.value = null;
+    isRecycleMode.value = false;
+    isUpgradeMode.value = false;
+    itemsToRecycle.value.clear();
+    upgradeIncrement.value = 1;
+};
 const changeSlot = (slot) => {
+  if (currentMode.value !== 'normal') return; 
   activeSlot.value = slot;
   activeTag.value = null;
   selectedItemId.value = null;
 };
+const toggleTag = (tag) => { activeTag.value = activeTag.value === tag ? null : tag; };
 
-const toggleTag = (tag) => {
-  activeTag.value = activeTag.value === tag ? null : tag;
+const handleItemClick = (item) => {
+    if (isRecycleMode.value) {
+        if (itemsToRecycle.value.has(item.id)) itemsToRecycle.value.delete(item.id);
+        else itemsToRecycle.value.add(item.id);
+        return;
+    }
+    selectNewItem(item);
 };
-
-const getEquippedItem = (slotName) => {
-  if (!props.character || !props.character.equippedItems) return null;
-  return props.character.equippedItems.find(i => i.category.toLowerCase() === slotName.toLowerCase());
-};
-
 const selectNewItem = (item) => {
   selectedItemId.value = selectedItemId.value === item.id ? null : item.id;
+  if(isUpgradeMode.value) upgradeIncrement.value = 1;
+};
+const toggleRecycleMode = () => {
+    isRecycleMode.value = !isRecycleMode.value;
+    isUpgradeMode.value = false; 
+    itemsToRecycle.value.clear();
+    selectedItemId.value = null;
+};
+const toggleUpgradeMode = () => {
+    isUpgradeMode.value = !isUpgradeMode.value;
+    isRecycleMode.value = false; 
+    selectedItemId.value = null;
+    upgradeIncrement.value = 1;
 };
 
+// --- LOGIQUE RECYCLAGE ---
+const calculateScrapForOneItem = (item) => {
+    const level = item.level || 1;
+    const damage = item.index_damage || 0;
+    let rarityMult = 1;
+    switch(item.rarity?.toLowerCase()) {
+        case 'basic': rarityMult = 1; break; case 'common': rarityMult = 2; break; case 'rare': rarityMult = 5; break; case 'epic': rarityMult = 10; break; case 'legendary': rarityMult = 20; break;
+    }
+    return Math.floor((level * rarityMult) + (damage / 2));
+};
+const totalScrapGain = computed(() => {
+    let total = 0;
+    itemsToRecycle.value.forEach(id => {
+        const item = props.allInventory.find(i => i.id === id);
+        if (item) total += calculateScrapForOneItem(item);
+    });
+    return total;
+});
+const confirmRecycle = async () => {
+    if (itemsToRecycle.value.size === 0) return;
+    try {
+        const scrapAmount = totalScrapGain.value;
+        const idsToUpdate = Array.from(itemsToRecycle.value);
+        for (const id of idsToUpdate) {
+            const item = props.allInventory.find(i => i.id === id);
+            if (!item) continue;
+            const apiId = item.documentId || item.id;
+            await client(`/items/${apiId}`, { method: 'PUT', body: { data: { isScrapped: true, character: null } } });
+        }
+        if (guildStore.guild) {
+            const currentScrap = guildStore.scrap || 0;
+            const guildApiId = guildStore.guild.documentId || guildStore.guild.id;
+            await client(`/guilds/${guildApiId}`, { method: 'PUT', body: { data: { scrap: currentScrap + scrapAmount } } });
+            await guildStore.refetchStats();
+        }
+        inventoryStore.items.forEach(item => {
+            if (itemsToRecycle.value.has(item.id)) item.isScrapped = true; 
+        });
+        resetAllModes();
+    } catch (e) { console.error("Erreur recyclage", e); }
+};
+
+// --- LOGIQUE AMÉLIORATION ---
+const selectedItemObject = computed(() => {
+    if (!selectedItemId.value) return null;
+    return props.allInventory.find(i => i.id === selectedItemId.value);
+});
+const getLevelCost = (level, rarity) => {
+    let rarityMult = 1;
+    switch(rarity?.toLowerCase()) {
+        case 'common': rarityMult = 1.5; break; case 'rare': rarityMult = 3; break; case 'epic': rarityMult = 6; break; case 'legendary': rarityMult = 10; break;
+    }
+    return { scrap: Math.floor(5 * level * rarityMult), gold: Math.floor(50 * level * rarityMult) };
+};
+const upgradeCost = computed(() => {
+    if (!selectedItemObject.value) return { scrap: 0, gold: 0 };
+    const currentLevel = selectedItemObject.value.level || 1;
+    const rarity = selectedItemObject.value.rarity;
+    let totalScrap = 0, totalGold = 0;
+    for (let i = 0; i < upgradeIncrement.value; i++) {
+        const lvlCost = getLevelCost(currentLevel + i, rarity);
+        totalScrap += lvlCost.scrap; totalGold += lvlCost.gold;
+    }
+    return { scrap: totalScrap, gold: totalGold };
+});
+const projectedStats = computed(() => {
+    if (!selectedItemObject.value) return { newLevel: 0, damageGain: 0 };
+    const item = selectedItemObject.value;
+    const currentDmg = calculateDamage(item);
+    const futureDmg = calculateDamage({ ...item, level: item.level + upgradeIncrement.value });
+    return { newLevel: item.level + upgradeIncrement.value, damageGain: futureDmg - currentDmg };
+});
+const canAffordUpgrade = computed(() => {
+    return (guildStore.gold || 0) >= upgradeCost.value.gold && (guildStore.scrap || 0) >= upgradeCost.value.scrap;
+});
+const setUpgradeIncrement = (val) => { upgradeIncrement.value = val; };
+const setMaxUpgrade = () => {
+    if (!selectedItemObject.value) return;
+    const userGold = guildStore.gold || 0, userScrap = guildStore.scrap || 0;
+    const currentLevel = selectedItemObject.value.level || 1, rarity = selectedItemObject.value.rarity;
+    let possibleLevels = 0, currentCostScrap = 0, currentCostGold = 0;
+    for (let i = 0; i < 1000; i++) {
+        const nextLvlCost = getLevelCost(currentLevel + i, rarity);
+        if (currentCostScrap + nextLvlCost.scrap <= userScrap && currentCostGold + nextLvlCost.gold <= userGold) {
+            currentCostScrap += nextLvlCost.scrap; currentCostGold += nextLvlCost.gold; possibleLevels++;
+        } else break;
+    }
+    upgradeIncrement.value = possibleLevels > 0 ? possibleLevels : 1; 
+};
+const confirmUpgrade = async () => {
+    if (!selectedItemObject.value || !canAffordUpgrade.value) return;
+    try {
+        const item = selectedItemObject.value;
+        const apiId = item.documentId || item.id;
+        const cost = upgradeCost.value;
+        const newLevel = projectedStats.value.newLevel;
+        if (guildStore.guild) {
+            const guildApiId = guildStore.guild.documentId || guildStore.guild.id;
+            await client(`/guilds/${guildApiId}`, { method: 'PUT', body: { data: { gold: guildStore.gold - cost.gold, scrap: guildStore.scrap - cost.scrap } } });
+            await guildStore.refetchStats();
+        }
+        await client(`/items/${apiId}`, { method: 'PUT', body: { data: { level: newLevel } } });
+        const localItem = inventoryStore.items.find(i => i.id === item.id);
+        if (localItem) { localItem.level = newLevel; if (localItem.attributes) localItem.attributes.level = newLevel; }
+        upgradeIncrement.value = 1;
+    } catch (e) { console.error("Erreur upgrade", e); }
+};
+
+// --- LOGIQUE STANDARD ---
 const handleEquip = () => {
   if (!selectedItemId.value) return;
   const itemToEquip = props.allInventory.find(i => i.id === selectedItemId.value);
-  if (itemToEquip) {
-    emit('equip', itemToEquip);
-    selectedItemId.value = null;
-  }
+  if (itemToEquip) { emit('equip', itemToEquip); selectedItemId.value = null; }
 };
-
-// --- CALCUL DE DÉGÂTS ---
 const calculateDamage = (item) => {
-  const base = item.index_damage || 0;
-  const lvl = item.level || 1;
+  const base = item.index_damage || 0, lvl = item.level || 1;
   let multiplier = 1;
-  
   switch (item.rarity?.toLowerCase()) {
-    case 'basic': multiplier = 1; break;
-    case 'common': multiplier = 1.5; break;
-    case 'rare': multiplier = 2; break;
-    case 'epic': multiplier = 3; break;
-    case 'legendary': multiplier = 3; break;
-    default: multiplier = 1;
+    case 'basic': multiplier = 1; break; case 'common': multiplier = 1.5; break; case 'rare': multiplier = 2; break; case 'epic': multiplier = 3; break; case 'legendary': multiplier = 3; break;
   }
-  
   return Math.floor(base * lvl * multiplier);
 };
-
-// --- COMPUTED FILTRAGE + TRI ---
 const filteredItems = computed(() => {
   if (!props.allInventory) return [];
-  
-  const currentEquipped = getEquippedItem(activeSlot.value);
-
   let items = props.allInventory.filter(item => {
-    const cat = (item.category || item.slot || '').toLowerCase();
-    const isCategoryMatch = cat === activeSlot.value.toLowerCase();
+    const isNotScrapped = !item.isScrapped;
+    const currentEquipped = props.character?.equippedItems?.find(i => i.category.toLowerCase() === activeSlot.value.toLowerCase());
+    const isCategoryMatch = (item.category || item.slot || '').toLowerCase() === activeSlot.value.toLowerCase();
     const isNotCurrentlyEquipped = !currentEquipped || item.id !== currentEquipped.id;
-    return isCategoryMatch && isNotCurrentlyEquipped;
+    return isCategoryMatch && isNotCurrentlyEquipped && isNotScrapped;
   });
-
-  if (activeTag.value) {
-    items = items.filter(item => item.types && item.types.includes(activeTag.value.toLowerCase()));
-  }
-
+  if (activeTag.value) items = items.filter(item => item.types && item.types.includes(activeTag.value.toLowerCase()));
   return items.sort((a, b) => {
-    // 1. Tri par Dégâts
     if (sortBy.value === 'damage') {
-        const dmgA = calculateDamage(a);
-        const dmgB = calculateDamage(b);
-        if (dmgA === dmgB) return b.level - a.level;
-        return dmgB - dmgA;
+        const dmgA = calculateDamage(a), dmgB = calculateDamage(b);
+        if (dmgA === dmgB) return b.level - a.level; return dmgB - dmgA;
     }
-    
-    // 2. Tri par Niveau
-    if (sortBy.value === 'level') {
-        return b.level - a.level;
-    }
-    
-    // 3. Tri par Rareté
-    const weightA = rarityWeight[a.rarity?.toLowerCase()] || 0;
-    const weightB = rarityWeight[b.rarity?.toLowerCase()] || 0;
-    if (weightB === weightA) return b.level - a.level;
-    return weightB - weightA;
+    if (sortBy.value === 'level') return b.level - a.level;
+    const weightA = rarityWeight[a.rarity?.toLowerCase()] || 0, weightB = rarityWeight[b.rarity?.toLowerCase()] || 0;
+    if (weightB === weightA) return b.level - a.level; return weightB - weightA;
   });
 });
 </script>
 
 <style scoped>
-.pt-safe-top { padding-top: max(20px, env(safe-area-inset-top)); }
-.pixelated { image-rendering: pixelated; }
 .slide-up-enter-active, .slide-up-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
 .slide-up-enter-from, .slide-up-leave-to { opacity: 0; transform: translateY(20px); }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-.font-power { font-family: 'Montserrat', sans-serif; }
 </style>
