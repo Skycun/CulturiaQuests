@@ -6,7 +6,7 @@ const API_URL = `${BASE_URL}/api/items`;
 // 🔴 TON TOKEN
 const STRAPI_TOKEN = '919c43d984c20aa2e434e2d78a586f92952a824328927c9d61cd4c735d1d80bdd0632952173486bd863b693576a2e206394e33a28ccb2221d9930434ef01a8fd5ed4b5370f486e32dcb5a65023a414d0c37d9f5a099aac6f8b636cc539f67f17d9b0c86cc3653328390e55be4e717b9b9dcc1753dde7688c545a4a2506749c4a'; 
 
-const GUILD_ID = 11; 
+const GUILD_ID = 12; 
 
 const RARITY_MAPPING = {
     common: 1,
@@ -16,7 +16,7 @@ const RARITY_MAPPING = {
 };
 
 // 🔥 NOUVEAU : Tes IDs de Tags (récupérés depuis ton image)
-const TAG_IDS = [1, 3, 5, 7, 9, 13]; // History(1), Art(3), Science(5), Nature(7), Society(9), Make(13)
+const TAG_IDS = [1, 3, 5, 34, 9, 13]; // History(1), Art(3), Science(5), Nature(34), Society(9), Make(13)
 
 const FILE_KEYWORDS = {
     weapon: 'weapon',
@@ -203,7 +203,7 @@ async function run() {
 
     // ÉTAPE 2 : Génération
     const categories = ['weapon', 'helmet', 'charm'];
-    const ITEMS_PER_CAT = 20; 
+    const ITEMS_PER_CAT = 50; 
 
     for (const cat of categories) {
         if (DYNAMIC_ICON_IDS[cat].length === 0) continue;

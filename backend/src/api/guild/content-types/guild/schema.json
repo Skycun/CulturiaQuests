@@ -7,7 +7,7 @@
     "displayName": "Guild"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -17,8 +17,8 @@
     },
     "gold": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "exp": {
       "type": "biginteger",
@@ -26,8 +26,8 @@
     },
     "scrap": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "user": {
       "type": "relation",

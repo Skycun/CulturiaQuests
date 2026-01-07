@@ -11,8 +11,9 @@
 7. [Store Visit](#store-visit)
 8. [Store Run](#store-run)
 9. [Store Friendship](#store-friendship)
-10. [Exemples d'utilisation](#exemples-dutilisation)
-11. [Bonnes pratiques](#bonnes-pratiques)
+10. [Store Npc](#store-npc)
+11. [Exemples d'utilisation](#exemples-dutilisation)
+12. [Bonnes pratiques](#bonnes-pratiques)
 
 ---
 
@@ -660,6 +661,76 @@ const checkFriendship = (npcId: number) => {
 
 ---
 
+## Store Npc
+
+**Fichier :** `/frontend/app/stores/npc.ts`
+
+### Description
+
+Gère les données des NPCs (Personnages Non Joueurs) et la logique d'affichage des journaux (Stories). Il centralise le formatage et le tri des NPCs en fonction de leur découverte par le joueur.
+
+### State
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `npcs` | `Npc[]` | Liste complète des NPCs |
+| `loading` | `boolean` | État de chargement |
+| `error` | `string \| null` | Erreur éventuelle |
+| `storiesSortMethod` | `'alpha' \| 'entries'` | Méthode de tri actuelle pour les journaux |
+
+### Getters
+
+| Getter | Type | Description |
+|--------|------|-------------|
+| `hasNpcs` | `boolean` | Vérifie si des NPCs sont chargés |
+| `npcCount` | `number` | Nombre total de NPCs |
+| `sortedJournals` | `Object[]` | **Clé** : Liste formatée et triée des journaux pour l'affichage (Grid) |
+| `getNpcFriendshipInfo(id)` | `Object` | Retourne les infos de progression (découvert, niveaux débloqués) pour un NPC |
+| `discoveredCount` | `number` | Nombre de NPCs découverts |
+
+### Actions principales
+
+#### `fetchNpcs()`
+
+Récupère la liste de tous les NPCs.
+
+```typescript
+const npcStore = useNpcStore()
+await npcStore.fetchNpcs()
+```
+
+#### `toggleSortMethod()`
+
+Bascule le tri des journaux entre alphabétique et par progression.
+
+```typescript
+npcStore.toggleSortMethod()
+```
+
+### Exemple complet (JournalGrid)
+
+```vue
+<script setup lang="ts">
+import { useNpcStore } from '~/stores/npc'
+
+const npcStore = useNpcStore()
+const { sortedJournals } = storeToRefs(npcStore)
+
+onMounted(async () => {
+  await npcStore.fetchNpcs()
+})
+</script>
+
+<template>
+  <div v-for="journal in sortedJournals" :key="journal.id">
+    <p>{{ journal.name }} - Niveau {{ journal.level }}</p>
+    <img :src="journal.image" />
+  </div>
+</template>
+```
+
+---
+
 ## Exemples d'utilisation
 
 ### Charger toutes les données au démarrage de l'application
@@ -847,6 +918,7 @@ import type { Item } from '~/types/item'
 | **Visit** | `visit.ts` | Visites de POIs |
 | **Run** | `run.ts` | Sessions de jeu dans les musées |
 | **Friendship** | `friendship.ts` | Amitiés avec les NPCs |
+| **Npc** | `npc.ts` | Données des NPCs et formatage des journaux (Stories) |
 
 ---
 
