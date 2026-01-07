@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     '@nuxtjs/strapi',
     '@nuxtjs/device',
     'pinia-plugin-persistedstate/nuxt',
+    '@nuxtjs/leaflet',
   ],
 
   // CSS principal
