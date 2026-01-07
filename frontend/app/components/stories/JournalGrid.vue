@@ -2,7 +2,7 @@
     <div>
         <!-- Bouton de Tri -->
         <button
-            class="flex items-center gap-2 mb-8 text-slate-900 font-bold text-sm mx-auto"
+            class="flex items-center gap-2 mb-8 text-slate-900 font-pixel text-lg mx-auto"
             @click="npcStore.toggleSortMethod()">
             <Icon name="bx-sort" class="w-6 h-6 bg-black" />
             <span>
@@ -16,7 +16,7 @@
         </div>
 
         <!-- Erreur -->
-        <div v-else-if="error" class="text-center py-10 text-red-500 font-bold">
+        <div v-else-if="error" class="text-center py-10 text-red-500 font-pixel text-lg">
             {{ error }}
         </div>
 
