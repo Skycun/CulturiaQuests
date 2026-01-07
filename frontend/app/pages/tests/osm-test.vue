@@ -11,6 +11,40 @@
       Getting your location...
     </div>
 
+    <!-- Guild Characters Panel -->
+    <div class="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
+      <button 
+        @click="loadGuildData" 
+        class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+      >
+        Load Guild Characters
+      </button>
+
+      <div v-if="showGuildInfo" class="bg-white p-4 rounded shadow w-64 max-h-[50vh] overflow-y-auto">
+        <h3 class="font-bold mb-2">Guild Members ({{ guildCharacters.length }})</h3>
+        
+        <div v-if="guildStore.loading" class="text-gray-500 text-sm">Loading...</div>
+        
+        <div v-else-if="guildCharacters.length === 0" class="text-gray-500 text-sm">
+          No characters found or not logged in.
+        </div>
+
+        <ul v-else class="space-y-3">
+          <li v-for="char in guildCharacters" :key="char.id" class="flex items-center gap-3 bg-gray-50 p-2 rounded">
+            <img 
+              :src="getCharacterIconUrl(char)" 
+              class="w-10 h-10 object-contain bg-gray-200 rounded"
+              alt="Icon"
+            />
+            <div>
+              <p class="font-bold text-sm">{{ char.firstname }} {{ char.lastname }}</p>
+              <p class="text-xs text-gray-500">ID: {{ char.id }}</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <ClientOnly>
       <LMap
         ref="map"
@@ -77,6 +111,16 @@
           </div>
         </div>
 
+        <div class="flex flex-row justify-evenly">
+          <div v-for="char in guildCharacters" :key="char.id" class="bg-white rounded-2xl h-20 w-20">
+            <img 
+              :src="getCharacterIconUrl(char)" 
+              class="object-contain"
+              alt="Icon h-20 w-20"
+            />
+          </div>
+        </div>
+
         <div class="bg-white p-4 rounded-2xl">
           <p class="text-center font-pixel text-3xl">DPS: 1578</p>
           <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
@@ -84,7 +128,7 @@
         </div>
 
           
-        <div class="bg-white rounded-2xl text-xs font-mono">
+        <!-- <div class="bg-white rounded-2xl text-xs font-mono">
           <p>
             Type: 
             <span :class="isMuseum(selectedItem) ? 'text-blue-600' : 'text-orange-600'" class="font-bold">
@@ -94,7 +138,7 @@
             <p>ID: {{ selectedItem.id }}</p>
             <p>Lat: {{ getLat(selectedItem)?.toFixed(6) }}</p>
             <p>Lng: {{ getLng(selectedItem)?.toFixed(6) }}</p>
-        </div>
+        </div> -->
         <FormPixelButton v-if="isMuseum(selectedItem)" color="indigo" variant="filled" class="w-full mt-4">
           Démarer l'expédition
         </FormPixelButton>
@@ -106,8 +150,10 @@
 <script setup lang="ts">
 import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
+import { useGuildStore } from '~/stores/guild'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
+import type { Character } from '~/types/character'
 
 // Type pour les éléments avec coordonnées (Museum ou POI)
 type LocationItem = Museum | Poi
@@ -115,6 +161,30 @@ type LocationItem = Museum | Poi
 // Stores
 const museumStore = useMuseumStore()
 const poiStore = usePOIStore()
+const guildStore = useGuildStore()
+const config = useRuntimeConfig()
+
+// Guild Logic
+const showGuildInfo = ref(false)
+const guildCharacters = computed(() => {
+  if (!guildStore.guild?.characters) return []
+  // Handle both array direct and { data: [] } structure
+  const chars = guildStore.guild.characters.data || guildStore.guild.characters
+  return Array.isArray(chars) ? chars : []
+})
+
+async function loadGuildData() {
+  await guildStore.fetchAll()
+  showGuildInfo.value = true
+}
+
+function getCharacterIconUrl(character: Character): string {
+  const icon = character.icon?.data || character.icon
+  if (!icon?.url) return '/assets/helmet1.png' // Fallback
+  
+  if (icon.url.startsWith('http')) return icon.url
+  return `${config.public.strapi.url}${icon.url}`
+}
 
 // Geolocation
 const userLat = ref<number>(49.1167)  // Saint-Lô par défaut
