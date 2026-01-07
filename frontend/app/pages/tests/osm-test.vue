@@ -1,5 +1,5 @@
 <template>
-  <div class="h-[600px] w-full relative">
+  <div class="h-[100vh] w-full relative">
     <!-- Geolocation request component -->
     <GeolocationRequest
       @allow="handleGeolocationAllow"
@@ -60,13 +60,44 @@
 
     <!-- Drawer Information -->
     <BottomDrawer v-model="isDrawerOpen">
-      <div v-if="selectedItem">
-        <h2 class="text-xl font-bold mb-2">{{ getName(selectedItem) }}</h2>
-        <div class="text-gray-600">
-          <p>Type: {{ 'rarity' in selectedItem ? 'Item/POI' : 'Museum' }}</p>
-          <p class="text-sm mt-2">Lat: {{ getLat(selectedItem)?.toFixed(4) }}</p>
-          <p class="text-sm">Lng: {{ getLng(selectedItem)?.toFixed(4) }}</p>
+      <div v-if="selectedItem" class="flex flex-col gap-4">
+
+        <div v-if="isMuseum(selectedItem)" class="bg-white p-4 rounded-2xl grid grid-cols-2 gap-2">
+          <img
+            :src="selectedItem.attributes?.coverImage?.url || '/assets/musee.png'"
+            :alt="getName(selectedItem)"
+            class="w-full h-48 object-contain"
+          />
+          <div class="flex flex-col justify-between">
+            <h2 class="text-xl font-power mb-2 text-right gap-4">{{ getName(selectedItem) }}</h2>
+            <div class="flex flex-row-reverse gap-2 flex-">
+              <TagCategory variant="outline" category="histoire" />
+              <TagCategory variant="outline" category="art" />
+            </div>
+          </div>
         </div>
+
+        <div class="bg-white p-4 rounded-2xl">
+          <p class="text-center font-pixel text-3xl">DPS: 1578</p>
+          <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+          <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+
+          
+        <div class="bg-white rounded-2xl text-xs font-mono">
+          <p>
+            Type: 
+            <span :class="isMuseum(selectedItem) ? 'text-blue-600' : 'text-orange-600'" class="font-bold">
+              {{ isMuseum(selectedItem) ? 'Museum' : 'Point of Interest' }}
+            </span>
+          </p>
+            <p>ID: {{ selectedItem.id }}</p>
+            <p>Lat: {{ getLat(selectedItem)?.toFixed(6) }}</p>
+            <p>Lng: {{ getLng(selectedItem)?.toFixed(6) }}</p>
+        </div>
+        <FormPixelButton v-if="isMuseum(selectedItem)" color="indigo" variant="filled" class="w-full mt-4">
+          Démarer l'expédition
+        </FormPixelButton>
       </div>
     </BottomDrawer>
   </div>
@@ -102,6 +133,37 @@ const isDrawerOpen = ref(false)
 function selectItem(item: LocationItem) {
   selectedItem.value = item
   isDrawerOpen.value = true
+
+  // Animation de la carte
+  if (map.value?.leafletObject) {
+    const lMap = map.value.leafletObject
+    const lat = getLat(item)
+    const lng = getLng(item)
+
+    if (lat !== undefined && lng !== undefined) {
+      const targetZoom = 16
+      const targetLatLng = [lat, lng] as [number, number]
+      
+      // Calcul du décalage pour centrer "haut" (pour laisser la place au drawer)
+      // On veut que le point soit à ~25% du haut de l'écran
+      const mapHeight = lMap.getSize().y
+      const offsetY = mapHeight * 0.25 // Le point sera décalé de 25% vers le haut par rapport au centre
+      
+      // On projette le latlng en pixels au niveau de zoom cible
+      const point = lMap.project(targetLatLng, targetZoom)
+      
+      // On ajoute le décalage (on descend le centre de la carte pour que le point remonte)
+      const targetPoint = point.add([0, offsetY])
+      
+      // On reconvertit en latlng
+      const newCenter = lMap.unproject(targetPoint, targetZoom)
+      
+      lMap.flyTo(newCenter, targetZoom, {
+        animate: true,
+        duration: 0.8
+      })
+    }
+  }
 }
 
 // Map reference (null car initialisé par Leaflet après le mount)
@@ -127,6 +189,10 @@ function getLng(item: LocationItem): number | undefined {
 
 function getName(item: LocationItem): string {
   return item.name || item.attributes?.name || 'Unnamed'
+}
+
+function isMuseum(item: LocationItem): item is Museum {
+  return 'radius' in item || (!!item.attributes && 'radius' in item.attributes)
 }
 
 // Handlers pour le composant GeolocationRequest
