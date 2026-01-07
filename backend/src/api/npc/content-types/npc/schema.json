@@ -19,6 +19,10 @@
       "type": "string",
       "required": true
     },
+    "nickname": {
+      "type": "string",
+      "required": true
+    },
     "pronouns": {
       "type": "enumeration",
       "required": true,

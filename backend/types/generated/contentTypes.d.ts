@@ -694,6 +694,7 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::npc.npc'> &
       Schema.Attribute.Private;
+    nickname: Schema.Attribute.String & Schema.Attribute.Required;
     pronouns: Schema.Attribute.Enumeration<['he', 'she', 'they']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'they'>;
