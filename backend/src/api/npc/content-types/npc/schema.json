@@ -7,7 +7,7 @@
     "displayName": "Npc"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -21,19 +21,23 @@
     },
     "pronouns": {
       "type": "enumeration",
-      "enum": ["he", "she", "they"],
       "required": true,
-      "default": "they"
+      "default": "they",
+      "enum": [
+        "he",
+        "she",
+        "they"
+      ]
     },
     "quests_entry_available": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "expedition_entry_available": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "friendships": {
       "type": "relation",
