@@ -11,22 +11,22 @@
             </div>
 
             <div class="flex-1">
-                <h1 class="text-xl font-black text-slate-900 leading-tight">
+                <h1 class="text-3xl font-pixel text-slate-900 leading-tight">
                     {{ details.fullName }}
                 </h1>
-                <p class="text-slate-500 font-bold text-sm mb-3">
+                <p class="text-slate-500 font-pixel text-lg mb-3">
                     {{ details.job }}
                 </p>
 
                 <!-- Barre de progression -->
                 <div class="flex items-center gap-3">
-                    <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                        <div 
-                            class="h-full bg-indigo-600 rounded-full"
-                            :style="{ width: `${(details.level / details.maxLevel) * 100}%` }" 
+                    <div class="flex-1">
+                        <UiProgressBar 
+                            :current="details.level" 
+                            :max="details.maxLevel" 
                         />
                     </div>
-                    <span class="text-xs font-black text-indigo-900">
+                    <span class="text-xl font-pixel text-indigo-900">
                         {{ details.level }}/{{ details.maxLevel }}
                     </span>
                 </div>
@@ -40,7 +40,7 @@
                     <h2 class="text-2xl font-black font-power text-slate-900 mb-3">
                         Entrée {{ entry.index }}
                     </h2>
-                    <div class="bg-white rounded-2xl p-5 shadow-sm text-sm leading-relaxed text-slate-700 text-justify">
+                    <div class="bg-white rounded-2xl p-5 shadow-sm text-sm leading-relaxed text-slate-700 text-justify font-onest">
                         {{ entry.text }}
                     </div>
                 </div>

@@ -26,23 +26,23 @@
             </div>
         </div>
 
-        <div class="w-full h-2 bg-gray-200 relative z-40">
-            <div 
-                class="h-full transition-all duration-500 ease-out rounded-l-none"
-                :style="{ width: `${progressPercentage}%` }" :class="[
-                    isCompleted ? 'bg-yellow-400 rounded-none' : 'bg-indigo-600 rounded-r-full'
-                ]" />
-        </div>
+        <UiProgressBar 
+            class="z-40"
+            bg-class="bg-gray-200"
+            variant="flat"
+            :current="isUnknown ? 0 : currentLevel"
+            :max="maxLevel"
+        />
 
         <div class="text-center mt-2">
-            <h3 class="font-bold text-xs sm:text-sm text-indigo-950 leading-tight font-sans">
+            <h3 class="text-base sm:text-lg text-indigo-950 leading-tight font-pixel">
                 {{ name }}
             </h3>
 
-            <span v-if="!isUnknown" class="text-[10px] sm:text-xs text-slate-500 font-bold mt-0.5 block">
+            <span v-if="!isUnknown" class="text-xs sm:text-sm text-slate-500 font-pixel mt-0.5 block">
                 {{ currentLevel }}/{{ maxLevel }}
             </span>
-            <span v-else class="text-xs text-slate-500 font-bold mt-0.5 block">???</span>
+            <span v-else class="text-xs text-slate-500 font-pixel mt-0.5 block">???</span>
         </div>
     </div>
 </template>
