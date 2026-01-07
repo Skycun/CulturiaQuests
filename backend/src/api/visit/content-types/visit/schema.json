@@ -7,27 +7,27 @@
     "displayName": "Visit"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "open_count": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "last_opened_at": {
       "type": "datetime"
     },
     "total_gold_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "total_exp_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "guild": {
       "type": "relation",
