@@ -46,3 +46,30 @@
     }
   }
 }
+
+/* ================================
+   TRANSITIONS
+   ================================ */
+
+/* Transition globale (gère l'opacité du backdrop) */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+/* Transition du panneau (gère le glissement) */
+.slide-up-enter-active .overlay-panel,
+.slide-up-leave-active .overlay-panel {
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
+}
+
+/* États de départ et de fin */
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-from .overlay-panel,
+.slide-up-leave-to .overlay-panel {
+  transform: translateY(100%);
+}

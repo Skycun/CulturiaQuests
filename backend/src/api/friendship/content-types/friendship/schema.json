@@ -7,19 +7,19 @@
     "displayName": "Friendship"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "quests_entry_unlocked": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "expedition_entry_unlocked": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "npc": {
       "type": "relation",
