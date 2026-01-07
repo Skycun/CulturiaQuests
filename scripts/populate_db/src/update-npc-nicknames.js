@@ -12,7 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const config = {
   baseUrl: process.env.STRAPI_BASE_URL || 'http://localhost:1337',
-  apiToken: '919c43d984c20aa2e434e2d78a586f92952a824328927c9d61cd4c735d1d80bdd0632952173486bd863b693576a2e206394e33a28ccb2221d9930434ef01a8fd5ed4b5370f486e32dcb5a65023a414d0c37d9f5a099aac6f8b636cc539f67f17d9b0c86cc3653328390e55be4e717b9b9dcc1753dde7688c545a4a2506749c4a',
+  apiToken: process.env.STRAPI_API_TOKEN || '',
 };
 
 if (!config.apiToken) {
