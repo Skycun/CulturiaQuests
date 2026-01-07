@@ -97,7 +97,7 @@ onMounted(async () => {
 
         details.value = {
             fullName: `${firstname} ${lastname}`,
-            job: npc?.job || 'Aventurier',
+            job: npc?.nickname,
             image: `/assets/npc/${safeName}/${safeName}.png`,
             level: currentLevel,
             maxLevel: maxLevel,
