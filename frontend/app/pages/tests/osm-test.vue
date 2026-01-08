@@ -11,40 +11,6 @@
       Getting your location...
     </div>
 
-    <!-- Guild Characters Panel -->
-    <div class="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
-      <button 
-        @click="loadGuildData" 
-        class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
-      >
-        Load Guild Characters
-      </button>
-
-      <div v-if="showGuildInfo" class="bg-white p-4 rounded shadow w-64 max-h-[50vh] overflow-y-auto">
-        <h3 class="font-bold mb-2">Guild Members ({{ guildCharacters.length }})</h3>
-        
-        <div v-if="guildStore.loading" class="text-gray-500 text-sm">Loading...</div>
-        
-        <div v-else-if="guildCharacters.length === 0" class="text-gray-500 text-sm">
-          No characters found or not logged in.
-        </div>
-
-        <ul v-else class="space-y-3">
-          <li v-for="char in guildCharacters" :key="char.id" class="flex items-center gap-3 bg-gray-50 p-2 rounded">
-            <img 
-              :src="getCharacterIconUrl(char)" 
-              class="w-10 h-10 object-contain bg-gray-200 rounded"
-              alt="Icon"
-            />
-            <div>
-              <p class="font-bold text-sm">{{ char.firstname }} {{ char.lastname }}</p>
-              <p class="text-xs text-gray-500">ID: {{ char.id }}</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </div>
-
     <ClientOnly>
       <LMap
         ref="map"
@@ -106,7 +72,7 @@
           <img
             :src="`/assets/map/museum/${getMuseumTags(selectedItem)[0] || 'Art'}.png`"
             :alt="getName(selectedItem)"
-            class="w-full h-48 object-contain"
+            class="w-full h-36 object-contain"
           />
           <div class="flex flex-col justify-between">
             <h2 class="text-xl font-power mb-2 text-right gap-4">{{ getName(selectedItem) }}</h2>
@@ -120,8 +86,19 @@
             </div>
           </div>
         </div>
+        <div v-else class="bg-white p-4 rounded-2xl grid grid-cols-2 gap-2">
+          <img
+            src="/assets/map/chest-opened.png"
+            :alt="getName(selectedItem)"
+            class="w-full h-36 object-contain"
+          />
+          <div class="flex flex-col justify-between">
+            <h2 class="text-xl font-power mb-2 text-right gap-4">{{ getName(selectedItem) }}</h2>
+            <p class="font-onest text-right text-xs">Réinitialisation dans 15:45:56</p>
+          </div>
+        </div>
 
-        <div class="flex flex-row justify-evenly">
+        <div v-if="isMuseum(selectedItem)" class="flex flex-row justify-evenly">
           <div v-for="char in guildCharacters" :key="char.id" class="bg-white rounded-2xl h-20 w-20">
             <img 
               :src="getCharacterIconUrl(char)" 
@@ -131,9 +108,13 @@
           </div>
         </div>
 
-        <div class="bg-white p-4 rounded-2xl">
+        <div v-if="isMuseum(selectedItem)" class="bg-white p-4 rounded-2xl">
           <p class="text-center font-pixel text-3xl">DPS: 1578</p>
           <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+
+        <div v-else class="bg-white p-4 rounded-2xl">
+          <p class="text-center font-pixel text-2xl">Objet collecté</p>
         </div>
 
           
@@ -149,7 +130,10 @@
             <p>Lng: {{ getLng(selectedItem)?.toFixed(6) }}</p>
         </div> -->
         <FormPixelButton v-if="isMuseum(selectedItem)" color="indigo" variant="filled" class="w-full mt-4">
-          Démarer l'expédition
+          Démarrer l'expédition
+        </FormPixelButton>
+        <FormPixelButton v-else color="red" variant="outline" class="w-full mt-4">
+          Ce coffre à déjà été ouvert
         </FormPixelButton>
       </div>
     </BottomDrawer>
@@ -164,6 +148,7 @@ import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 import type { Character } from '~/types/character'
 import type { Tag } from '~/types/tag'
+import Items from '~/components/items.vue'
 
 // Type pour les éléments avec coordonnées (Museum ou POI)
 type LocationItem = Museum | Poi
@@ -175,18 +160,12 @@ const guildStore = useGuildStore()
 const config = useRuntimeConfig()
 
 // Guild Logic
-const showGuildInfo = ref(false)
 const guildCharacters = computed(() => {
   if (!guildStore.guild?.characters) return []
   // Handle both array direct and { data: [] } structure
   const chars = guildStore.guild.characters.data || guildStore.guild.characters
   return Array.isArray(chars) ? chars : []
 })
-
-async function loadGuildData() {
-  await guildStore.fetchAll()
-  showGuildInfo.value = true
-}
 
 function getCharacterIconUrl(character: Character): string {
   const icon = character.icon?.data || character.icon
@@ -445,6 +424,11 @@ async function fetchNearbyLocations(): Promise<void> {
 }
 
 // Lifecycle
+onMounted(() => {
+  // Charger automatiquement les characters de la guild
+  guildStore.fetchAll()
+})
+
 onUnmounted(() => {
   stopLocationTracking()
 })
