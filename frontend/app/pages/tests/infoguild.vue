@@ -93,15 +93,15 @@ definePageMeta({
       <div class="bg-white shadow rounded-lg p-6 space-y-4">
         <div class="flex gap-4">
           <button
-            @click="handleLogout"
             class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+            @click="handleLogout"
           >
             Logout
           </button>
           <button
             v-if="guild"
-            @click="showDeleteConfirm = true"
             class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded"
+            @click="showDeleteConfirm = true"
           >
             Delete Guild
           </button>
@@ -137,16 +137,16 @@ definePageMeta({
 
           <div class="flex gap-3 justify-end">
             <button
-              @click="showDeleteConfirm = false"
               :disabled="loading"
               class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-semibold disabled:opacity-50"
+              @click="showDeleteConfirm = false"
             >
               Cancel
             </button>
             <button
-              @click="handleDeleteGuild"
               :disabled="loading"
               class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-semibold disabled:opacity-50"
+              @click="handleDeleteGuild"
             >
               {{ loading ? 'Deleting...' : 'Yes, Delete Everything' }}
             </button>

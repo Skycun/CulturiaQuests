@@ -16,9 +16,9 @@
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-semibold">Character Icons Test</h2>
         <button
-          @click="loadIcons"
           class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
           :disabled="iconsLoading"
+          @click="loadIcons"
         >
           {{ iconsLoading ? 'Chargement...' : 'Recharger les icônes' }}
         </button>
