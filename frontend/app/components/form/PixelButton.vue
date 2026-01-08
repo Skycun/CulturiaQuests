@@ -37,7 +37,7 @@ const props = defineProps({
   color: {
     type: String,
     default: 'indigo',
-    validator: (v) => ['indigo', 'red'].includes(v)
+    validator: (v) => ['indigo', 'red', 'darker-red'].includes(v)
   }
 });
 
@@ -49,6 +49,9 @@ const outerColorClass = computed(() => {
   if (props.color === 'red') {
     return 'bg-[#d50000] hover:bg-[#b71c1c]';
   }
+  if (props.color === 'darker-red'){
+    return 'bg-[#B93121] hover:bg-[#8B2315]';
+  } 
   return '';
 });
 
@@ -62,7 +65,7 @@ const textColorClass = computed(() => {
   // Si le bouton est 'outline', le texte prend la couleur du thème
   if (props.color === 'indigo') return 'text-indigo-600';
   if (props.color === 'red') return 'text-[#d50000]';
-  
+  if (props.color === 'darker-red') return 'text-[#B93121]';
   return '';
 });
 </script>

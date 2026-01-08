@@ -48,8 +48,8 @@ definePageMeta({
 
       <div class="pt-4">
         <button 
-          @click="handleLogout"
           class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+          @click="handleLogout"
         >
           Logout
         </button>

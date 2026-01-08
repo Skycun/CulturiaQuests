@@ -51,7 +51,7 @@ definePageMeta({
   <div class="p-8 max-w-md mx-auto">
     <h1 class="text-2xl font-bold mb-4">Test Login</h1>
     
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <form class="space-y-4" @submit.prevent="handleSubmit">
       <div>
         <label class="block text-sm font-medium">Email / Username</label>
         <input 

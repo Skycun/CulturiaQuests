@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-100 font-sans">
-    
+
     <AppHeader />
 
     <main class="px-4 pt-4 pb-24 w-full max-w-5xl mx-auto">
@@ -15,29 +15,20 @@
 
       <div v-else>
         <CharacterRow 
-          v-for="perso in formattedCharacters" 
-          :key="perso.id"
-          :characterName="perso.name"
-          :characterImage="perso.avatar"
-          :items="perso.equippedItems"
-          @click-item="(item) => openOverlay(perso, item)" 
-        />
-        
+          v-for="perso in formattedCharacters" :key="perso.id" :characterName="perso.name"
+          :characterImage="perso.avatar" :items="perso.equippedItems"
+          @click-item="(item) => openOverlay(perso, item)" />
+
         <div v-if="formattedCharacters.length === 0" class="text-center text-gray-400 mt-10">
           Aucun personnage trouvé.
         </div>
       </div>
     </main>
 
-    <EquipmentOverlay 
-      :is-open="showOverlay"
-      :character="selectedCharacter"
-      :initial-slot="selectedSlot"
-      :all-inventory="formattedInventory" 
-      :loading="isOverlayLoading"
-      @close="showOverlay = false"
-      @equip="handleEquipItem" 
-    />
+    <EquipmentOverlay
+      :is-open="showOverlay" :character="selectedCharacter" :initial-slot="selectedSlot"
+      :all-inventory="formattedInventory" :loading="isOverlayLoading" @close="showOverlay = false"
+      @equip="handleEquipItem" />
 
   </div>
 </template>
@@ -52,14 +43,14 @@ import { useInventoryStore } from '~/stores/inventory';
 const characterStore = useCharacterStore();
 const guildStore = useGuildStore();
 const inventoryStore = useInventoryStore();
-const config = useRuntimeConfig(); 
+const config = useRuntimeConfig();
 const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
 
 // --- ÉTAT LOCAL ---
 const showOverlay = ref(false);
 const isOverlayLoading = ref(false);
 const selectedCharacter = ref(null);
-const selectedSlot = ref('weapon'); 
+const selectedSlot = ref('weapon');
 
 // --- LIFECYCLE ---
 onMounted(async () => {
@@ -70,9 +61,9 @@ onMounted(async () => {
 // --- GESTION OVERLAY ---
 const openOverlay = async (character, item) => {
   selectedCharacter.value = character;
-  selectedSlot.value = item.category || 'weapon'; 
+  selectedSlot.value = item.category || 'weapon';
   showOverlay.value = true;
-  
+
   // On lance un fetch frais pour être sûr d'avoir le bon inventaire
   isOverlayLoading.value = true;
   try {
@@ -95,7 +86,7 @@ const handleEquipItem = async (newItemMapped) => {
   const charIndex = characterStore.characters.findIndex(c => c.id === selectedCharacter.value.id);
   if (charIndex === -1) return;
   const characterRaw = characterStore.characters[charIndex];
-  
+
   // Gestion de la structure Strapi (attributes vs racine)
   const charData = characterRaw.attributes || characterRaw;
   let charItemsArray = Array.isArray(charData.items) ? charData.items : (charData.items?.data || []);
@@ -103,25 +94,25 @@ const handleEquipItem = async (newItemMapped) => {
   // 3. Identifier l'ANCIEN item sur le personnage
   const categoryToSwap = newItemMapped.category.toLowerCase();
   const oldItemIndex = charItemsArray.findIndex(i => {
-     const iAttr = i.attributes || i;
-     const iSlot = iAttr.slot || iAttr.category || '';
-     return iSlot.toLowerCase() === categoryToSwap;
+    const iAttr = i.attributes || i;
+    const iSlot = iAttr.slot || iAttr.category || '';
+    return iSlot.toLowerCase() === categoryToSwap;
   });
-  
+
   let oldItemRaw = null;
   if (oldItemIndex !== -1) {
     oldItemRaw = charItemsArray[oldItemIndex];
   }
 
   // --- MISE À JOUR VISUELLE (Store Local) ---
-  
+
   // A. Mise à jour du PERSONNAGE (C'est le plus important)
   // On retire l'ancien item du perso et on met le nouveau.
   if (oldItemIndex !== -1) {
     charItemsArray.splice(oldItemIndex, 1);
   }
   charItemsArray.push(newItemRaw);
-  
+
   // B. IMPORTANT : On ne touche PAS à inventoryStore.items !
   // L'inventaire contient TOUS les items. C'est le computed 'filteredItems' dans l'overlay
   // qui décide d'afficher ou masquer un item selon s'il est équipé par le perso sélectionné.
@@ -131,13 +122,13 @@ const handleEquipItem = async (newItemMapped) => {
 
   // C. Appliquer les changements à la structure Pinia (Réactivité)
   if (characterRaw.attributes) {
-      if (characterRaw.attributes.items && characterRaw.attributes.items.data) {
-          characterRaw.attributes.items.data = charItemsArray;
-      } else {
-          characterRaw.attributes.items = charItemsArray;
-      }
+    if (characterRaw.attributes.items && characterRaw.attributes.items.data) {
+      characterRaw.attributes.items.data = charItemsArray;
+    } else {
+      characterRaw.attributes.items = charItemsArray;
+    }
   } else {
-      characterRaw.items = charItemsArray;
+    characterRaw.items = charItemsArray;
   }
 
   // D. Rafraîchir l'overlay
@@ -196,28 +187,28 @@ const getImageUrl = (imgData) => {
 };
 
 const mapSingleItem = (itemObj) => {
-   if (!itemObj) return null;
-   const item = itemObj.attributes || itemObj;
-   const rawTags = item.tags?.data || item.tags || [];
-   const tagList = rawTags.map(t => (t.attributes?.name || t.name || '').toLowerCase());
+  if (!itemObj) return null;
+  const item = itemObj.attributes || itemObj;
+  const rawTags = item.tags?.data || item.tags || [];
+  const tagList = rawTags.map(t => (t.attributes?.name || t.name || '').toLowerCase());
 
-   let rarityVal = 'common';
-   if (item.rarity) {
-      rarityVal = item.rarity.data?.attributes?.name || item.rarity.name || item.rarity;
-   }
+  let rarityVal = 'common';
+  if (item.rarity) {
+    rarityVal = item.rarity.data?.attributes?.name || item.rarity.name || item.rarity;
+  }
 
-   return {
-     id: item.id,
-     documentId: item.documentId, 
-     level: item.level || 1,
-     index_damage: item.index_damage || 0,
-     rarity: String(rarityVal).toLowerCase(),
-     category: item.slot || 'weapon',
-     image: getImageUrl(item.icon),
-     types: tagList,
-     // IMPORTANT POUR LE RECYCLAGE
-     isScrapped: item.isScrapped || false
-   };
+  return {
+    id: item.id,
+    documentId: item.documentId,
+    level: item.level || 1,
+    index_damage: item.index_damage || 0,
+    rarity: String(rarityVal).toLowerCase(),
+    category: item.slot || 'weapon',
+    image: getImageUrl(item.icon),
+    types: tagList,
+    // IMPORTANT POUR LE RECYCLAGE
+    isScrapped: item.isScrapped || false
+  };
 };
 
 const formattedInventory = computed(() => {
@@ -245,6 +236,11 @@ const mapItems = (itemsData) => {
 </script>
 
 <style scoped>
-.font-pixel { font-family: 'Jersey 10', sans-serif; }
-.font-power { font-family: 'Montserrat', sans-serif; }
+.font-pixel {
+  font-family: 'Jersey 10', sans-serif;
+}
+
+.font-power {
+  font-family: 'Montserrat', sans-serif;
+}
 </style>
