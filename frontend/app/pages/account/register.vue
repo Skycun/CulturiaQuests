@@ -12,7 +12,7 @@
         :step-titles="stepTitles"
       />
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="handleSubmit">
         <!-- Step 1: Account Information -->
         <div v-if="currentStep === 1" class="space-y-4">
           <PixelInput
@@ -99,11 +99,11 @@
           <PixelButton
             v-if="currentStep > 1"
             type="button"
-            @click="previousStep"
             :disabled="loading"
             variant="filled"
             color="indigo"
             class="flex-1 !text-white"
+            @click="previousStep"
           >
             Précédent
           </PixelButton>
@@ -111,11 +111,11 @@
           <PixelButton
             v-if="currentStep < totalSteps"
             type="button"
-            @click="nextStep"
             :disabled="loading || !canProceed"
             variant="filled"
             color="indigo"
             class="flex-1"
+            @click="nextStep"
           >
             Suivant
           </PixelButton>
