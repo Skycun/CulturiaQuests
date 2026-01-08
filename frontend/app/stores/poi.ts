@@ -2,6 +2,30 @@ import { defineStore } from 'pinia'
 import type { Poi } from '~/types/poi'
 import { filterByDistance } from '~/utils/geolocation'
 
+/**
+ * Normalise un objet POI brut Strapi en structure flat.
+ * Extrait les données depuis attributes ou directement selon la structure v4/v5.
+ *
+ * @param raw - POI brut retourné par l'API Strapi
+ * @returns POI normalisé avec accès direct aux propriétés
+ */
+function normalizePoi(raw: any): Poi {
+  return {
+    id: raw.id,
+    documentId: raw.documentId,
+    name: raw.name || raw.attributes?.name || 'Unnamed',
+    lat: raw.lat ?? raw.attributes?.lat,
+    lng: raw.lng ?? raw.attributes?.lng,
+    geohash: raw.geohash || raw.attributes?.geohash,
+    location: raw.location || raw.attributes?.location,
+    visits: raw.visits || raw.attributes?.visits,
+    quests_a: raw.quests_a || raw.attributes?.quests_a,
+    quests_b: raw.quests_b || raw.attributes?.quests_b,
+    // Garder attributes originaux pour compatibilité
+    attributes: raw.attributes
+  }
+}
+
 export const usePOIStore = defineStore('poi', () => {
   // State
   const pois = ref<Poi[]>([])
@@ -41,7 +65,11 @@ export const usePOIStore = defineStore('poi', () => {
       })
 
       const data = response.data || response
-      setPOIs(Array.isArray(data) ? data : [])
+
+      // Normaliser les données à la source
+      const normalizedPOIs = Array.isArray(data) ? data.map(normalizePoi) : []
+
+      setPOIs(normalizedPOIs)
     } catch (e: any) {
       console.error('Failed to fetch POIs:', e)
       error.value = e?.message || 'Failed to fetch POIs'
