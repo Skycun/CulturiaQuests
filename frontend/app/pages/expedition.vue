@@ -5,8 +5,7 @@
         <section class="relative flex-grow flex flex-col items-center justify-evenly pt-12 w-full max-w-md mx-auto">
 
             <div
-                class="absolute inset-x-4 top-4 bottom-0 border-x-2 border-t-2 border-white/90 rounded-t-[50vw] pointer-events-none mask-fade">
-            </div>
+                class="absolute inset-x-4 top-4 bottom-0 border-x-2 border-t-2 border-white/90 rounded-t-[50vw] pointer-events-none mask-fade"/>
 
             <div class="text-center shrink-0 z-10">
                 <h1 class="font-pixel text-6xl sm:text-7xl mb-1">{{ formattedTime }}</h1>
@@ -14,9 +13,9 @@
             </div>
 
             <div class="relative w-48 h-40 sm:w-64 sm:h-56 shrink-0 flex items-center justify-center z-10">
-                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-16 bg-white/5 rounded-full blur-xl">
-                </div>
-                <img :src="museumImage" alt="Musée"
+                <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-16 bg-white/5 rounded-full blur-xl"/>
+                <img 
+                    :src="museumImage" alt="Musée"
                     class="w-full h-full object-contain pixelated relative z-10 drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]" />
             </div>
 
@@ -30,9 +29,10 @@
             <div class="flex items-end justify-center gap-3 sm:gap-4 h-20 sm:h-24 shrink-0 w-full z-10">
                 <div v-for="perso in characters" :key="perso.id" class="relative flex justify-center w-12 sm:w-16">
 
-                    <div class="absolute bottom-0 w-8 sm:w-12 h-3 sm:h-4 bg-white/20 rounded-[50%] blur-[2px]"></div>
+                    <div class="absolute bottom-0 w-8 sm:w-12 h-3 sm:h-4 bg-white/20 rounded-[50%] blur-[2px]"/>
 
-                    <img :src="perso.avatar" :alt="perso.name"
+                    <img 
+                        :src="perso.avatar" :alt="perso.name"
                         class="anim-target w-12 h-12 sm:w-16 sm:h-16 object-contain pixelated relative z-10" />
                 </div>
                 

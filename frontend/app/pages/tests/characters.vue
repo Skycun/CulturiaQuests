@@ -189,7 +189,7 @@ definePageMeta({
       <div v-if="isEditing" class="bg-white border rounded-lg p-6 shadow-sm">
         <h2 class="text-xl font-semibold mb-4">{{ formTitle }}</h2>
 
-        <form @submit.prevent="handleSubmit" class="space-y-4">
+        <form class="space-y-4" @submit.prevent="handleSubmit">
           <!-- Icon Selection -->
           <div>
             <label class="block text-sm font-medium mb-2">Icone</label>

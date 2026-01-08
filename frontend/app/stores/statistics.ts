@@ -32,6 +32,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const totalItemsScrapped = ref(0)
   const totalScrapAccumulated = ref(0)
   const totalExp = ref(0)
+  const totalGold = ref(0)
   const accountDays = ref(0)
 
   // --- Getters (Computed) ---
@@ -46,6 +47,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const formattedTotalDamage = computed(() => {
     const val = totalDamage.value
+    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M'
+    if (val >= 1000) return (val / 1000).toFixed(1) + 'k'
+    return Math.floor(val).toString()
+  })
+
+  const formattedTotalExp = computed(() => {
+    const val = totalExp.value
     if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M'
     if (val >= 1000) return (val / 1000).toFixed(1) + 'k'
     return Math.floor(val).toString()
@@ -132,10 +140,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
       }
 
       // 2. Fetch all collections in parallel
-      const [runs, visits, items] = await Promise.all([
+      const [runs, visits, items, quests, guildRes] = await Promise.all([
         fetchAllPages('/runs', '*'),
         fetchAllPages('/visits', '*'),
-        fetchAllPages('/items', { rarity: true })
+        fetchAllPages('/items', { rarity: true }),
+        fetchAllPages('/quests', '*'),
+        client<any>('/guilds')
       ])
 
       // 3. Process Runs
@@ -144,7 +154,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       let tTime = 0
       let tDamage = 0
       let tMaxFloor = 0
-      let tRunExp = 0
+      let tTotalGold = 0
 
       for (const run of runs) {
         const attr = run.attributes || run
@@ -168,9 +178,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
           tMaxFloor = attr.threshold_reached
         }
 
-        // Exp
-        if (attr.xp_earned) {
-          tRunExp += attr.xp_earned
+        // Gold
+        if (attr.gold_earned) {
+            tTotalGold += attr.gold_earned
         }
       }
       totalTime.value = tTime
@@ -179,13 +189,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       // 4. Process Visits
       let tPoiVisits = 0
-      let tVisitExp = 0
       totalDistinctPois.value = visits.length 
 
       for (const visit of visits) {
         const attr = visit.attributes || visit
         if (attr.open_count) tPoiVisits += attr.open_count
-        if (attr.total_exp_earned) tVisitExp += attr.total_exp_earned
+        if (attr.total_gold_earned) tTotalGold += attr.total_gold_earned
       }
       totalPoiVisits.value = tPoiVisits
       
@@ -205,8 +214,18 @@ export const useStatisticsStore = defineStore('statistics', () => {
       totalItemsScrapped.value = tScrapped
       totalScrapAccumulated.value = tScrapValue
 
-      // 6. Total Exp
-      totalExp.value = tRunExp + tVisitExp
+      // 6. Process Quests
+      for (const quest of quests) {
+        const attr = quest.attributes || quest
+        if (attr.gold_earned) {
+            tTotalGold += attr.gold_earned
+        }
+      }
+      totalGold.value = tTotalGold
+
+      // 7. Total Exp (from Guild)
+      const guildData = Array.isArray(guildRes.data) ? guildRes.data[0] : (guildRes.data || guildRes)
+      totalExp.value = guildData?.attributes?.exp ?? guildData?.exp ?? 0
 
     } catch (e: any) {
       console.error('Error calculating statistics:', e)
@@ -230,11 +249,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
     totalItemsScrapped,
     totalScrapAccumulated,
     totalExp,
+    totalGold,
     accountDays,
 
     // Getters
     formattedTotalTime,
     formattedTotalDamage,
+    formattedTotalExp,
 
     // Actions
     fetchStatistics
