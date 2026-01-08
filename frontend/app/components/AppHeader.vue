@@ -25,7 +25,7 @@
     </div>
   </header>
 
-  <div class="w-full h-14 sm:h-20 pt-[env(safe-area-inset-top)] box-content"></div>
+  <div class="w-full h-14 sm:h-20 pt-[env(safe-area-inset-top)] box-content"/>
 </template>
 
 <script setup>

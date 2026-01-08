@@ -10,7 +10,6 @@ const { availableQuests } = storeToRefs(questStore)
 
 onMounted(async () => {
     await questStore.fetchQuests()
-    console.log('Quêtes chargées:', availableQuests.value)
 })
 </script>
 
