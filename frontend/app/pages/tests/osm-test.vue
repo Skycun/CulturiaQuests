@@ -60,7 +60,13 @@
         />
 
         <!-- Marqueur position utilisateur -->
-        <LMarker :lat-lng="[userLat, userLng]" />
+        <LMarker :lat-lng="[userLat, userLng]">
+          <LIcon
+            icon-url="/assets/map/userpoint.svg"
+            :icon-size="[20, 20]"
+            :icon-anchor="[10, 10]"
+          />
+        </LMarker>
 
         <!-- Marqueurs Musées -->
         <LMarker
@@ -70,9 +76,9 @@
           @click="selectItem(museum)"
         >
           <LIcon
-            icon-url="/assets/musee.png"
-            :icon-size="[54, 46]"
-            :icon-anchor="[27, 46]"
+            :icon-url="`/assets/map/museum/${getMuseumTags(museum)[0] || 'Art'}.png`"
+            :icon-size="[32, 24]"
+            :icon-anchor="[16, 12]"
           />
         </LMarker>
 
@@ -84,9 +90,9 @@
           @click="selectItem(poi)"
         >
           <LIcon
-            icon-url="/assets/poi.png"
-            :icon-size="[64, 46]"
-            :icon-anchor="[32, 46]"
+            icon-url="/assets/map/chest.png"
+            :icon-size="[32, 24]"
+            :icon-anchor="[16, 12]"
           />
         </LMarker>
       </LMap>
@@ -98,15 +104,19 @@
 
         <div v-if="isMuseum(selectedItem)" class="bg-white p-4 rounded-2xl grid grid-cols-2 gap-2">
           <img
-            :src="selectedItem.attributes?.coverImage?.url || '/assets/musee.png'"
+            :src="`/assets/map/museum/${getMuseumTags(selectedItem)[0] || 'Art'}.png`"
             :alt="getName(selectedItem)"
             class="w-full h-48 object-contain"
           />
           <div class="flex flex-col justify-between">
             <h2 class="text-xl font-power mb-2 text-right gap-4">{{ getName(selectedItem) }}</h2>
-            <div class="flex flex-row-reverse gap-2 flex-">
-              <TagCategory variant="outline" category="histoire" />
-              <TagCategory variant="outline" category="art" />
+            <div class="flex flex-row-reverse gap-2 flex-wrap">
+              <TagCategory
+                v-for="tag in getMuseumTags(selectedItem as Museum)"
+                :key="tag"
+                variant="outline"
+                :category="tag"
+              />
             </div>
           </div>
         </div>
@@ -124,7 +134,6 @@
         <div class="bg-white p-4 rounded-2xl">
           <p class="text-center font-pixel text-3xl">DPS: 1578</p>
           <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-          <p class="font-onest text-sm">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
         </div>
 
           
@@ -133,7 +142,7 @@
             Type: 
             <span :class="isMuseum(selectedItem) ? 'text-blue-600' : 'text-orange-600'" class="font-bold">
               {{ isMuseum(selectedItem) ? 'Museum' : 'Point of Interest' }}
-            </span>
+            </span>]
           </p>
             <p>ID: {{ selectedItem.id }}</p>
             <p>Lat: {{ getLat(selectedItem)?.toFixed(6) }}</p>
@@ -154,6 +163,7 @@ import { useGuildStore } from '~/stores/guild'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 import type { Character } from '~/types/character'
+import type { Tag } from '~/types/tag'
 
 // Type pour les éléments avec coordonnées (Museum ou POI)
 type LocationItem = Museum | Poi
@@ -191,6 +201,10 @@ const userLat = ref<number>(49.1167)  // Saint-Lô par défaut
 const userLng = ref<number>(-1.0833)
 const geolocLoading = ref<boolean>(false)
 const geolocError = ref<string | null>(null)
+const watchId = ref<number | null>(null)  // Pour le tracking continu
+const isFirstPosition = ref<boolean>(true) // Pour différencier le premier chargement
+const lastFetchLat = ref<number | null>(null)  // Dernière position où on a fetch les POIs
+const lastFetchLng = ref<number | null>(null)
 
 // Nearby results
 const nearbyMuseums = ref<Museum[]>([])
@@ -265,9 +279,67 @@ function isMuseum(item: LocationItem): item is Museum {
   return 'radius' in item || (!!item.attributes && 'radius' in item.attributes)
 }
 
+function getMuseumTags(museum: Museum): string[] {
+  // Support multiple Strapi structure variations
+  console.log('🏷️ Getting tags for museum:', museum)
+
+  let tags: Tag[] = []
+
+  // Check attributes.tags first
+  if (museum.attributes?.tags) {
+    console.log('✅ Found museum.attributes.tags:', museum.attributes.tags)
+    const attrTags = museum.attributes.tags
+    if ('data' in attrTags && Array.isArray(attrTags.data)) {
+      tags = attrTags.data
+      console.log('✅ Using attributes.tags.data:', tags)
+    } else if (Array.isArray(attrTags)) {
+      tags = attrTags
+      console.log('✅ Using attributes.tags (direct array):', tags)
+    }
+  }
+  // Then check direct tags property
+  else if (museum.tags) {
+    console.log('✅ Found museum.tags:', museum.tags)
+    if (Array.isArray(museum.tags)) {
+      // Direct array - STRAPI 5 FLATTEN
+      tags = museum.tags
+      console.log('✅ Using tags (direct array):', tags)
+    } else if ('data' in museum.tags && Array.isArray(museum.tags.data)) {
+      // Wrapped in data
+      tags = museum.tags.data
+      console.log('✅ Using tags.data:', tags)
+    }
+  } else {
+    console.log('❌ No tags found in museum object')
+  }
+
+  // Extract name from each tag
+  const names = tags.map((tag: Tag) => tag.attributes?.name || tag.name || '').filter((name: string) => name !== '')
+  console.log('🏷️ Final tag names:', names)
+
+  return names
+}
+
+// Calculer la distance entre deux points (formule de Haversine en km)
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371 // Rayon de la Terre en km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  return R * c
+}
+
 // Handlers pour le composant GeolocationRequest
 function handleGeolocationAllow(): void {
-  getUserLocation()
+  // Charger immédiatement avec la position par défaut
+  fetchNearbyLocations()
+
+  // Puis activer le tracking en temps réel
+  startLocationTracking()
 }
 
 function handleGeolocationDeny(): void {
@@ -275,32 +347,81 @@ function handleGeolocationDeny(): void {
   fetchNearbyLocations()
 }
 
-// Géolocalisation
-function getUserLocation(): void {
+// Tracking de position en temps réel
+function startLocationTracking(): void {
   if (!navigator.geolocation) {
     console.warn('Geolocation not supported, using Saint-Lô default')
-    fetchNearbyLocations()
     return
   }
 
   geolocLoading.value = true
   geolocError.value = null
 
-  navigator.geolocation.getCurrentPosition(
+  // watchPosition surveille en continu la position de l'utilisateur
+  watchId.value = navigator.geolocation.watchPosition(
     (position: GeolocationPosition) => {
-      userLat.value = position.coords.latitude
-      userLng.value = position.coords.longitude
-      geolocLoading.value = false
-      fetchNearbyLocations()
+      const newLat = position.coords.latitude
+      const newLng = position.coords.longitude
+
+      // Première position obtenue
+      if (isFirstPosition.value) {
+        console.log('First real position obtained:', newLat, newLng)
+        userLat.value = newLat
+        userLng.value = newLng
+        geolocLoading.value = false
+        isFirstPosition.value = false
+
+        // Recharger les POIs/musées avec la vraie position
+        fetchNearbyLocations()
+
+        // Animer la carte vers la vraie position
+        if (map.value?.leafletObject) {
+          map.value.leafletObject.flyTo([newLat, newLng], 13, {
+            animate: true,
+            duration: 1.5
+          })
+        }
+      } else {
+        // Mises à jour suivantes : juste mettre à jour la position du marqueur
+        userLat.value = newLat
+        userLng.value = newLng
+
+        // Recharger les POIs si l'utilisateur s'est déplacé de plus de 5 km
+        if (lastFetchLat.value !== null && lastFetchLng.value !== null) {
+          const distance = calculateDistance(
+            lastFetchLat.value,
+            lastFetchLng.value,
+            newLat,
+            newLng
+          )
+
+          if (distance > 5) {
+            console.log(`User moved ${distance.toFixed(2)}km, reloading POIs...`)
+            fetchNearbyLocations()
+          }
+        }
+      }
     },
     (error: GeolocationPositionError) => {
-      console.warn('Geolocation failed, using Saint-Lô default:', error.message)
+      console.warn('Geolocation tracking failed:', error.message)
       geolocError.value = error.message
       geolocLoading.value = false
-      // Continuer avec Saint-Lô par défaut
-      fetchNearbyLocations()
+    },
+    {
+      enableHighAccuracy: false,  // Plus rapide, utilise WiFi/réseau au lieu de GPS
+      timeout: 5000,              // Timeout de 5 secondes par tentative
+      maximumAge: 10000           // Accepte une position de moins de 10 secondes
     }
   )
+}
+
+// Arrêter le tracking quand le composant est détruit
+function stopLocationTracking(): void {
+  if (watchId.value !== null) {
+    navigator.geolocation.clearWatch(watchId.value)
+    watchId.value = null
+    console.log('Location tracking stopped')
+  }
 }
 
 // Récupération des données
@@ -316,10 +437,17 @@ async function fetchNearbyLocations(): Promise<void> {
   nearbyMuseums.value = museums
   nearbyPOIs.value = pois
 
+  // Sauvegarder la position du dernier fetch
+  lastFetchLat.value = userLat.value
+  lastFetchLng.value = userLng.value
+
   console.log(`Found ${museums.length} museums and ${pois.length} POIs within ${radius}km`)
 }
 
-// Lifecycle - ne pas demander automatiquement la géolocalisation
+// Lifecycle
+onUnmounted(() => {
+  stopLocationTracking()
+})
 
 // Layout de test
 definePageMeta({

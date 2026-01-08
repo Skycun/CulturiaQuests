@@ -36,11 +36,24 @@ export const useMuseumStore = defineStore('museum', () => {
     error.value = null
 
     try {
+      console.log('🔄 Fetching museums with tags...')
+
       const response = await client<any>('/museums', {
         method: 'GET',
+        query: {
+          populate: 'tags'
+        }
       })
 
+      console.log('📦 Full API response:', response)
+
       const data = response.data || response
+
+      // DEBUG: Log first museum to see structure
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('🏛️ First museum structure:', JSON.stringify(data[0], null, 2))
+      }
+
       setMuseums(Array.isArray(data) ? data : [])
     } catch (e: any) {
       console.error('Failed to fetch museums:', e)
@@ -60,10 +73,8 @@ export const useMuseumStore = defineStore('museum', () => {
    * @returns Array of museums within the specified radius
    */
   async function fetchNearby(radius: number, lat: number, lng: number): Promise<Museum[]> {
-    // Fetch all museums if store is empty
-    if (!hasMuseums.value) {
-      await fetchAll()
-    }
+    // Always fetch fresh data to ensure we have tags populated
+    await fetchAll()
 
     // Filter by distance client-side
     return filterByDistance(museums.value, lat, lng, radius)
