@@ -1,6 +1,31 @@
 import { defineStore } from 'pinia'
 import type { Museum } from '~/types/museum'
 import { filterByDistance } from '~/utils/geolocation'
+import { extractTags } from '~/utils/strapiHelpers'
+
+/**
+ * Normalise un objet Museum brut Strapi en structure flat.
+ * Extrait les données depuis attributes ou directement selon la structure v4/v5.
+ *
+ * @param raw - Museum brut retourné par l'API Strapi
+ * @returns Museum normalisé avec accès direct aux propriétés
+ */
+function normalizeMuseum(raw: any): Museum {
+  return {
+    id: raw.id,
+    documentId: raw.documentId,
+    name: raw.name || raw.attributes?.name || 'Unnamed',
+    lat: raw.lat ?? raw.attributes?.lat,
+    lng: raw.lng ?? raw.attributes?.lng,
+    geohash: raw.geohash || raw.attributes?.geohash,
+    radius: raw.radius ?? raw.attributes?.radius,
+    location: raw.location || raw.attributes?.location,
+    tags: extractTags(raw), // Extrait les tags depuis structure v4/v5
+    runs: raw.runs || raw.attributes?.runs,
+    // Garder attributes originaux pour compatibilité
+    attributes: raw.attributes
+  }
+}
 
 export const useMuseumStore = defineStore('museum', () => {
   // State
@@ -51,10 +76,18 @@ export const useMuseumStore = defineStore('museum', () => {
 
       // DEBUG: Log first museum to see structure
       if (Array.isArray(data) && data.length > 0) {
-        console.log('🏛️ First museum structure:', JSON.stringify(data[0], null, 2))
+        console.log('🏛️ First museum structure (raw):', JSON.stringify(data[0], null, 2))
       }
 
-      setMuseums(Array.isArray(data) ? data : [])
+      // Normaliser les données à la source
+      const normalizedMuseums = Array.isArray(data) ? data.map(normalizeMuseum) : []
+
+      // DEBUG: Log first normalized museum
+      if (normalizedMuseums.length > 0) {
+        console.log('✅ First museum structure (normalized):', JSON.stringify(normalizedMuseums[0], null, 2))
+      }
+
+      setMuseums(normalizedMuseums)
     } catch (e: any) {
       console.error('Failed to fetch museums:', e)
       error.value = e?.message || 'Failed to fetch museums'

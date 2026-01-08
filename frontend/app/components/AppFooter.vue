@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-50">
+  <div class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-[10000]">
 
     <NuxtLink v-for="item in navItems" :key="item.name" :to="item.path"
       class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity w-20"
