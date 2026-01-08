@@ -36,8 +36,6 @@ onMounted(async () => {
 
     try {
         const idToSearch = Number(friendshipId);
-        // Optimisation : on pourrait utiliser findOne si l'API Strapi le permet directement avec l'ID, 
-        // mais gardons la logique actuelle qui semble fonctionner pour toi.
         const response = await client('/friendships', {
             method: 'GET',
             params: {

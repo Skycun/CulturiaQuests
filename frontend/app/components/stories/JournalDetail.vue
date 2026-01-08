@@ -22,11 +22,14 @@
                 <div class="flex items-center gap-3">
                     <div class="flex-1">
                         <UiProgressBar 
-                            :current="details.level" 
+                            :current="details.level"
                             :max="details.maxLevel" 
                         />
                     </div>
-                    <span class="text-xl font-pixel text-indigo-900">
+                    <span 
+                        class="text-xl font-pixel"
+                        :class="details.level >= details.maxLevel ? 'text-yellow-500' : 'text-indigo-900'"
+                    >
                         {{ details.level }}/{{ details.maxLevel }}
                     </span>
                 </div>
