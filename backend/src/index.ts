@@ -56,7 +56,13 @@ export default {
     if (authenticatedRole) {
       const actions = [
         'api::guild.guild.setup',
-        'api::item.item.getItemIcons'
+        'api::item.item.getItemIcons',
+        'api::museum.museum.find',
+        'api::museum.museum.findOne',
+        'api::poi.poi.find',
+        'api::poi.poi.findOne',
+        'api::tag.tag.find',
+        'api::tag.tag.findOne'
       ];
 
       for (const action of actions) {
