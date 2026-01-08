@@ -8,7 +8,6 @@
                 class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none">
 
             <!-- Overlay Gradient -->
-            <!-- Changed to solid black at the bottom for smooth transition -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black z-0" />
 
             <!-- Top Content -->
@@ -42,14 +41,13 @@
             </div>
 
             <div v-else class="space-y-2">
-                <div 
-                    v-for="(stat, index) in displayStats" :key="index"
-                    class="flex items-center justify-between py-2 border-b border-gray-900 last:border-0"
-                >
-                    <Icon v-if="stat.icon" :name="stat.icon"/>
-                    <span class="font-onest text-gray-300">{{ stat.label }}</span>
-                    <span class="font-pixel text-xl text-white">{{ stat.value }}</span>
-                </div>
+                <GuildStatRow 
+                    v-for="(stat, index) in displayStats" 
+                    :key="index"
+                    :icon="stat.icon"
+                    :label="stat.label"
+                    :value="stat.value"
+                />
             </div>
             
             <!-- Account Age Footer -->
@@ -74,6 +72,7 @@ import { useRouter } from 'vue-router'
 import { useGuildStore } from '~/stores/guild'
 import { useStatisticsStore } from '~/stores/statistics'
 import PixelButton from '~/components/form/PixelButton.vue'
+import GuildStatRow from '~/components/guild/GuildStatRow.vue'
 
 const router = useRouter()
 const { logout: strapiLogout } = useStrapiAuth()

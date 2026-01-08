@@ -56,7 +56,8 @@ export default {
     if (authenticatedRole) {
       const actions = [
         'api::guild.guild.setup',
-        'api::item.item.getItemIcons'
+        'api::item.item.getItemIcons',
+        'api::statistic.statistic.getSummary'
       ];
 
       for (const action of actions) {
