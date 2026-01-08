@@ -37,10 +37,10 @@
           />
         </div>
 
-        <InventoryGrid 
+        <InventoryGrid
+          v-model:sortBy="sortBy"
           :items="filteredItems"
           :loading="loading"
-          v-model:sortBy="sortBy"
           :activeTag="activeTag"
           :availableTags="availableTags"
           :isRecycleMode="currentMode === 'recycle'"
