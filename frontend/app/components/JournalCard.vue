@@ -58,11 +58,6 @@ const props = defineProps({
     isUnknown: { type: Boolean, default: false }
 });
 
-const progressPercentage = computed(() => {
-    if (props.isUnknown || props.maxLevel === 0) return 0;
-    return Math.min((props.currentLevel / props.maxLevel) * 100, 100);
-});
-
 const isCompleted = computed(() => {
     return props.currentLevel >= props.maxLevel && !props.isUnknown;
 });
