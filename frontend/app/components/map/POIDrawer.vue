@@ -3,35 +3,32 @@
     <!-- Card POI -->
     <div class="bg-white p-4 rounded-2xl grid grid-cols-2 gap-2">
       <img
-        src="/assets/map/chest.png"
+        :src="chestIcon"
         :alt="poi.name"
         class="w-full h-36 object-contain"
       />
       <div class="flex flex-col justify-between">
         <div>
-          <h2 class="text-xl font-power mb-1 text-right">{{ poi.name }}</h2>
-          <p class="text-sm font-onest text-gray-600 text-right mb-2">
+          <h2 class="text-lg font-power mb-1 text-right">{{ poi.name }}</h2>
+          <p class="text-base font-pixel text-gray-600 text-right mb-2">
             📍 Distance : {{ formattedDistance }}
           </p>
         </div>
-        <p class="font-onest text-right text-xs">Réinitialisation dans 15:45:56</p>
+        <p class="font-pixel text-right text-lg" :class="statusClass">
+          {{ statusText }}
+        </p>
       </div>
     </div>
 
-    <!-- Message collecté -->
-    <div class="bg-white p-4 rounded-2xl">
-      <p class="text-center font-pixel text-2xl">Objet collecté</p>
-    </div>
-
-    <!-- Boutons CTA -->
-    <div v-if="isTooFar" class="w-full">
+    <!-- Boutons -->
+    <div v-if="isTooFar || !isAvailable" class="w-full">
       <FormPixelButton
         color="red"
         variant="outline"
         class="w-full mt-4"
         disabled
       >
-        Vous êtes trop loin
+        {{ buttonText }}
       </FormPixelButton>
     </div>
     <div v-else>
@@ -39,16 +36,18 @@
         color="indigo"
         variant="filled"
         class="w-full mt-4"
+        @click="handleOpenChest"
       >
         Ouvrir le coffre
       </FormPixelButton>
     </div>
-    <div class="h-9 w-full"></div>
+    <div class="h-9 w-full" />
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Poi } from '~/types/poi'
+import { useGeolocation } from '~/composables/useGeolocation'
 
 /**
  * Composant d'affichage du drawer pour un POI (Point d'Intérêt) sélectionné.
@@ -62,4 +61,29 @@ const props = defineProps<{
 }>()
 
 const { isTooFar, formattedDistance } = useDrawerLogic(toRef(props, 'distanceToUser'))
+const { isAvailable, chestIcon, statusText } =
+  useChestState(toRef(props, 'poi'))
+
+const geolocation = useGeolocation()
+
+const statusClass = computed(() =>
+  isAvailable.value ? 'text-green-600' : 'text-orange-600'
+)
+
+const buttonText = computed(() => {
+  if (isTooFar.value) return 'Vous êtes trop loin'
+  if (!isAvailable.value) return 'Coffre indisponible'
+  return 'Ouvrir le coffre'
+})
+
+async function handleOpenChest() {
+  await navigateTo({
+    path: '/chest',
+    query: {
+      poiId: props.poi.documentId || props.poi.id,
+      lat: geolocation.userLat.value,
+      lng: geolocation.userLng.value
+    }
+  })
+}
 </script>

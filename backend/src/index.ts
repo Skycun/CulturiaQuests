@@ -63,7 +63,8 @@ export default {
         'api::poi.poi.findOne',
         'api::tag.tag.find',
         'api::tag.tag.findOne',
-        'api::statistic.statistic.getSummary'
+        'api::statistic.statistic.getSummary',
+        'api::visit.visit.openChest'
       ];
 
       for (const action of actions) {

@@ -22,7 +22,7 @@
     />
   </LMarker>
 
-  <!-- Marqueurs POIs -->
+  <!-- Marqueurs POIs avec icône dynamique -->
   <LMarker
     v-for="poi in pois"
     :key="`poi-${poi.id}`"
@@ -30,7 +30,7 @@
     @click="$emit('select-poi', poi)"
   >
     <LIcon
-      icon-url="/assets/map/chest.png"
+      :icon-url="getChestIcon(poi)"
       :icon-size="[32, 24]"
       :icon-anchor="[16, 12]"
     />
@@ -40,6 +40,21 @@
 <script setup lang="ts">
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
+import { useVisitStore } from '~/stores/visit'
+
+const visitStore = useVisitStore()
+
+/**
+ * Get the appropriate chest icon based on chest availability
+ */
+function getChestIcon(poi: Poi): string {
+  const poiId = poi.id || poi.documentId
+  const isAvailable = visitStore.isChestAvailable(poiId)
+
+  return isAvailable
+    ? '/assets/map/chest.png'
+    : '/assets/map/chest-opened.png'
+}
 
 /**
  * Composant d'affichage des marqueurs sur la carte.

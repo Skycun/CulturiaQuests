@@ -4,7 +4,7 @@
     <AppHeader />
 
     <main class="px-4 pt-4 pb-24 w-full max-w-5xl mx-auto">
-      <h1 class="text-2xl font-bold text-center mb-8 mt-4 font-power">Équipement</h1>
+      <h1 class="text-2xl text-center mb-8 mt-4 font-power">Équipement</h1>
 
       <div v-if="characterStore.loading" class="text-center py-10 font-pixel text-xl text-gray-500">
         Chargement de vos héros...

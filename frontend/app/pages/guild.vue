@@ -121,6 +121,11 @@ const displayStats = computed(() => [
         value: statsStore.totalDistinctPois,
     },
     {
+        icon: 'game-icons:hanging-sign',
+        label: 'POI le plus visité',
+        value: statsStore.mostVisitedPoiName || 'Aucun',
+    },
+    {
         icon: 'game-icons:cardboard-box-closed',
         label: 'Total d\'items collectés',
         value: statsStore.totalItemsCollected,
