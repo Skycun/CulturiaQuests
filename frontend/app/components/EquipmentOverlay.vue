@@ -9,7 +9,6 @@
         <OverlayHeader :title="headerTitle" @close="closeModal" />
 
         <div class="pointer-events-auto px-4 py-2">
-          
           <TopPanelEquip 
             v-if="currentMode === 'normal'"
             :character="character"
@@ -72,8 +71,8 @@
 import { ref, computed, watch } from 'vue';
 import { useGuildStore } from '~/stores/guild';
 import { useInventoryStore } from '~/stores/inventory';
+import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
-// Import des nouveaux composants
 import OverlayHeader from './equipment/OverlayHeader.vue';
 import InventoryGrid from './equipment/InventoryGrid.vue';
 import ActionFooter from './equipment/ActionFooter.vue';
@@ -81,7 +80,6 @@ import TopPanelEquip from './equipment/TopPanelEquip.vue';
 import TopPanelRecycle from './equipment/TopPanelRecycle.vue';
 import TopPanelUpgrade from './equipment/TopPanelUpgrade.vue';
 
-// --- PROPS & EMITS ---
 const props = defineProps({
   isOpen: Boolean,
   character: Object,
@@ -91,12 +89,11 @@ const props = defineProps({
 });
 const emit = defineEmits(['close', 'equip']);
 
-// --- CONFIG ---
 const guildStore = useGuildStore();
 const inventoryStore = useInventoryStore();
 const client = useStrapiClient();
+const { calculateItemPower } = useDamageCalculator();
 
-// --- STATE ---
 const activeSlot = ref('weapon');
 const selectedItemId = ref(null);
 const sortBy = ref('rarity');
@@ -109,7 +106,6 @@ const upgradeIncrement = ref(1);
 const availableTags = ['nature', 'history', 'science', 'art', 'make', 'society'];
 const rarityWeight = { legendary: 4, epic: 3, rare: 2, common: 1, basic: 0 };
 
-// --- COMPUTED HELPERS ---
 const currentMode = computed(() => {
     if (isRecycleMode.value) return 'recycle';
     if (isUpgradeMode.value) return 'upgrade';
@@ -122,7 +118,6 @@ const headerTitle = computed(() => {
     return 'Équipement';
 });
 
-// --- WATCHERS ---
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     if (props.initialSlot) activeSlot.value = props.initialSlot;
@@ -130,7 +125,6 @@ watch(() => props.isOpen, (newVal) => {
   }
 });
 
-// --- ACTIONS UI ---
 const closeModal = () => { resetAllModes(); emit('close'); };
 const resetAllModes = () => {
     selectedItemId.value = null;
@@ -240,8 +234,8 @@ const upgradeCost = computed(() => {
 const projectedStats = computed(() => {
     if (!selectedItemObject.value) return { newLevel: 0, damageGain: 0 };
     const item = selectedItemObject.value;
-    const currentDmg = calculateDamage(item);
-    const futureDmg = calculateDamage({ ...item, level: item.level + upgradeIncrement.value });
+    const currentDmg = calculateItemPower(item);
+    const futureDmg = calculateItemPower({ ...item, level: item.level + upgradeIncrement.value });
     return { newLevel: item.level + upgradeIncrement.value, damageGain: futureDmg - currentDmg };
 });
 const canAffordUpgrade = computed(() => {
@@ -286,27 +280,55 @@ const handleEquip = () => {
   const itemToEquip = props.allInventory.find(i => i.id === selectedItemId.value);
   if (itemToEquip) { emit('equip', itemToEquip); selectedItemId.value = null; }
 };
-const calculateDamage = (item) => {
-  const base = item.index_damage || 0, lvl = item.level || 1;
-  let multiplier = 1;
-  switch (item.rarity?.toLowerCase()) {
-    case 'basic': multiplier = 1; break; case 'common': multiplier = 1.5; break; case 'rare': multiplier = 2; break; case 'epic': multiplier = 3; break; case 'legendary': multiplier = 3; break;
-  }
-  return Math.floor(base * lvl * multiplier);
-};
+
+// Dans components/EquipmentOverlay.vue
+
+// --- FILTRAGE ET TRI ---
 const filteredItems = computed(() => {
   if (!props.allInventory) return [];
+  
   let items = props.allInventory.filter(item => {
+    // 1. Filtrer les items recyclés
     const isNotScrapped = !item.isScrapped;
-    const currentEquipped = props.character?.equippedItems?.find(i => i.category.toLowerCase() === activeSlot.value.toLowerCase());
+
+    // 2. Filtrer par slot (Arme, Armure...)
     const isCategoryMatch = (item.category || item.slot || '').toLowerCase() === activeSlot.value.toLowerCase();
-    const isNotCurrentlyEquipped = !currentEquipped || item.id !== currentEquipped.id;
-    return isCategoryMatch && isNotCurrentlyEquipped && isNotScrapped;
+
+    // 3. NOUVEAU : Vérifier si l'objet est déjà équipé par QUICONQUE
+    // On doit regarder dans l'inventoryStore car 'item' (formatted) n'a pas l'info du propriétaire
+    const rawItem = inventoryStore.items.find(i => i.id === item.id);
+    let isEquipped = false;
+    
+    if (rawItem) {
+        const attrs = rawItem.attributes || rawItem;
+        
+        // Strapi renvoie soit un ID (si non populé), soit un objet { data: ... } (si populé)
+        // S'il y a une donnée dans 'character', c'est que l'item est pris
+        if (attrs.character) {
+             // Cas Strapi v4 populated
+             if (attrs.character.data) isEquipped = true;
+             // Cas Strapi v4 ID simple ou Strapi v5
+             else if (typeof attrs.character === 'number' || attrs.character.id) isEquipped = true;
+        }
+    }
+    
+    // On garde l'item seulement si :
+    // - C'est la bonne catégorie
+    // - Il n'est PAS équipé (ni par moi, ni par les autres)
+    // - Il n'est pas recyclé
+    return isCategoryMatch && !isEquipped && isNotScrapped;
   });
-  if (activeTag.value) items = items.filter(item => item.types && item.types.includes(activeTag.value.toLowerCase()));
+
+  // Filtrage par Tag (Nature, Art...)
+  if (activeTag.value) {
+      items = items.filter(item => item.types && item.types.includes(activeTag.value.toLowerCase()));
+  }
+  
+  // Tri
   return items.sort((a, b) => {
     if (sortBy.value === 'damage') {
-        const dmgA = calculateDamage(a), dmgB = calculateDamage(b);
+        const dmgA = calculateItemPower(a);
+        const dmgB = calculateItemPower(b);
         if (dmgA === dmgB) return b.level - a.level; return dmgB - dmgA;
     }
     if (sortBy.value === 'level') return b.level - a.level;

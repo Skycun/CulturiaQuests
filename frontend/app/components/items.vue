@@ -37,51 +37,42 @@
 
 <script setup>
 import { computed } from 'vue';
+// IMPORT DU COMPOSABLE (Source unique de vérité pour les dégâts)
+import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
 const props = defineProps({
-  level: { type: Number, required: true },
-  // On ajoute index_damage (avec une valeur par défaut de 0 pour éviter les NaN si manquant)
-  index_damage: { type: Number, default: 0 },
-  rarity: { 
-    type: String, 
-    required: true,
-    validator: (v) => ['legendary', 'epic', 'rare', 'common', 'basic'].includes(v) // Ajout de 'basic' au validateur
-  },
+  level: { type: [Number, String], default: 1 },
+  index_damage: { type: [Number, String], default: 0 },
+  rarity: { type: String, default: 'common' },
   selected: { type: Boolean, default: false },
   image: { type: String, required: true },
   types: { type: Array, default: () => [] }, 
   category: { type: String, default: 'Weapon' }
 });
 
-// --- 1. Calcul des Dégâts ---
-const calculatedDamage = computed(() => {
-  const base = props.index_damage || 0;
-  const lvl = props.level || 1;
-  
-  let multiplier = 1;
-  switch (props.rarity?.toLowerCase()) {
-    case 'basic': multiplier = 1; break;
-    case 'common': multiplier = 1.5; break;
-    case 'rare': multiplier = 2; break;
-    case 'epic': multiplier = 3; break;
-    case 'legendary': multiplier = 3; break;
-    default: multiplier = 1;
-  }
+// Récupération de la fonction de calcul
+const { calculateItemPower } = useDamageCalculator();
 
-  return Math.floor(base * lvl * multiplier);
+// --- 1. Calcul des Dégâts (Via Composable) ---
+const calculatedDamage = computed(() => {
+  return calculateItemPower({
+    index_damage: props.index_damage,
+    level: props.level,
+    rarity: props.rarity
+  });
 });
 
 // --- 2. Formatage (12000 -> 12k) ---
 const formattedDamage = computed(() => {
   const val = calculatedDamage.value;
+  if (!val) return "0";
   if (val >= 1000) {
-    // toFixed(1) garde une décimale (12.5k), replace enlève le .0 si c'est un entier (12.0k -> 12k)
     return (val / 1000).toFixed(1).replace('.0', '') + 'k';
   }
   return val.toString();
 });
 
-// --- 3. Gestion des Couleurs ---
+// --- 3. Gestion des Couleurs (Dégradés) ---
 const gradientClass = computed(() => {
   switch (props.rarity?.toLowerCase()) {
     case 'legendary': return 'bg-gradient-to-b from-yellow-300 to-amber-500';
@@ -103,11 +94,13 @@ const getTypeIcon = (typeName) => {
     make: '/assets/make-icon.png',
     society: '/assets/society-icon.png' 
   };
+  // Fallback si l'image n'est pas mappée
   return map[typeName.toLowerCase()] || `/${typeName}.svg`;
 };
 </script>
 
 <style scoped>
+/* Forme "Pixel Box" (Coins coupés) */
 .pixel-box {
   clip-path: polygon(
     0px 4px, 4px 4px, 4px 0px,
@@ -125,6 +118,7 @@ const getTypeIcon = (typeName) => {
   image-rendering: pixelated;
 }
 
+/* Contour noir pour le texte pixel */
 .text-shadow-outline {
   text-shadow: -1px 0 #000, 0 1px #000, 1px 0 #000, 0 -1px #000, 1px 1px #000, -1px -1px #000;
 }
