@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-100 font-sans">
-    <main class="h-[100vh] w-full relative pt-14 pb-16">
+    <main class="h-[100vh] w-full relative">
       <!-- Geolocation request -->
       <GeolocationRequest
         @allow="handleGeolocationAllow"
@@ -45,6 +45,7 @@
         <MapDrawerContent
           :selected-item="selectedItem"
           :guild-characters="guildCharacters"
+          :distance-to-user="distanceToSelectedItem"
           @start-expedition="handleStartExpedition"
         />
       </BottomDrawer>
@@ -58,6 +59,7 @@ import { usePOIStore } from '~/stores/poi'
 import { useGuildStore } from '~/stores/guild'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useMapInteraction } from '~/composables/useMapInteraction'
+import { calculateDistance } from '~/utils/geolocation'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 
@@ -111,6 +113,18 @@ const validMuseums = computed<Museum[]>(() =>
 const validPOIs = computed<Poi[]>(() =>
   nearbyPOIs.value.filter((p) => p.lat !== undefined && p.lng !== undefined)
 )
+
+// Computed - Distance to selected item
+const distanceToSelectedItem = computed<number>(() => {
+  if (!selectedItem.value) return 0
+
+  const itemLat = selectedItem.value.lat
+  const itemLng = selectedItem.value.lng
+
+  if (itemLat === undefined || itemLng === undefined) return 0
+
+  return calculateDistance(userLat.value, userLng.value, itemLat, itemLng)
+})
 
 // Destructure geolocation state
 const { userLat, userLng, geolocLoading } = geolocation
