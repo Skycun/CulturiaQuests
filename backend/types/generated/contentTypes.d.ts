@@ -438,7 +438,7 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
     singularName: 'character';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -470,7 +470,7 @@ export interface ApiDialogDialog extends Struct.CollectionTypeSchema {
     singularName: 'dialog';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -509,7 +509,7 @@ export interface ApiFriendshipFriendship extends Struct.CollectionTypeSchema {
     singularName: 'friendship';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -544,7 +544,7 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     singularName: 'guild';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     characters: Schema.Attribute.Relation<
@@ -592,7 +592,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     singularName: 'item';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     character: Schema.Attribute.Relation<
@@ -634,7 +634,7 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
     singularName: 'museum';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -675,7 +675,7 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     singularName: 'npc';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -694,6 +694,7 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::npc.npc'> &
       Schema.Attribute.Private;
+    nickname: Schema.Attribute.String & Schema.Attribute.Required;
     pronouns: Schema.Attribute.Enumeration<['he', 'she', 'they']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'they'>;
@@ -717,7 +718,7 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     singularName: 'poi';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -755,7 +756,7 @@ export interface ApiQuestQuest extends Struct.CollectionTypeSchema {
     singularName: 'quest';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -797,7 +798,7 @@ export interface ApiRarityRarity extends Struct.CollectionTypeSchema {
     singularName: 'rarity';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -826,7 +827,7 @@ export interface ApiRunRun extends Struct.CollectionTypeSchema {
     singularName: 'run';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -868,7 +869,7 @@ export interface ApiTagTag extends Struct.CollectionTypeSchema {
     singularName: 'tag';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -895,7 +896,7 @@ export interface ApiVisitVisit extends Struct.CollectionTypeSchema {
     singularName: 'visit';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;

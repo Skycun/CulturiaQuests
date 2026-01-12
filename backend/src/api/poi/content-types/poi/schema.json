@@ -7,7 +7,7 @@
     "displayName": "POI"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {

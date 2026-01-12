@@ -8,6 +8,7 @@ export const useNpcStore = defineStore('npc', () => {
   const npcs = ref<Npc[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const storiesSortMethod = ref<'alpha' | 'entries'>('alpha')
 
   // Getters
   const hasNpcs = computed(() => npcs.value.length > 0)
@@ -116,6 +117,63 @@ export const useNpcStore = defineStore('npc', () => {
     }
   })
 
+  /**
+   * Retourne la liste complète des journaux formatés et triés pour l'affichage
+   */
+  const sortedJournals = computed(() => {
+    if (!hasNpcs.value) return []
+
+    const journals = npcs.value.map((npcObj) => {
+      // Gestion Strapi v4/v5 (attributes ou direct)
+      const npc = npcObj
+      const npcId = npcObj.id
+
+      // Récupérer les infos de friendship via le helper existant
+      const friendshipInfo = getNpcFriendshipInfo.value(npcId)
+
+      // Calcul du niveau max
+      const maxEntries = (npc.quests_entry_available || 0)
+                          + (npc.expedition_entry_available || 0)
+      const finalMax = maxEntries > 0 ? maxEntries : 4
+
+      // Formatage du nom et de l'image
+      const firstName = npc.firstname || 'Inconnu'
+      const lastName = npc.lastname || ''
+      const realName = `${firstName} ${lastName}`.trim()
+      
+      // Logique d'image (internalisée ici)
+      const safeName = firstName.trim()
+      const realImage = (firstName === 'Inconnu' || !firstName) 
+        ? '/assets/default-avatar.png' 
+        : `/assets/npc/${safeName}/${safeName}.png`
+
+      return {
+        id: npcId,
+        friendshipId: friendshipInfo.friendship?.id,
+        name: friendshipInfo.discovered ? realName : '???',
+        level: friendshipInfo.totalUnlocked,
+        maxLevel: finalMax,
+        image: realImage,
+        isUnknown: !friendshipInfo.discovered,
+      }
+    })
+
+    // Séparation Découverts / Inconnus
+    const unlocked = journals.filter(j => !j.isUnknown)
+    const locked = journals.filter(j => j.isUnknown)
+
+    // Application du tri
+    if (storiesSortMethod.value === 'alpha') {
+      unlocked.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    else {
+      unlocked.sort((a, b) => b.level - a.level)
+    }
+
+    // Les inconnus sont toujours à la fin
+    return [...unlocked, ...locked]
+  })
+
   // Actions
   function setNpcs(data: Npc[]) {
     npcs.value = data
@@ -124,6 +182,10 @@ export const useNpcStore = defineStore('npc', () => {
   function clearNpcs() {
     npcs.value = []
     error.value = null
+  }
+
+  function toggleSortMethod() {
+    storiesSortMethod.value = storiesSortMethod.value === 'alpha' ? 'entries' : 'alpha'
   }
 
   /**
@@ -205,6 +267,7 @@ export const useNpcStore = defineStore('npc', () => {
     npcs,
     loading,
     error,
+    storiesSortMethod,
     // Getters
     hasNpcs,
     npcCount,
@@ -216,14 +279,16 @@ export const useNpcStore = defineStore('npc', () => {
     discoveredCount,
     undiscoveredCount,
     getNpcFriendshipInfo,
+    sortedJournals,
     // Actions
     setNpcs,
     clearNpcs,
+    toggleSortMethod,
     fetchNpcs,
     fetchNpcByDocumentId,
   }
 }, {
   persist: {
-    pick: ['npcs'],
+    pick: ['npcs', 'storiesSortMethod'],
   },
 })

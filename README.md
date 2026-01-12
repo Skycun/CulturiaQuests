@@ -215,4 +215,4 @@ Avoir lancé docker desktop
 `bash scripts/restore-db.sh backups/initial_data.tar.gz`
 
 **Pour faire une sauvegarde de la base de données :**
-`bash scripts/backup`
+`bash scripts/backup-db.sh`
