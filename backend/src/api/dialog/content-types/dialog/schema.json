@@ -7,20 +7,20 @@
     "displayName": "Dialog"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "text_type": {
       "type": "enumeration",
+      "required": true,
       "enum": [
         "quest_description",
         "expedition_appear",
         "expedition_fail",
         "quest_complete",
         "journal_entries"
-      ],
-      "required": true
+      ]
     },
     "dialogues": {
       "type": "json",

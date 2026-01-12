@@ -5,7 +5,7 @@
         Connexion
       </h1>
 
-      <form @submit.prevent="handleSubmit" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="handleSubmit">
         <PixelInput
           v-model="form.identifier"
           type="text"

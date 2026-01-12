@@ -19,6 +19,18 @@ export const useQuestStore = defineStore('quest', () => {
     })
   })
 
+  const availableQuests = computed(() => {
+    const today = new Date().toDateString()
+
+    return quests.value.filter(q => {
+      const attrs = q.attributes || q
+      if (!attrs.date_start) return false
+      
+      const questDate = new Date(attrs.date_start).toDateString()
+      return questDate === today
+    })
+  })
+
   const completedQuests = computed(() => {
     return quests.value.filter(q => {
       const isPoiACompleted = q.is_poi_a_completed ?? q.attributes?.is_poi_a_completed
@@ -98,6 +110,7 @@ export const useQuestStore = defineStore('quest', () => {
     hasQuests,
     questCount,
     activeQuests,
+    availableQuests,
     completedQuests,
     activeQuestCount,
     completedQuestCount,

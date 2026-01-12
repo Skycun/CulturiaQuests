@@ -7,19 +7,19 @@
     "displayName": "Quest"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
     "is_poi_a_completed": {
       "type": "boolean",
-      "default": false,
-      "required": true
+      "required": true,
+      "default": false
     },
     "is_poi_b_completed": {
       "type": "boolean",
-      "default": false,
-      "required": true
+      "required": true,
+      "default": false
     },
     "date_start": {
       "type": "datetime",
@@ -30,13 +30,13 @@
     },
     "gold_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "xp_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "guild": {
       "type": "relation",

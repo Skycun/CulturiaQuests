@@ -7,7 +7,7 @@
     "displayName": "Run"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -24,18 +24,18 @@
     },
     "gold_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "xp_earned": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "threshold_reached": {
       "type": "integer",
-      "default": 0,
-      "required": true
+      "required": true,
+      "default": 0
     },
     "target_threshold": {
       "type": "integer"
