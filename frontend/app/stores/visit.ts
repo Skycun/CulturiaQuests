@@ -185,8 +185,6 @@ export const useVisitStore = defineStore('visit', () => {
     fetchVisits,
     openChest,
   }
-}, {
-  persist: {
-    pick: ['visits'],
-  },
 })
+// Note: Persistence disabled to prevent 431 errors with large visit data
+// Visits are loaded automatically via guildStore.fetchAll() on login

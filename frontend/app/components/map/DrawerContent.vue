@@ -13,6 +13,8 @@
       v-else
       :poi="selectedItem"
       :distance-to-user="distanceToUser"
+      :user-lat="userLat"
+      :user-lng="userLng"
     />
   </div>
 </template>
@@ -33,6 +35,10 @@ const props = defineProps<{
   guildCharacters: Character[]
   /** Distance en km entre l'utilisateur et l'élément sélectionné */
   distanceToUser: number
+  /** Latitude de l'utilisateur */
+  userLat: number
+  /** Longitude de l'utilisateur */
+  userLng: number
 }>()
 
 defineEmits<{

@@ -113,7 +113,7 @@ export default factories.createCoreController('api::visit.visit', ({ strapi }) =
       return ctx.notFound('POI not found');
     }
 
-    // 3. Valider distance (< 50m = 0.05 km)
+    // 3. Valider distance (<= 50m = 0.05 km)
     const distance = calculateDistance(userLat, userLng, poi.lat, poi.lng);
     if (distance > 0.05) {
       return ctx.badRequest(`You are too far from this chest (${(distance * 1000).toFixed(0)}m). Maximum: 50m.`);
