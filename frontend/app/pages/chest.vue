@@ -36,7 +36,7 @@
         <div
           v-for="item in loot.items"
           :key="item.documentId"
-          ref="itemElements"
+          :ref="setItemRef"
           class="bg-white/10 backdrop-blur-sm rounded-xl p-4 opacity-0"
         >
           <div class="flex items-center gap-4">
@@ -107,7 +107,7 @@ import { useVisitStore } from '~/stores/visit'
 import { useGuildStore } from '~/stores/guild'
 
 definePageMeta({
-  layout: 'default'
+  layout: 'blank'
 })
 
 const route = useRoute()
@@ -123,9 +123,16 @@ const showLoot = ref(false)
 
 const chestContainer = ref<HTMLElement>()
 const chestImage = ref<HTMLImageElement>()
-const itemElements = ref<HTMLElement[]>([])
 const goldElement = ref<HTMLElement>()
 const expElement = ref<HTMLElement>()
+
+// Vue 3 way to handle refs in v-for
+const itemElementsRefs = ref<HTMLElement[]>([])
+const setItemRef = (el: HTMLElement | null) => {
+  if (el) {
+    itemElementsRefs.value.push(el)
+  }
+}
 
 const poiId = computed(() => route.query.poiId as string)
 const userLat = computed(() => parseFloat(route.query.lat as string))
@@ -165,6 +172,11 @@ async function openChestAnimation() {
       userLng.value
     )
 
+    console.log('🎁 Loot received:', loot.value)
+    console.log('📦 Items:', loot.value?.items)
+    console.log('💰 Gold:', loot.value?.gold)
+    console.log('⭐ XP:', loot.value?.exp)
+
     // 3. Refresh guild
     await guildStore.refetchStats()
 
@@ -183,34 +195,49 @@ async function openChestAnimation() {
 
     // 6. Show loot
     showLoot.value = true
+
+    // Clear refs before nextTick so they can be repopulated
+    itemElementsRefs.value = []
+
     await nextTick()
 
     // 7. Animate items
+    console.log('🎬 Starting animations...')
+    console.log('📝 itemElements:', itemElementsRefs.value)
+    console.log('💰 goldElement:', goldElement.value)
+    console.log('⭐ expElement:', expElement.value)
+
     const timeline = anime.timeline({ easing: 'easeOutExpo' })
 
-    itemElements.value.forEach((el, index) => {
-      timeline.add({
-        targets: el,
-        opacity: [0, 1],
-        translateY: [20, 0],
-        duration: 600,
-        delay: index * 200
-      })
+    itemElementsRefs.value.forEach((el, index) => {
+      if (el) {
+        timeline.add({
+          targets: el,
+          opacity: [0, 1],
+          translateY: [20, 0],
+          duration: 600,
+          delay: index * 200
+        })
+      }
     })
 
-    timeline.add({
-      targets: goldElement.value,
-      opacity: [0, 1],
-      translateY: [20, 0],
-      duration: 600
-    }, '-=400')
+    if (goldElement.value) {
+      timeline.add({
+        targets: goldElement.value,
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 600
+      }, '-=400')
+    }
 
-    timeline.add({
-      targets: expElement.value,
-      opacity: [0, 1],
-      translateY: [20, 0],
-      duration: 600
-    }, '-=400')
+    if (expElement.value) {
+      timeline.add({
+        targets: expElement.value,
+        opacity: [0, 1],
+        translateY: [20, 0],
+        duration: 600
+      }, '-=400')
+    }
 
   } catch (e: any) {
     console.error('Failed to open chest:', e)

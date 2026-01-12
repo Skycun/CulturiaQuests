@@ -47,7 +47,6 @@
 
 <script setup lang="ts">
 import type { Poi } from '~/types/poi'
-import { useGeolocation } from '~/composables/useGeolocation'
 
 /**
  * Composant d'affichage du drawer pour un POI (Point d'Intérêt) sélectionné.
@@ -58,13 +57,15 @@ const props = defineProps<{
   poi: Poi
   /** Distance en km entre l'utilisateur et le POI */
   distanceToUser: number
+  /** Latitude de l'utilisateur */
+  userLat: number
+  /** Longitude de l'utilisateur */
+  userLng: number
 }>()
 
 const { isTooFar, formattedDistance } = useDrawerLogic(toRef(props, 'distanceToUser'))
 const { isAvailable, chestIcon, statusText } =
   useChestState(toRef(props, 'poi'))
-
-const geolocation = useGeolocation()
 
 const statusClass = computed(() =>
   isAvailable.value ? 'text-green-600' : 'text-orange-600'
@@ -81,8 +82,8 @@ async function handleOpenChest() {
     path: '/chest',
     query: {
       poiId: props.poi.documentId || props.poi.id,
-      lat: geolocation.userLat.value,
-      lng: geolocation.userLng.value
+      lat: props.userLat,
+      lng: props.userLng
     }
   })
 }

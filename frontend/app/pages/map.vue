@@ -46,6 +46,8 @@
           :selected-item="selectedItem"
           :guild-characters="guildCharacters"
           :distance-to-user="distanceToSelectedItem"
+          :user-lat="userLat"
+          :user-lng="userLng"
           @start-expedition="handleStartExpedition"
         />
       </BottomDrawer>
