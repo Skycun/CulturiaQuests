@@ -1,8 +1,11 @@
 <template>
   <div class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-[10000]">
 
-    <NuxtLink 
-      v-for="item in navItems" :key="item.name" :to="item.path"
+
+    <NuxtLink
+      v-for="item in navItems"
+      :key="item.name"
+      :to="item.path"
       class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity w-20"
       active-class="opacity-100 text-yellow-400">
       <Icon :name="item.icon" class="w-6 h-6 bg-white" />
