@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-100 font-sans">
-
+    
     <AppHeader />
 
     <main class="px-4 pt-4 pb-24 w-full max-w-5xl mx-auto">
@@ -15,20 +15,29 @@
 
       <div v-else>
         <CharacterRow 
-          v-for="perso in formattedCharacters" :key="perso.id" :characterName="perso.name"
-          :characterImage="perso.avatar" :items="perso.equippedItems"
-          @click-item="(item) => openOverlay(perso, item)" />
-
+          v-for="perso in formattedCharacters" 
+          :key="perso.id"
+          :characterName="perso.name"
+          :characterImage="perso.avatar"
+          :items="perso.equippedItems"
+          @click-item="(item) => openOverlay(perso, item)" 
+        />
+        
         <div v-if="formattedCharacters.length === 0" class="text-center text-gray-400 mt-10">
           Aucun personnage trouvé.
         </div>
       </div>
     </main>
 
-    <EquipmentOverlay
-      :is-open="showOverlay" :character="selectedCharacter" :initial-slot="selectedSlot"
-      :all-inventory="formattedInventory" :loading="isOverlayLoading" @close="showOverlay = false"
-      @equip="handleEquipItem" />
+    <EquipmentOverlay 
+      :is-open="showOverlay"
+      :character="selectedCharacter"
+      :initial-slot="selectedSlot"
+      :all-inventory="formattedInventory" 
+      :loading="isOverlayLoading"
+      @close="showOverlay = false"
+      @equip="handleEquipItem" 
+    />
 
   </div>
 </template>
@@ -38,19 +47,24 @@ import { ref, onMounted, computed } from 'vue';
 import { useCharacterStore } from '~/stores/character';
 import { useGuildStore } from '~/stores/guild';
 import { useInventoryStore } from '~/stores/inventory';
+// 1. IMPORT DU COMPOSABLE DE DÉGÂTS
+import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
 // --- CONFIGURATION ---
 const characterStore = useCharacterStore();
 const guildStore = useGuildStore();
 const inventoryStore = useInventoryStore();
-const config = useRuntimeConfig();
+const config = useRuntimeConfig(); 
 const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
+
+// 2. RÉCUPÉRATION DE LA FONCTION DE CALCUL
+const { calculateItemPower } = useDamageCalculator();
 
 // --- ÉTAT LOCAL ---
 const showOverlay = ref(false);
 const isOverlayLoading = ref(false);
 const selectedCharacter = ref(null);
-const selectedSlot = ref('weapon');
+const selectedSlot = ref('weapon'); 
 
 // --- LIFECYCLE ---
 onMounted(async () => {
@@ -61,9 +75,9 @@ onMounted(async () => {
 // --- GESTION OVERLAY ---
 const openOverlay = async (character, item) => {
   selectedCharacter.value = character;
-  selectedSlot.value = item.category || 'weapon';
+  selectedSlot.value = item.category || 'weapon'; 
   showOverlay.value = true;
-
+  
   // On lance un fetch frais pour être sûr d'avoir le bon inventaire
   isOverlayLoading.value = true;
   try {
@@ -75,74 +89,55 @@ const openOverlay = async (character, item) => {
   }
 };
 
-// --- LOGIQUE D'ÉQUIPEMENT (SWAP + API) ---
+// --- LOGIQUE D'ÉQUIPEMENT (SWAP + REFETCH) ---
 const handleEquipItem = async (newItemMapped) => {
-  // 1. Trouver l'item NEUF dans le store (Données brutes)
-  const newItemIndex = inventoryStore.items.findIndex(i => i.id === newItemMapped.id);
-  if (newItemIndex === -1) return;
-  const newItemRaw = inventoryStore.items[newItemIndex];
+  // On active le chargement pour éviter les clics multiples
+  isOverlayLoading.value = true;
 
-  // 2. Trouver le PERSONNAGE dans le store
-  const charIndex = characterStore.characters.findIndex(c => c.id === selectedCharacter.value.id);
-  if (charIndex === -1) return;
-  const characterRaw = characterStore.characters[charIndex];
+  try {
+      // 1. Récupération des IDs nécessaires
+      const charIndex = characterStore.characters.findIndex(c => c.id === selectedCharacter.value.id);
+      if (charIndex === -1) return;
+      const characterRaw = characterStore.characters[charIndex];
+      const charData = characterRaw.attributes || characterRaw;
+      
+      // Trouver l'item actuel sur le slot (pour le déséquiper)
+      const currentItems = Array.isArray(charData.items) ? charData.items : (charData.items?.data || []);
+      const categoryToSwap = newItemMapped.category.toLowerCase();
+      
+      const oldItemRaw = currentItems.find(i => {
+         const iAttr = i.attributes || i;
+         const iSlot = iAttr.slot || iAttr.category || '';
+         return iSlot.toLowerCase() === categoryToSwap;
+      });
 
-  // Gestion de la structure Strapi (attributes vs racine)
-  const charData = characterRaw.attributes || characterRaw;
-  let charItemsArray = Array.isArray(charData.items) ? charData.items : (charData.items?.data || []);
+      // IDs pour l'API
+      const characterApiId = characterRaw.documentId || characterRaw.id;
+      const newItemApiId = newItemMapped.documentId || newItemMapped.id;
+      const oldItemApiId = oldItemRaw ? (oldItemRaw.documentId || oldItemRaw.id) : null;
 
-  // 3. Identifier l'ANCIEN item sur le personnage
-  const categoryToSwap = newItemMapped.category.toLowerCase();
-  const oldItemIndex = charItemsArray.findIndex(i => {
-    const iAttr = i.attributes || i;
-    const iSlot = iAttr.slot || iAttr.category || '';
-    return iSlot.toLowerCase() === categoryToSwap;
-  });
+      // 2. Appel API (Sauvegarde en BDD)
+      await saveEquipmentChange(characterApiId, newItemApiId, oldItemApiId);
 
-  let oldItemRaw = null;
-  if (oldItemIndex !== -1) {
-    oldItemRaw = charItemsArray[oldItemIndex];
+      // 3. REFETCH (C'est ici que ton problème se règle)
+      // On recharge l'inventaire pour que Strapi nous dise : "Cet ancien item est maintenant libre"
+      // On recharge aussi les persos pour voir le nouvel item équipé
+      await Promise.all([
+          inventoryStore.fetchItems(),       // Met à jour isEquipped pour l'overlay
+          characterStore.fetchCharacters(true) // Met à jour le perso en dessous
+      ]);
+
+      // 4. Rafraîchir la sélection locale (pour que l'affichage se mette à jour)
+      const updatedCharUI = formattedCharacters.value.find(c => c.id === selectedCharacter.value.id);
+      if (updatedCharUI) {
+        selectedCharacter.value = updatedCharUI;
+      }
+
+  } catch (error) {
+      console.error("Erreur lors de l'équipement :", error);
+  } finally {
+      isOverlayLoading.value = false;
   }
-
-  // --- MISE À JOUR VISUELLE (Store Local) ---
-
-  // A. Mise à jour du PERSONNAGE (C'est le plus important)
-  // On retire l'ancien item du perso et on met le nouveau.
-  if (oldItemIndex !== -1) {
-    charItemsArray.splice(oldItemIndex, 1);
-  }
-  charItemsArray.push(newItemRaw);
-
-  // B. IMPORTANT : On ne touche PAS à inventoryStore.items !
-  // L'inventaire contient TOUS les items. C'est le computed 'filteredItems' dans l'overlay
-  // qui décide d'afficher ou masquer un item selon s'il est équipé par le perso sélectionné.
-  // En mettant à jour le perso (étape A), le filtre va automatiquement :
-  // - Masquer le nouvel item (car désormais équipé)
-  // - Afficher l'ancien item (car désormais libre)
-
-  // C. Appliquer les changements à la structure Pinia (Réactivité)
-  if (characterRaw.attributes) {
-    if (characterRaw.attributes.items && characterRaw.attributes.items.data) {
-      characterRaw.attributes.items.data = charItemsArray;
-    } else {
-      characterRaw.attributes.items = charItemsArray;
-    }
-  } else {
-    characterRaw.items = charItemsArray;
-  }
-
-  // D. Rafraîchir l'overlay
-  const updatedCharUI = formattedCharacters.value.find(c => c.id === selectedCharacter.value.id);
-  if (updatedCharUI) {
-    selectedCharacter.value = updatedCharUI;
-  }
-
-  // --- SAUVEGARDE EN BASE DE DONNÉES (API) ---
-  const characterApiId = characterRaw.documentId || characterRaw.id;
-  const newItemApiId = newItemRaw.documentId || newItemRaw.id;
-  const oldItemApiId = oldItemRaw ? (oldItemRaw.documentId || oldItemRaw.id) : null;
-
-  await saveEquipmentChange(characterApiId, newItemApiId, oldItemApiId);
 };
 
 // --- FONCTION API (Utilisation de useStrapiClient) ---
@@ -172,6 +167,7 @@ const saveEquipmentChange = async (characterId, newItemId, oldItemId) => {
   } catch (error) {
     console.error("❌ Erreur API Strapi :", error);
     if (error.error) console.error("Détail Strapi :", error.error);
+    throw error; // On relance l'erreur pour qu'elle soit attrapée par handleEquipItem
   }
 };
 
@@ -187,28 +183,36 @@ const getImageUrl = (imgData) => {
 };
 
 const mapSingleItem = (itemObj) => {
-  if (!itemObj) return null;
-  const item = itemObj.attributes || itemObj;
-  const rawTags = item.tags?.data || item.tags || [];
-  const tagList = rawTags.map(t => (t.attributes?.name || t.name || '').toLowerCase());
+   if (!itemObj) return null;
+   const item = itemObj.attributes || itemObj;
+   const rawTags = item.tags?.data || item.tags || [];
+   const tagList = rawTags.map(t => (t.attributes?.name || t.name || '').toLowerCase());
 
-  let rarityVal = 'common';
-  if (item.rarity) {
-    rarityVal = item.rarity.data?.attributes?.name || item.rarity.name || item.rarity;
-  }
+   let rarityVal = 'common';
+   if (item.rarity) {
+      rarityVal = item.rarity.data?.attributes?.name || item.rarity.name || item.rarity;
+   }
 
-  return {
-    id: item.id,
-    documentId: item.documentId,
-    level: item.level || 1,
-    index_damage: item.index_damage || 0,
-    rarity: String(rarityVal).toLowerCase(),
-    category: item.slot || 'weapon',
-    image: getImageUrl(item.icon),
-    types: tagList,
-    // IMPORTANT POUR LE RECYCLAGE
-    isScrapped: item.isScrapped || false
-  };
+   // 3. UTILISATION DU COMPOSABLE pour calculer la puissance
+   // Utile pour afficher "Puissance: 450" ou pour le tri
+   const calculatedPower = calculateItemPower({
+       index_damage: item.index_damage,
+       level: item.level,
+       rarity: rarityVal
+   });
+
+   return {
+     id: item.id,
+     documentId: item.documentId, 
+     level: item.level || 1,
+     index_damage: item.index_damage || 0,
+     rarity: String(rarityVal).toLowerCase(),
+     category: item.slot || 'weapon',
+     image: getImageUrl(item.icon),
+     types: tagList,
+     isScrapped: item.isScrapped || false,
+     power: calculatedPower // Ajout de la puissance calculée
+   };
 };
 
 const formattedInventory = computed(() => {
@@ -234,13 +238,3 @@ const mapItems = (itemsData) => {
   return rawItems.map(mapSingleItem).filter(i => i !== null);
 };
 </script>
-
-<style scoped>
-.font-pixel {
-  font-family: 'Jersey 10', sans-serif;
-}
-
-.font-power {
-  font-family: 'Montserrat', sans-serif;
-}
-</style>
