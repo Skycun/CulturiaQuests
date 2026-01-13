@@ -14,5 +14,4 @@ defineEmits(['close']);
 
 <style scoped>
 .pt-safe-top { padding-top: max(20px, env(safe-area-inset-top)); }
-.font-power { font-family: 'Montserrat', sans-serif; }
 </style>

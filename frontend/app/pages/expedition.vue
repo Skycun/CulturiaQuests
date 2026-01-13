@@ -78,7 +78,7 @@ const { calculateItemPower } = useDamageCalculator();
 const router = useRouter();
 
 // --- CONSTANTES DE JEU ---
-const BASE_DIFFICULTY = 500; 
+const BASE_DIFFICULTY = 100; 
 const SCALING_FACTOR = 1.5; 
 
 // Extension jusqu'à 24 objets (4 équipes complètes)
@@ -99,7 +99,7 @@ const SYNERGY_BONUS = [
 // --- ETAT ---
 const currentExpedition = ref({
     name: "Musée d'art et d'histoire de Saint-Lô",
-    type: "history",
+    type: ["history", "nature"],
 });
 const museumImage = "/assets/musee.png";
 
@@ -177,16 +177,35 @@ const rawTotalDamage = computed(() => {
     return total;
 });
 
+// pages/expedition.vue
+
 const globalMultiplier = computed(() => {
     let count = 0;
-    const typeExp = currentExpedition.value.type.toLowerCase();
+    
+    // On s'assure que 'type' est toujours un tableau
+    const expTypes = Array.isArray(currentExpedition.value.type) 
+        ? currentExpedition.value.type.map(t => t.toLowerCase())
+        : [currentExpedition.value.type.toLowerCase()];
     
     formattedCharacters.value.forEach(char => {
         char.equippedItems.forEach(item => {
-            if (item.types && item.types.includes(typeExp)) count++;
+            if (item.types) {
+                // ANCIENNE LOGIQUE (Mauvaise pour toi) :
+                // if (item.types.some(t => expTypes.includes(t))) count++;
+
+                // NOUVELLE LOGIQUE (Cumulatif) :
+                // On parcourt chaque tag de l'objet. 
+                // Si l'objet est "Nature" ET "Histoire", ça ajoutera 2 au compteur.
+                item.types.forEach(tag => {
+                    if (expTypes.includes(tag)) {
+                        count++;
+                    }
+                });
+            }
         });
     });
     
+    // Protection pour ne pas dépasser la taille du tableau de bonus
     const index = Math.min(count, SYNERGY_BONUS.length - 1);
     return SYNERGY_BONUS[index];
 });
