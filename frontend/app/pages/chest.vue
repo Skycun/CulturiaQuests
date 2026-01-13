@@ -105,6 +105,46 @@
 import anime from 'animejs'
 import { useVisitStore } from '~/stores/visit'
 import { useGuildStore } from '~/stores/guild'
+import type { ComponentPublicInstance } from 'vue'
+
+// Type definitions
+interface StrapiMedia {
+  url: string
+  [key: string]: unknown
+}
+
+interface ItemIcon {
+  data?: StrapiMedia
+  url?: string
+}
+
+interface ItemRarity {
+  data?: {
+    name?: string
+    attributes?: {
+      name?: string
+    }
+  }
+  name?: string
+  attributes?: {
+    name?: string
+  }
+}
+
+interface LootItem {
+  documentId: string
+  name: string
+  level: number
+  index_damage: number
+  icon?: ItemIcon
+  rarity?: ItemRarity
+}
+
+interface ChestLoot {
+  items: LootItem[]
+  gold: number
+  exp: number
+}
 
 definePageMeta({
   layout: 'blank'
@@ -118,7 +158,7 @@ const config = useRuntimeConfig()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
-const loot = ref<any>(null)
+const loot = ref<ChestLoot | null>(null)
 const showLoot = ref(false)
 
 const chestContainer = ref<HTMLElement>()
@@ -128,8 +168,8 @@ const expElement = ref<HTMLElement>()
 
 // Vue 3 way to handle refs in v-for
 const itemElementsRefs = ref<HTMLElement[]>([])
-const setItemRef = (el: HTMLElement | null) => {
-  if (el) {
+const setItemRef = (el: Element | ComponentPublicInstance | null) => {
+  if (el && el instanceof HTMLElement) {
     itemElementsRefs.value.push(el)
   }
 }
@@ -138,14 +178,14 @@ const poiId = computed(() => route.query.poiId as string)
 const userLat = computed(() => parseFloat(route.query.lat as string))
 const userLng = computed(() => parseFloat(route.query.lng as string))
 
-function getItemIcon(item: any): string {
+function getItemIcon(item: LootItem): string {
   const icon = item.icon?.data || item.icon
   if (!icon?.url) return '/assets/helmet1.png'
   if (icon.url.startsWith('http')) return icon.url
   return `${config.public.strapi.url}${icon.url}`
 }
 
-function getRarityName(item: any): string {
+function getRarityName(item: LootItem): string {
   const rarity = item.rarity?.data || item.rarity
   return rarity?.name || rarity?.attributes?.name || 'Commun'
 }
@@ -239,9 +279,9 @@ async function openChestAnimation() {
       }, '-=400')
     }
 
-  } catch (e: any) {
+  } catch (e) {
     console.error('Failed to open chest:', e)
-    error.value = e?.message || 'Impossible d\'ouvrir le coffre'
+    error.value = e instanceof Error ? e.message : 'Impossible d\'ouvrir le coffre'
   } finally {
     loading.value = false
   }
