@@ -1,6 +1,5 @@
 <template>
-    <div
-        class="h-screen bg-gradient-to-b from-[#040050] to-black text-white font-sans flex flex-col relative overflow-hidden">
+    <div class="h-screen bg-gradient-to-b from-[#040050] to-black text-white font-sans flex flex-col relative overflow-hidden">
 
         <section class="relative flex-grow flex flex-col items-center justify-evenly pt-12 w-full max-w-md mx-auto">
 
@@ -9,7 +8,10 @@
 
             <div class="text-center shrink-0 z-10">
                 <h1 class="font-pixel text-6xl sm:text-7xl mb-1">{{ formattedTime }}</h1>
-                <p class="font-pixel text-3xl sm:text-4xl text-white tracking-widest">Palier {{ floor }}</p>
+                
+                <p class="font-pixel text-3xl sm:text-4xl text-white tracking-widest">
+                    Palier {{ infiniteTierInfo.tier }}
+                </p>
             </div>
 
             <div class="relative w-48 h-40 sm:w-64 sm:h-56 shrink-0 flex items-center justify-center z-10">
@@ -22,21 +24,20 @@
             <div class="text-center shrink-0 max-w-[80%] z-10">
                 <p class="font-power text-gray-400 text-sm font-semibold mb-1">Actuellement :</p>
                 <h2 class="font-power text-2xl sm:text-3xl leading-tight">
-                    {{ museumName }}
+                    {{ currentExpedition.name }}
                 </h2>
+                <div v-if="globalMultiplier > 1" class="mt-2 inline-block bg-green-900/30 border border-green-500/30 px-2 py-0.5 rounded text-[10px] text-green-400 font-bold uppercase tracking-wider">
+                    Bonus Synergie x{{ globalMultiplier }}
+                </div>
             </div>
 
             <div class="flex items-end justify-center gap-3 sm:gap-4 h-20 sm:h-24 shrink-0 w-full z-10">
-                <div v-for="perso in characters" :key="perso.id" class="relative flex justify-center w-12 sm:w-16">
-
-                    <div class="absolute bottom-0 w-8 sm:w-12 h-3 sm:h-4 bg-white/20 rounded-[50%] blur-[2px]"/>
-
-                    <img 
-                        :src="perso.avatar" :alt="perso.name"
-                        class="anim-target w-12 h-12 sm:w-16 sm:h-16 object-contain pixelated relative z-10" />
+                <div v-for="perso in formattedCharacters" :key="perso.id" class="relative flex justify-center w-12 sm:w-16">
+                    <div class="absolute bottom-0 w-8 sm:w-12 h-3 sm:h-4 bg-white/20 rounded-[50%] blur-[2px]"></div>
+                    <img :src="perso.avatar" :alt="perso.name" class="anim-target w-12 h-12 sm:w-16 sm:h-16 object-contain pixelated relative z-10" />
                 </div>
                 
-                <div v-if="characters.length === 0 && !characterStore.loading" class="text-gray-500 text-xs font-pixel">
+                <div v-if="formattedCharacters.length === 0 && !characterStore.loading" class="text-gray-500 text-xs font-pixel">
                     Aucun héros...
                 </div>
             </div>
@@ -44,7 +45,6 @@
         </section>
 
         <section class="shrink-0 w-full max-w-md mx-auto px-4 pb-8 pt-2 flex flex-col items-center z-20">
-
             <p class="font-onest text-center text-gray-300 text-xs sm:text-sm max-w-xs leading-relaxed mb-4">
                 Allez explorer pendant que<br>
                 vos personnages se battent pour le royaume
@@ -55,7 +55,6 @@
                     Arrêter l'expédition
                 </FormPixelButton>
             </div>
-
         </section>
 
     </div>
@@ -64,25 +63,48 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import anime from 'animejs';
-import { useCharacterStore } from '~/stores/character'; // Import du store
+import { useRouter } from 'vue-router';
+import { useCharacterStore } from '~/stores/character';
+import FormPixelButton from '~/components/form/PixelButton.vue';
+import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
-definePageMeta({
-    layout: 'footerless'
-});
+definePageMeta({ layout: 'footerless' });
 
-// --- STORES & CONFIG ---
+// --- CONFIGURATION ---
 const characterStore = useCharacterStore();
 const config = useRuntimeConfig();
 const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
+const { calculateItemPower } = useDamageCalculator();
+const router = useRouter();
 
-// --- DONNÉES STATIQUES (RUN) ---
-// À terme, tu devras probablement récupérer ces infos depuis un "RunStore"
-const floor = ref(18);
-const museumName = "Musée d'art et d'histoire de Saint-Lô";
+// --- CONSTANTES DE JEU ---
+const BASE_DIFFICULTY = 100; 
+const SCALING_FACTOR = 1.5; 
+
+// Extension jusqu'à 24 objets (4 équipes complètes)
+const SYNERGY_BONUS = [
+    // 0 à 6 (Ta base actuelle)
+    1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0, 
+    
+    // 7 à 12 (Progression vers x4)
+    2.25, 2.5, 2.75, 3.0, 3.5, 4.0, 
+    
+    // 13 à 18 (Progression vers x8)
+    4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 
+    
+    // 19 à 24 (Mode "Dieu" -> x15)
+    9.0, 10.0, 11.0, 12.0, 13.5, 15.0 
+];
+
+// --- ETAT ---
+const currentExpedition = ref({
+    name: "Musée d'art et d'histoire de Saint-Lô",
+    type: ["history", "nature"],
+});
 const museumImage = "/assets/musee.png";
 
-// --- TIMER ---
-const secondsElapsed = ref(13 * 60 + 12);
+const secondsElapsed = ref(0);
+const totalDamageDealt = ref(0);
 let timerInterval = null;
 
 const formattedTime = computed(() => {
@@ -91,24 +113,129 @@ const formattedTime = computed(() => {
     return `${m}:${s}`;
 });
 
-// --- RÉCUPÉRATION DES PERSONNAGES ---
-const characters = computed(() => {
+// --- 1. PRÉPARATION DES DONNÉES ---
+const formattedCharacters = computed(() => {
+    // Sécurité : si le store est vide, on renvoie tableau vide
+    if (!characterStore.characters) return [];
+
     return characterStore.characters.map(char => {
         const c = char.attributes || char;
+        
+        // Récupération des items
+        const rawItems = c.items?.data || c.items || [];
+        
+        // FILTRAGE : On retire les items recyclés (isScrapped: true)
+        const validItems = rawItems.filter(i => {
+            const attrs = i.attributes || i;
+            return attrs.isScrapped !== true;
+        });
+        
+        const equippedItems = validItems.map(i => {
+            const itemAttr = i.attributes || i;
+            
+            // Gestion Rareté (String ou Objet)
+            let rarityStr = 'common';
+            if (typeof itemAttr.rarity === 'string') {
+                rarityStr = itemAttr.rarity;
+            } else if (itemAttr.rarity?.data?.attributes?.name) {
+                rarityStr = itemAttr.rarity.data.attributes.name;
+            } else if (itemAttr.rarity?.name) { // Strapi v5 flat
+                rarityStr = itemAttr.rarity.name;
+            }
+
+            // Gestion Tags
+            const tags = (itemAttr.tags?.data || itemAttr.tags || []).map(t => 
+                (t.attributes?.name || t.name || '').toLowerCase()
+            );
+
+            return {
+                id: i.id,
+                level: Number(itemAttr.level) || 1,
+                index_damage: Number(itemAttr.index_damage) || 0, 
+                rarity: rarityStr,
+                types: tags
+            };
+        });
+
         return {
             id: char.id,
             name: c.firstname,
-            avatar: getImageUrl(c.icon)
+            avatar: getImageUrl(c.icon),
+            equippedItems
         };
     });
 });
 
-// Helper pour l'image URL
+// --- 2. CALCUL DU DPS ---
+const rawTotalDamage = computed(() => {
+    let total = 0;
+    formattedCharacters.value.forEach(char => {
+        char.equippedItems.forEach(item => {
+            total += calculateItemPower(item);
+        });
+    });
+    return total;
+});
+
+// pages/expedition.vue
+
+const globalMultiplier = computed(() => {
+    let count = 0;
+    
+    // On s'assure que 'type' est toujours un tableau
+    const expTypes = Array.isArray(currentExpedition.value.type) 
+        ? currentExpedition.value.type.map(t => t.toLowerCase())
+        : [currentExpedition.value.type.toLowerCase()];
+    
+    formattedCharacters.value.forEach(char => {
+        char.equippedItems.forEach(item => {
+            if (item.types) {
+                // ANCIENNE LOGIQUE (Mauvaise pour toi) :
+                // if (item.types.some(t => expTypes.includes(t))) count++;
+
+                // NOUVELLE LOGIQUE (Cumulatif) :
+                // On parcourt chaque tag de l'objet. 
+                // Si l'objet est "Nature" ET "Histoire", ça ajoutera 2 au compteur.
+                item.types.forEach(tag => {
+                    if (expTypes.includes(tag)) {
+                        count++;
+                    }
+                });
+            }
+        });
+    });
+    
+    // Protection pour ne pas dépasser la taille du tableau de bonus
+    const index = Math.min(count, SYNERGY_BONUS.length - 1);
+    return SYNERGY_BONUS[index];
+});
+
+const finalDPS = computed(() => {
+    return Math.floor(rawTotalDamage.value * globalMultiplier.value);
+});
+
+// --- 3. PROGRESSION PALIERS ---
+const infiniteTierInfo = computed(() => {
+    const score = totalDamageDealt.value;
+
+    if (score < BASE_DIFFICULTY) return { tier: 1 };
+
+    const tierIndex = Math.floor(Math.log(score / BASE_DIFFICULTY) / Math.log(SCALING_FACTOR));
+    return { tier: tierIndex + 2 };
+});
+
+// --- HELPERS ---
+const formatNumber = (num) => {
+    if(!num) return "0";
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return Math.floor(num).toString();
+};
+
 const getImageUrl = (imgData) => {
-    if (!imgData) return '/assets/default-avatar.png'; // Image par défaut si pas d'avatar
+    if (!imgData) return '/assets/default-avatar.png';
     const data = imgData.data?.attributes || imgData.attributes || imgData;
     const url = data?.url;
-
     if (!url) return '/assets/default-avatar.png';
     if (url.startsWith('/')) return `${strapiUrl}${url}`;
     return url;
@@ -116,46 +243,48 @@ const getImageUrl = (imgData) => {
 
 // --- ANIMATION ---
 const startAnimation = () => {
-    // On arrête les animations précédentes pour éviter les bugs si on reload
     anime.remove('.anim-target');
-    
     anime({
         targets: '.anim-target',
-        translateY: [
-            { value: -8, duration: 500, easing: 'easeInOutSine' },
-            { value: 0, duration: 500, easing: 'easeInOutSine' }
-        ],
+        translateY: [ { value: -8, duration: 500, easing: 'easeInOutSine' }, { value: 0, duration: 500, easing: 'easeInOutSine' } ],
         loop: true,
-        delay: anime.stagger(200) // Décale le saut de chaque perso
+        delay: anime.stagger(200)
     });
 };
 
 const stopExpedition = () => {
-    console.log("Stop !");
-    // Ici tu ajouteras la logique pour arrêter le run dans le store
+    router.push({
+        path: '/expedition-summary',
+        query: {
+            tier: infiniteTierInfo.value.tier,
+            damage: totalDamageDealt.value
+        }
+    });
 };
 
+// --- LIFECYCLE ---
 onMounted(async () => {
-    // 1. Timer
+    // Boucle de jeu (1 seconde)
     timerInterval = setInterval(() => {
         secondsElapsed.value++;
+        
+        if (finalDPS.value > 0) {
+            totalDamageDealt.value += finalDPS.value;
+        }
     }, 1000);
 
-    // 2. Charger les persos si pas déjà fait
-    if (!characterStore.hasCharacters) {
-        await characterStore.fetchCharacters();
-    }
+    // FIX MAJEUR : On force le chargement avec TRUE pour récupérer les items et leurs stats
+    // Même si les persos sont déjà là, on veut être sûr d'avoir les items à jour.
+    await characterStore.fetchCharacters(true);
 
-    // 3. Lancer l'animation une fois que le DOM est prêt
-    // nextTick assure que le v-for a fini d'afficher les images
+    // Lancement animations après chargement des données
     await nextTick();
-    if (characters.value.length > 0) {
+    if (formattedCharacters.value.length > 0) {
         startAnimation();
     }
 });
 
-// Surveille si les persos changent (cas où le fetch prend du temps)
-watch(characters, async (newVal) => {
+watch(formattedCharacters, async (newVal) => {
     if (newVal.length > 0) {
         await nextTick();
         startAnimation();
@@ -173,7 +302,6 @@ onUnmounted(() => {
     -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 20%, transparent 100%);
 }
-
 .pixelated {
     image-rendering: pixelated;
 }
