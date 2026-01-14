@@ -68,7 +68,7 @@ import { useCharacterStore } from '~/stores/character';
 import FormPixelButton from '~/components/form/PixelButton.vue';
 import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
-definePageMeta({ layout: 'footerless' });
+definePageMeta({ layout: 'blank' });
 
 // --- CONFIGURATION ---
 const characterStore = useCharacterStore();
