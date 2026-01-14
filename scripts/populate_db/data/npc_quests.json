@@ -1,0 +1,506 @@
+[
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_description",
+    "entries": [
+      "Ah, [PlayerName]… quelle galère, je suis dans un pétrin pas possible…",
+      "J’ai poursuivi une bête rare dans le sanctuaire et elle m’a semé en montant les étages…",
+      "Je crois qu’elle s’est cachée à l’étage [DungeonThreshold]… tu pourrais m’aider à la retrouver ?"
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_complete",
+    "entries": [
+      "Tu l’as retrouvée ?! Par tous les esprits de la forêt… j’te jure que je la laisserai plus jamais me ridiculiser comme ça.",
+      "Merci, [PlayerName]. Sans toi, j’aurais dû prétendre qu’elle s’était “volatilisée”.",
+      "À croire que je commence à me laisser aller, si je suis même plus capable de pister tout seul un animal."
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_description",
+    "entries": [
+      "Hey [PlayerName]… tu sais que j’aime essayer des trucs nouveaux… peut-être même un peu trop.",
+      "J’ai voulu tester un piège expérimental et… j’ai oublié où je l’ai posé dans le sanctuaire. Les monstres sont arrivés et je suis parti précipitamment",
+      "Tu pourrais vérifier l’étage [DungeonThreshold] ? J’avoue que j’ai un peu peur d’y retomber dessus comme un idiot."
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_complete",
+    "entries": [
+      "Oh… tu l’as retrouvé. Et t’as réussi à pas te le prendre sur le pied ?",
+      "T’es officiellement plus malin que moi… ce qui, ok, met pas la barre très haut, mais quand même. Merci [PlayerName].",
+      "Et si un jour je dis devant toi que j’ai envie de tester un prototype de piège dans un sanctuaire, attrape moi tout de suite par le col. Ça nous fera gagner du temps à tous les deux."
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName] ! Tu tombes pile quand il faut !",
+      "J’avais envie de laisser mon chien flairer une piste “juste pour voir où ça mène”… et maintenant je ne sais plus où il est..",
+      "Tu peux suivre son dernier trajet ? Promis, je ferai plus attention à où il part la prochaine fois."
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_complete",
+    "entries": [
+      "Merci [PlayerName]. Tu l’as retrouvé mon champion ! Regarde-moi ça… tout fier, comme si c’était lui qui t’avait retrouvé.",
+      "Je crois que j’oublie parfois que c’est pas un guide spirituel, juste un chien qui suit des odeurs bizarres.",
+      "Merci encore [PlayerName], je suis content de voir que vous vous entendiez bien tous les deux !"
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_description",
+    "entries": [
+      "Ah, [PlayerName]… je suis vraiment incorrigible.",
+      "J’ai voulu emprunter un raccourci “mystérieux”… et mon carquois a dû tomber en route.",
+      "Tu pourrais refaire le chemin ? J’aimerais éviter de fouiller la forêt pendant trois jours."
+    ]
+  },
+  {
+    "npc_name": "Garen Fouldier",
+    "type": "quest_complete",
+    "entries": [
+      "Oh merci… tu viens de me sauver trois jours de marche, deux crises de nerfs et probablement une entorse.",
+      "J’sais pas comment j’ai fait pour pas l’entendre tomber… J’te dois une fière chandelle, [PlayerName].",
+      "Et si un jour je te reparle de prendre un raccourci alors pousse moi directement dans la direction opposée. Et de toute tes forces."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], t’arrives pile quand je suis en train de me demander si y’aurait pas quelqu’un pour m’aider.",
+      "J’ai égaré un schéma de moulin, un de mes plans les plus précis, à l’étage [DungeonThreshold] du sanctuaire. Si les monstres le déchirent ou le piétinent, je devrai tout recommencer depuis zéro.",
+      "Va le récupérer… si tu arrives à ne pas le faire tomber comme un enfant."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_complete",
+    "entries": [
+      "[PlayerName]… oh, tu l’as retrouvé. Je… hmpf",
+      "Bien sûr que je savais que tu t’en sortirais. Je t’avais juste demandé ça pour me débarrasser cinq minutes, hein.",
+      "Bon, merci. Vraiment. Mais si tu répètes que j’ai dit ça, je t’enferme dans un silo."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], t’es prêt à faire quelque chose d’utile ou tu vas encore juste papoter ?",
+      "J’ai laissé tomber mon rouleau à pâtisserie renforcé, indispensable pour écraser certains grains rares. Il est tombé à l’étage [DungeonThreshold]. Les monstres ne se contenteront pas de le regarder, crois-moi.",
+      "Récupère-le avant qu’il ne devienne un casse-dent pour eux… et un vrai souci pour moi."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_complete",
+    "entries": [
+      "Ah, ma jauge à engrenages… intacte. Enfin, “intacte”… pour toi, c’est déjà un miracle. Tss.",
+      "Écoute… merci. Ça m’aurait pris des heures d’en refaire une. Et j’ai beau râler, j’aime pas laisser les choses en plan.",
+      "Allez, file. Avant que je devienne encore plus sentimental."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], parfait ! Enfin quelqu’un qui pourrait éviter que je hurle après le vent.",
+      "Il y a une herbe aromatique rare, qu’on ne trouve qu’au bord du vieux marais. Parfaite pour mon pain d’épices, mais apparemment les créatures aiment aussi l’odeur.",
+      "Va la cueillir et ramène-la entière… sinon tu serais vraiment aussi inutile que tous les autres."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_complete",
+    "entries": [
+      "Ah, tu l’as trouvée… la foutue herbe. Je commençais à croire qu’elle avait disparu comme la patience de Joric quand je parle.",
+      "Je râle, oui, mais cette herbe-là, c’est la seule qui donne à mes pains ce goût que ma mère adorait. C’est pas juste de la cuisine… c’est un souvenir.",
+      "Hé… merci, [PlayerName]. Allez, dégage avant que je t’offre un sourire. Je veux pas ruiner ma réputation."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], tiens-toi droit et écoute bien, ça va pas être long mais ça va demander un peu de jugeote.",
+      "Mon moulin miniature d’entraînement, un vieux jouet que je conserve pour les apprentis du quartier, a été emporté par le vent jusqu’au chemin entre le village et les bois.",
+      "Récupère-le avant qu’il ne finisse en dentelle pour monstres. Et fais attention… c’est pas juste du bois, c’est un morceau de ma réputation."
+    ]
+  },
+  {
+    "npc_name": "Toben Montivert",
+    "type": "quest_complete",
+    "entries": [
+      "… Tu l’as ramené. Je pensais pas que… enfin. Je m’imaginais pas le revoir un jour.",
+      "Ça compte beaucoup pour moi, [PlayerName]. Plus que j’le dirai jamais. Alors… merci.",
+      "Et si tu dis que j’ai les yeux humides, je te jette dans la première meule qui tourne."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], j’ai un service à te demander… et crois-moi, si je pouvais encore courir là-dedans, je le ferais moi-même.",
+      "J’ai laissé tomber un prototype d’une nouvelle lame. Elle a du tomber à l’étage [DungeonThreshold] du sanctuaire. Si un monstre l’abime je sais pas si je pourrais la reconstruire.",
+      "Je t’en prie aide moi à la récupérer !"
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_complete",
+    "entries": [
+      "…Elle est entière. Par le feu de mon enclume, j’y croyais plus.",
+      "Tu m’as évité un mois de jurons et deux semaines de nuits blanches.",
+      "Merci, [PlayerName]. Tu viens de sauver une arme… et mes nerfs."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], approche. J’ai besoin de quelqu’un qui n’a pas les mains qui tremblent.",
+      "Une goupille de serrage de mon enclume mobile a glissé pendant que je travaillais… j’ai été surpris par un monstre qui me chargeait.",
+      "Elle est tombée à l’étage [DungeonThreshold]. Ramène-la-moi. Une arme mal forgée peut tuer son porteur, et je refuse ça."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_complete",
+    "entries": [
+      "Ah ! La voilà cette goupille. Je reconnaîtrais cette petite peste entre mille.",
+      "Tu sais, une enclume qui bouge pas droit, c’est un bras cassé assuré.",
+      "Merci. Grâce à toi, je vais pouvoir recommencer à frapper sans craindre de m’arracher l’épaule."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], voilà une tâche qui demande de la poigne.",
+      "On m’a signalé la présence de ferrite vive, un minerai rare qui pulse comme un cœur encore tiède. Parfait pour renforcer une lame… mais dangereux si on ne sait pas l’extraire.",
+      "Va sur le site et récupère un fragment intact. Pas trop gros : si ça se met à vibrer dans ton sac, tu cours."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_complete",
+    "entries": [
+      "T’as fait du bon boulot. Il pulse encore, c’est parfait. Doucement, doucement… voilà.",
+      "Avec ça, je vais pouvoir forger une lame qui chante comme un cœur en colère.",
+      "Merci, [PlayerName]. Je savais que t’avais la poigne pour ça."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], te voilà. Bien. J’ai quelque chose de… délicat.",
+      "Un ancien rivet d’obsidacier, vestige d’une arme royale, aurait été aperçu dans une ruine au nord. Un éclat minuscule, mais d’une valeur inestimable pour mes recherches.",
+      "Trouve-le et ramène-le-moi. Et surtout… ne le fais pas tomber. Ce genre de pièce disparaît à la moindre secousse."
+    ]
+  },
+  {
+    "npc_name": "Denrick Largent",
+    "type": "quest_complete",
+    "entries": [
+      "Par les braises du premier forgeron… tu l’as vraiment trouvé.",
+      "Regarde-moi cette beauté. Un vrai morceau d’histoire.",
+      "Merci. Tu viens de me donner une raison de bosser trois nuits d’affilée, et j’suis même content de le faire."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName] ! Hé, t’es dispo une minute ? J’vais avoir besoin d’une main qui a pas peur de se mouiller.",
+      "J’ai perdu ma canne à pêche fétiche. Elle est tombé au [DungeonThreshold]ème étage du sanctuaire quand j’ai trébuché comme un idiot. J’y tiens énormément..",
+      "Ramène-la-moi, je t’en prie ? Et fais gaffe… ces couloirs avalent les choses plus vite que la mer avale un secret."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Ah, tu me rapportes ma canne à pêche ? Eh ben… tu m’enlèves une belle épine du pied.",
+      "J’aime pas demander de l’aide, mais parfois j’arrive à être moins têtu que l’océan.",
+      "Merci, vraiment. Je te revaudrai ça. Peut-être une balade au coucher du soleil… ou juste un bon ragoût. À toi de choisir."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName] ! Par ici ! Et sois indulgent, je vais avoir l’air d’un pêcheur complètement à la ramasse.",
+      "J’avais fabriqué un appât spécial, un truc expérimental… très fragile. Sauf qu’un monstre m’a surpris pendant mes tests, et plop : j’ai l’impression que l’appât n’attire pas que les poissons finalement. J’ai pas eu le courage de rester plus longtemps là-dedans.",
+      "Si tu m’aides à le retrouver, je t’en prie… évite de le casser. Je tiens à mes idées, même les plus bancales."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Regarde-moi ça ! Ils sont parfaits ! Avec ça, je vais pouvoir attraper les poissons les plus têtus du coin.",
+      "Je savais que je pouvais compter sur toi. Tu ne t’en rends peut-être pas compte, mais tu m’aides plus que tu ne crois.",
+      "Et fais gaffe… c’est fragile. Comme les confidences."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], ah ! Ça tombe bien, j’ai senti la mer me souffler quelque chose.",
+      "Il existe une algue rare, la merliane profonde, j’ai entendu une rumeur comme quoi quelqu’un en aurait fait tomber pas trop loin d’ici.",
+      "Va m’en chercher un bouquet. Je… j’en ai besoin pour un plat qui me rappelle quelqu’un que j’ai jamais connu. On pourra le déguster ensemble !"
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Alors… tu l’as trouvé ? …",
+      "Regarde-moi ça ! Elle est parfaite ! Merci, vraiment.",
+      "Et puis, entre nous, ça fait du bien de me sentir moins seul dans toutce bazar."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], viens voir. J’aurais un service à te demander.",
+      "Quelqu’un m’a parlé d’une pierre spécial. On l’appelle “le cœur de l’océan”. On dit qu’elle apaise l’esprit.",
+      "Ramène-la-moi. Tu m’aiderais vraiment énormément. Je t’en serai éternellement reconnaissant."
+    ]
+  },
+  {
+    "npc_name": "Marn Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Tu l’as vraiment trouvé ??",
+      "Je ne sais pas trop comment te remercier alors… je vais le dire simplement : merci.",
+      "Je ne sais pas encore si elle marche vraiment mais compte sur moi pour te tenir au courant !"
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], viens ici un instant. J’ai besoin de quelqu’un de fiable pour une tâche délicate.",
+      "Un couteau spécial que je conserve pour la communauté a été mal perdu… il a glissé à l’étage [DungeonThreshold] du sanctuaire. La lame va s’émousser si personne ne la ramasse au plus vite.",
+      "Récupère-le et ramène-le intact. Les traditions valent parfois plus que n’importe quelle épée."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Tu as été… digne. Merci.. vraiment.",
+      "Je sais que c’est pas une quête comme les autres, et je t’aurais pas demandé ça si ça n’avait pas été important.",
+      "Et si un jour t’as besoin d’une épaule, d’un toit, ou même juste d’un repas chaud, tu viens. Pas de questions."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], approche. J’aurais besoin de tes mains, et de ta discrétion.",
+      "Mon maillet de boucher, celui que j’utilise pour préparer les provisions de tout le quartier, a roulé jusqu’à l’étage [DungeonThreshold]. S’ils le cassent, c’est toute la communauté qui en pâtira.",
+      "Récupère-le. Certains outils nourrissent plus de gens qu’une armée entière."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Tu l’as retrouvé. Bien. Très bien même !",
+      "Je savais que t’en étais capable, mais ça fait plaisir à voir.",
+      "Merci, l’ami. Ça me simplifiera la vie… et ça m’évitera de me mettre en retard pour la tournée du village."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], parfait timing. Je vais avoir besoin de bras pour ça.",
+      "Il nous manque une viande rare, qu’on ne trouve que dans la vallée de l’Ombre. Les habitants comptent sur moi pour nourrir tout le monde… et je peux pas le faire seul.",
+      "Va chercher la viande et ramène-la. On nourrira notre communauté, et personne ne manquera à table ce soir."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Je n’arrive pas à le croire !",
+      "Tu as vraiment réussi à trouver cette viande ! Je n’ai fais qu’y penser, j’en ai encore l’eau à la bouche.",
+      "Viens ce soir à la maison et on pourra la goûter en avant-première !"
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], merci d’être là. J’ai quelque chose d’important pour nos jeunes apprentis.",
+      "Un ancien tablier d’initiation, symbole de passage pour les futurs bouchers, a été perdu dans les bois. Sans lui, la cérémonie ne pourra avoir lieu.",
+      "Va le récupérer et ramène-le-moi. La fierté de nos apprentis dépend de toi."
+    ]
+  },
+  {
+    "npc_name": "Bram Thobas",
+    "type": "quest_complete",
+    "entries": [
+      "Ah ! Ça, c’est du bon travail.",
+      "Ça peut te sembler inutile un simple tablier mais je t’assure que c’est plus important que ce que tu peux croire.",
+      "Grâce à toi je vais pouvoir pas perdre la face devant les apprentis. Je te le revaudrais."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], approche. J’ai besoin de quelqu’un qui ne perd pas le fil de ses plans.",
+      "Une pierre angulaire gravée, essentielle pour la stabilité d’un projet de monument, a été égarée à l’étage [DungeonThreshold] du sanctuaire. Si elle est endommagée, tout s’effondrera… littéralement.",
+      "Récupère-la intacte. Chaque angle mal positionné ici pourrait me hanter plus longtemps que mes propres erreurs passées."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_complete",
+    "entries": [
+      "Je n’arrive pas à croire que tu l’as récupéré. Et elle est presque intact en plus !",
+      "Ton aide m’a été précieuse… plus que je ne l’aurais admis il y a encore quelques années.",
+      "Et crois-moi : c’est un compliment rare venant de moi."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], je te préviens, ça demande précision et patience.",
+      "J’ai laissé tomber un compas ancien, outil de mesure essentiel pour mes plans. Il a roulé jusque l’étage [DungeonThreshold]. Sans lui, impossible de vérifier mes proportions, et je refuse de compromettre mes travaux.",
+      "Va le chercher. Une simple erreur de mesure pourrait me rappeler plus brutalement mes années perdues."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_complete",
+    "entries": [
+      "Ah… parfait. Grâce à toi je vais pouvoir vérifier les mesures !",
+      "C’est tout bon ! J’ai pu corriger les proportions.",
+      "Mmh. Heureusement que t’es là. J’avoue que ça aurait été une catastrophe sans toi."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], te voilà. J’ai besoin de quelqu’un qui comprend la valeur d’un objet précis.",
+      "Une planche d’architecture ancienne, témoin des grands chantiers de Monarque, a été perdue sur le chemin entre deux postes. Sans elle, certains savoirs seront perdus.",
+      "Ramène-la. Je tiens à ce que le patrimoine survive… et que ma propre conscience reste intacte."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_complete",
+    "entries": [
+      "Tu savais pas, mais cet objet a plus de valeur que tu ne crois.",
+      "Vraiment c’est pas juste un morceau important pour moi. C’est un vrai morceau d’histoire pour la nation.",
+      "Merci de l’avoir retrouvé… je ne sais pas ce que j’aurais pu faire sans."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName], parfait. Ton timing est exact, comme il se doit.",
+      "On m’a indiqué l’emplacement d’une argile luminescente, utilisée pour renforcer certaines fondations. Mais la zone est périlleuse, infestée de créatures. Seul quelqu’un de méthodique peut la récupérer sans la dégrader.",
+      "Va chercher un échantillon intact. Si tu échoues… je devrai refaire des mois de calculs."
+    ]
+  },
+  {
+    "npc_name": "Toren Brauvin",
+    "type": "quest_complete",
+    "entries": [
+      "Déjà de retour ? J’avoue que là tu m’impressionnes.",
+      "T’as été vraiment efficace. J’ai assez d’échantillon d’argile pour tenir pendant des mois et des mois.",
+      "Là vraiment merci [PlayerName]. Je te dois une fière chandelle."
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_description",
+    "entries": [
+      "Maitre de guilde ! Je suis tellement soulagé de te voir !",
+      "Il se peut qu’un de mes colis ait atterri malencontreusement dans le musée",
+      "Et mon boss va me passer un savon s’il apprend la catastrophe…"
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_complete",
+    "entries": [
+      "Oooooh merci, merci, merci ! Tu viens littéralement de me sauver la carrière.",
+      "Si mon chef avait appris que ça avait fini dans un sanctuaire… j’aurais été rétrogradée au tri des enveloppes moisies.",
+      "Vraiment, [PlayerName], tu es mon héros."
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_description",
+    "entries": [
+      "Par Monarque ! [PlayerName] j’ai vraiment besoin de toi !",
+      "Ne le dis à personne mais j’ai perdu une lettre de la plus haute importance..",
+      "J’ai du la faire tomber à l’étage [DungeonThreshold] du musée. Je t’en prie aide moi !"
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_complete",
+    "entries": [
+      "Tu… tu l’as retrouvée ?!",
+      "Par Monarque je te bénis ! J’étais déjà en train de rédiger ma lettre de démission dans ma tête.",
+      "Merci infiniment, [PlayerName]. Cette lettre vaut plus que mon salaire annuel…"
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName] tu tombe à pic !",
+      "Mon meilleur pigeon voyageur n’est pas rentré de sa dernière mission !",
+      "Est-ce que tu pourrais essayer de le retrouver s’il te plait ?"
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_complete",
+    "entries": [
+      "AAAAAH ! Ah, excuse-moi [PlayerName], je… je suis juste tellement soulagée.",
+      "Merci d’être allé le chercher. C’est le meilleur de mes pigeons, mais c’est aussi le plus idiot visiblement.",
+      "Et si je te dis que je vais “lui apprendre à ne plus se perdre”, rappellemoi que c’est un pigeon. Ça m’évitera de me ridiculiser."
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_description",
+    "entries": [
+      "[PlayerName] ! Heureusement que tu es là !",
+      "Tu vas rire mais j’ai peut-être égaré le tampon officiel de la poste lors de ma dernière livraison..",
+      "Je me demandais si tu pouvais faire le trajet dans l’autre sens pour essayer de le récupérer..?"
+    ]
+  },
+  {
+    "npc_name": "Malori Marnett",
+    "type": "quest_complete",
+    "entries": [
+      "Oh OUF… tu viens de sauver ma peau.",
+      "Ce truc, s’il disparaît officiellement, je dois remplir quatre formulaires, demander deux signatures, et écouter trois heures de sermons.",
+      "Merci, [PlayerName]… et si quelqu’un te demande, non, je l’ai pas laissé tomber comme une débutante. C’est tombé tout seul. Voilà. C’est mieux."
+    ]
+  }
+]
