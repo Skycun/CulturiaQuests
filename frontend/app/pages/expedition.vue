@@ -10,7 +10,7 @@
                 <h1 class="font-pixel text-6xl sm:text-7xl mb-1">{{ formattedTime }}</h1>
                 
                 <p class="font-pixel text-3xl sm:text-4xl text-white tracking-widest">
-                    Palier {{ infiniteTierInfo.tier }}
+                    Palier {{ currentTier }}
                 </p>
             </div>
 
@@ -24,7 +24,7 @@
             <div class="text-center shrink-0 max-w-[80%] z-10">
                 <p class="font-power text-gray-400 text-sm font-semibold mb-1">Actuellement :</p>
                 <h2 class="font-power text-2xl sm:text-3xl leading-tight">
-                    {{ currentExpedition.name }}
+                    {{ museumName }}
                 </h2>
                 <div v-if="globalMultiplier > 1" class="mt-2 inline-block bg-green-900/30 border border-green-500/30 px-2 py-0.5 rounded text-[10px] text-green-400 font-bold uppercase tracking-wider">
                     Bonus Synergie x{{ globalMultiplier }}
@@ -51,9 +51,10 @@
             </p>
 
             <div class="w-[90%]">
-                <FormPixelButton color="red" class="w-full" @click="stopExpedition">
-                    Arrêter l'expédition
+                <FormPixelButton color="red" class="w-full" @click="stopExpedition" :disabled="stopping">
+                    {{ stopping ? 'Arrêt en cours...' : "Arrêter l'expédition" }}
                 </FormPixelButton>
+                <p v-if="error" class="text-red-500 text-center mt-2">{{ error }}</p>
             </div>
         </section>
 
@@ -65,47 +66,45 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import anime from 'animejs';
 import { useRouter } from 'vue-router';
 import { useCharacterStore } from '~/stores/character';
+import { useRunStore } from '~/stores/run';
 import FormPixelButton from '~/components/form/PixelButton.vue';
-import { useDamageCalculator } from '~/composables/useDamageCalculator';
 
 definePageMeta({ layout: 'blank' });
 
 // --- CONFIGURATION ---
 const characterStore = useCharacterStore();
+const runStore = useRunStore();
 const config = useRuntimeConfig();
 const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
-const { calculateItemPower } = useDamageCalculator();
 const router = useRouter();
 
-// --- CONSTANTES DE JEU ---
-const BASE_DIFFICULTY = 100; 
-const SCALING_FACTOR = 1.5; 
-
-// Extension jusqu'à 24 objets (4 équipes complètes)
-const SYNERGY_BONUS = [
-    // 0 à 6 (Ta base actuelle)
-    1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0, 
-    
-    // 7 à 12 (Progression vers x4)
-    2.25, 2.5, 2.75, 3.0, 3.5, 4.0, 
-    
-    // 13 à 18 (Progression vers x8)
-    4.5, 5.0, 5.5, 6.0, 7.0, 8.0, 
-    
-    // 19 à 24 (Mode "Dieu" -> x15)
-    9.0, 10.0, 11.0, 12.0, 13.5, 15.0 
-];
-
-// --- ETAT ---
-const currentExpedition = ref({
-    name: "Musée d'art et d'histoire de Saint-Lô",
-    type: ["history", "nature"],
-});
-const museumImage = "/assets/musee.png";
-
+// --- STATE ---
 const secondsElapsed = ref(0);
-const totalDamageDealt = ref(0);
+const stopping = ref(false);
+const error = ref(null);
 let timerInterval = null;
+
+// --- COMPUTED ---
+const activeRun = computed(() => runStore.activeRun);
+
+const museumName = computed(() => {
+    const museum = activeRun.value?.museum?.data?.attributes || activeRun.value?.museum;
+    return museum?.name || "Lieu inconnu";
+});
+
+const museumImage = "/assets/musee.png"; // Placeholder or fetch from museum?
+
+const currentTier = computed(() => {
+    // Formula: floor(log(totalDamage/100) / log(1.5)) + 2
+    // totalDamage = dps * seconds
+    const dps = activeRun.value?.dps || 0;
+    const totalDamage = dps * secondsElapsed.value;
+    
+    if (totalDamage < 100) return 1;
+    
+    const tier = Math.floor(Math.log(totalDamage / 100) / Math.log(1.5)) + 2;
+    return Math.max(1, tier);
+});
 
 const formattedTime = computed(() => {
     const m = Math.floor(secondsElapsed.value / 60).toString().padStart(2, '0');
@@ -113,125 +112,29 @@ const formattedTime = computed(() => {
     return `${m}:${s}`;
 });
 
-// --- 1. PRÉPARATION DES DONNÉES ---
+// Used for display only (synergy bonus logic moved to backend dps calculation, 
+// but we keep display of characters)
 const formattedCharacters = computed(() => {
-    // Sécurité : si le store est vide, on renvoie tableau vide
     if (!characterStore.characters) return [];
-
     return characterStore.characters.map(char => {
         const c = char.attributes || char;
-        
-        // Récupération des items
-        const rawItems = c.items?.data || c.items || [];
-        
-        // FILTRAGE : On retire les items recyclés (isScrapped: true)
-        const validItems = rawItems.filter(i => {
-            const attrs = i.attributes || i;
-            return attrs.isScrapped !== true;
-        });
-        
-        const equippedItems = validItems.map(i => {
-            const itemAttr = i.attributes || i;
-            
-            // Gestion Rareté (String ou Objet)
-            let rarityStr = 'common';
-            if (typeof itemAttr.rarity === 'string') {
-                rarityStr = itemAttr.rarity;
-            } else if (itemAttr.rarity?.data?.attributes?.name) {
-                rarityStr = itemAttr.rarity.data.attributes.name;
-            } else if (itemAttr.rarity?.name) { // Strapi v5 flat
-                rarityStr = itemAttr.rarity.name;
-            }
-
-            // Gestion Tags
-            const tags = (itemAttr.tags?.data || itemAttr.tags || []).map(t => 
-                (t.attributes?.name || t.name || '').toLowerCase()
-            );
-
-            return {
-                id: i.id,
-                level: Number(itemAttr.level) || 1,
-                index_damage: Number(itemAttr.index_damage) || 0, 
-                rarity: rarityStr,
-                types: tags
-            };
-        });
-
         return {
             id: char.id,
             name: c.firstname,
-            avatar: getImageUrl(c.icon),
-            equippedItems
+            avatar: getImageUrl(c.icon)
         };
     });
 });
 
-// --- 2. CALCUL DU DPS ---
-const rawTotalDamage = computed(() => {
-    let total = 0;
-    formattedCharacters.value.forEach(char => {
-        char.equippedItems.forEach(item => {
-            total += calculateItemPower(item);
-        });
-    });
-    return total;
-});
-
-// pages/expedition.vue
-
-const globalMultiplier = computed(() => {
-    let count = 0;
-    
-    // On s'assure que 'type' est toujours un tableau
-    const expTypes = Array.isArray(currentExpedition.value.type) 
-        ? currentExpedition.value.type.map(t => t.toLowerCase())
-        : [currentExpedition.value.type.toLowerCase()];
-    
-    formattedCharacters.value.forEach(char => {
-        char.equippedItems.forEach(item => {
-            if (item.types) {
-                // ANCIENNE LOGIQUE (Mauvaise pour toi) :
-                // if (item.types.some(t => expTypes.includes(t))) count++;
-
-                // NOUVELLE LOGIQUE (Cumulatif) :
-                // On parcourt chaque tag de l'objet. 
-                // Si l'objet est "Nature" ET "Histoire", ça ajoutera 2 au compteur.
-                item.types.forEach(tag => {
-                    if (expTypes.includes(tag)) {
-                        count++;
-                    }
-                });
-            }
-        });
-    });
-    
-    // Protection pour ne pas dépasser la taille du tableau de bonus
-    const index = Math.min(count, SYNERGY_BONUS.length - 1);
-    return SYNERGY_BONUS[index];
-});
-
-const finalDPS = computed(() => {
-    return Math.floor(rawTotalDamage.value * globalMultiplier.value);
-});
-
-// --- 3. PROGRESSION PALIERS ---
-const infiniteTierInfo = computed(() => {
-    const score = totalDamageDealt.value;
-
-    if (score < BASE_DIFFICULTY) return { tier: 1 };
-
-    const tierIndex = Math.floor(Math.log(score / BASE_DIFFICULTY) / Math.log(SCALING_FACTOR));
-    return { tier: tierIndex + 2 };
-});
+// We assume Synergy is already factored into `run.dps`. 
+// If we want to display it, we'd need to re-calculate it or fetch it.
+// For now, setting to 1 or removing the badge logic if we don't know it.
+// But the user likes seeing "Bonus Synergie".
+// Ideally `run` should have `synergy_bonus` field?
+// Or we re-calculate it just for display.
+const globalMultiplier = ref(1); // Placeholder
 
 // --- HELPERS ---
-const formatNumber = (num) => {
-    if(!num) return "0";
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
-    return Math.floor(num).toString();
-};
-
 const getImageUrl = (imgData) => {
     if (!imgData) return '/assets/default-avatar.png';
     const data = imgData.data?.attributes || imgData.attributes || imgData;
@@ -241,7 +144,7 @@ const getImageUrl = (imgData) => {
     return url;
 };
 
-// --- ANIMATION ---
+// --- ACTIONS ---
 const startAnimation = () => {
     anime.remove('.anim-target');
     anime({
@@ -252,32 +155,54 @@ const startAnimation = () => {
     });
 };
 
-const stopExpedition = () => {
-    router.push({
-        path: '/expedition-summary',
-        query: {
-            tier: infiniteTierInfo.value.tier,
-            damage: totalDamageDealt.value
-        }
-    });
+const stopExpedition = async () => {
+    const run = activeRun.value;
+    if (!run) return;
+    
+    const runId = run.documentId;
+    stopping.value = true;
+    error.value = null;
+    
+    try {
+        await runStore.endExpedition(runId);
+        
+        router.push({
+            path: '/expedition-summary',
+            query: {
+                runId: runId
+            }
+        });
+    } catch (e) {
+        error.value = e.message || "Erreur à l'arrêt";
+    } finally {
+        stopping.value = false;
+    }
 };
 
 // --- LIFECYCLE ---
 onMounted(async () => {
-    // Boucle de jeu (1 seconde)
-    timerInterval = setInterval(() => {
-        secondsElapsed.value++;
-        
-        if (finalDPS.value > 0) {
-            totalDamageDealt.value += finalDPS.value;
-        }
-    }, 1000);
+    await characterStore.fetchCharacters();
+    
+    // Fetch active run
+    const run = await runStore.fetchActiveRun();
+    
+    if (!run) {
+        // No active run, redirect
+        router.push('/map');
+        return;
+    }
+    
+    // Init timer
+    const start = new Date(run.date_start).getTime();
+    
+    const updateTimer = () => {
+        const now = Date.now();
+        secondsElapsed.value = Math.floor((now - start) / 1000);
+    };
+    
+    updateTimer();
+    timerInterval = setInterval(updateTimer, 1000);
 
-    // FIX MAJEUR : On force le chargement avec TRUE pour récupérer les items et leurs stats
-    // Même si les persos sont déjà là, on veut être sûr d'avoir les items à jour.
-    await characterStore.fetchCharacters(true);
-
-    // Lancement animations après chargement des données
     await nextTick();
     if (formattedCharacters.value.length > 0) {
         startAnimation();
