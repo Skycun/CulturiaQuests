@@ -59,6 +59,7 @@
 import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
 import { useGuildStore } from '~/stores/guild'
+import { useRunStore } from '~/stores/run'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useMapInteraction } from '~/composables/useMapInteraction'
 import { calculateDistance } from '~/utils/geolocation'
@@ -75,6 +76,7 @@ definePageMeta({
 const museumStore = useMuseumStore()
 const poiStore = usePOIStore()
 const guildStore = useGuildStore()
+const runStore = useRunStore()
 
 // Composables
 const geolocation = useGeolocation({
@@ -92,6 +94,8 @@ const nearbyMuseums = ref<Museum[]>([])
 const nearbyPOIs = ref<Poi[]>([])
 const selectedItem = ref<LocationItem | null>(null)
 const isDrawerOpen = ref(false)
+const expeditionLoading = ref(false)
+const expeditionError = ref<string | null>(null)
 
 // Computed - Guild characters
 const guildCharacters = computed(() => {
@@ -148,10 +152,34 @@ function selectItem(item: LocationItem) {
   mapInteraction.flyToItem(mapRef.value, item)
 }
 
-function handleStartExpedition() {
-  console.log('Starting expedition for:', selectedItem.value)
-  // TODO: Navigate to expedition page
-  // navigateTo(`/expedition/${selectedItem.value?.documentId}`)
+async function handleStartExpedition() {
+  if (!selectedItem.value) return
+
+  const museumId = selectedItem.value.documentId
+  if (!museumId) {
+    console.error("Museum has no documentId")
+    return
+  }
+
+  expeditionLoading.value = true
+  expeditionError.value = null
+
+  try {
+    const result = await runStore.startExpedition(museumId, userLat.value, userLng.value)
+
+    if (result.questRolled) {
+      // NPC tiré → page interaction NPC avec dialogues
+      navigateTo('/npc-interaction')
+    } else {
+      // Pas de NPC → directement à l'expédition
+      navigateTo('/expedition')
+    }
+  } catch (e: any) {
+    console.error('Failed to start expedition:', e)
+    expeditionError.value = e?.error?.message || e?.message || 'Erreur lors du lancement'
+  } finally {
+    expeditionLoading.value = false
+  }
 }
 
 // Fetch nearby locations

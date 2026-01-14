@@ -5,7 +5,11 @@
 
             <div class="absolute inset-x-4 top-4 bottom-0 border-x-2 border-t-2 border-white/20 rounded-t-[50vw] pointer-events-none z-0"></div>
 
-            <div class="pt-4 pb-6 text-center px-6 z-10">
+            <div v-if="loading" class="pt-32 text-center z-10">
+                <p class="font-pixel text-2xl animate-pulse">Chargement...</p>
+            </div>
+
+            <div v-else class="pt-4 pb-6 text-center px-6 z-10 w-full">
           <h1 class="font-pixel text-4xl my-8">Expédition terminée</h1>
 
           <div class="flex items-center justify-center gap-4 mb-8">
@@ -25,6 +29,9 @@
           <div class="mb-8">
             <p class="font-power text-sm text-orange-200 mb-1">Palier atteint</p>
             <p class="font-pixel text-6xl text-white drop-shadow-lg">{{ tier }}</p>
+            <p v-if="entryUnlocked" class="text-green-400 font-bold font-pixel text-xl mt-2 animate-bounce">
+                QUÊTE RÉUSSIE !
+            </p>
           </div>
 
           <div class="flex justify-center gap-4 mb-10">
@@ -39,15 +46,18 @@
           </div>
 
           <div class="w-full">
-            <h3 class="font-power text-lg font-bold mb-4">Équipements obtenu</h3>
+            <h3 class="font-power text-lg font-bold mb-4">Équipements obtenus ({{ lootItems.length }})</h3>
             
-            <div class="grid grid-cols-4 gap-2">
+            <div v-if="lootItems.length > 0" class="grid grid-cols-4 gap-2">
                 <Items
                     v-for="(item, index) in lootItems"
                     :key="index"
                     v-bind="item"
                     class="w-full aspect-square loot-item opacity-0"
                 />
+            </div>
+            <div v-else class="text-gray-400 text-sm font-pixel">
+                Aucun équipement trouvé...
             </div>
           </div>
 
@@ -64,14 +74,14 @@
 </template>
 
 <script setup>
-import { nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import anime from 'animejs';
 import { useCharacterStore } from '~/stores/character';
+import { useGuildStore } from '~/stores/guild';
 import Items from '~/components/items.vue';
 import PixelButton from '~/components/form/PixelButton.vue'; 
 
-// 1. Cacher le layout footer global
 definePageMeta({
   layout: 'blank'
 });
@@ -79,18 +89,33 @@ definePageMeta({
 const router = useRouter();
 const route = useRoute();
 const characterStore = useCharacterStore();
+const guildStore = useGuildStore();
+const client = useStrapiClient();
 const config = useRuntimeConfig();
 const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
 
-const tier = ref(Number(route.query.tier) || 1);
-const totalDamage = ref(Number(route.query.damage) || 0);
+const runId = route.query.runId;
+const loading = ref(true);
+const run = ref(null);
+const lootItems = ref([]);
 
-const museumName = "Musée d'art et d'histoire de Saint-Lô";
-const museumImage = "/assets/musee.png";
+// --- COMPUTED ---
+const tier = computed(() => run.value?.threshold_reached || 0);
+const goldEarned = computed(() => run.value?.gold_earned || 0);
+const xpEarned = computed(() => run.value?.xp_earned || 0);
+const entryUnlocked = computed(() => run.value?.entry_unlocked || false);
 
-const goldEarned = computed(() => Math.floor(tier.value * 250 + (totalDamage.value / 100)));
-const xpEarned = computed(() => Math.floor(tier.value * 180 + (totalDamage.value / 150)));
+const museumName = computed(() => run.value?.museum?.name || run.value?.museum?.data?.attributes?.name || "Lieu inconnu");
+const museumImage = "/assets/musee.png"; // Placeholder
 
+const characters = computed(() => {
+    return characterStore.characters.map(c => {
+        const char = c.attributes || c;
+        return { id: c.id, avatar: getImageUrl(char.icon) };
+    });
+});
+
+// --- HELPERS ---
 const formatNumber = (num) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
@@ -104,37 +129,7 @@ const getImageUrl = (imgData) => {
     return url;
 };
 
-const characters = computed(() => {
-    return characterStore.characters.map(c => {
-        const char = c.attributes || c;
-        return { id: c.id, avatar: getImageUrl(char.icon) };
-    });
-});
-
-const lootItems = ref([]);
-
-const generateLoot = () => {
-    const count = Math.min(4 + Math.floor(tier.value / 2), 24); 
-    const items = [];
-    const types = ['weapon', 'helmet', 'charm']; // Tes types d'assets
-    const rarities = ['common', 'common', 'rare', 'rare', 'epic', 'legendary'];
-    
-    for(let i=0; i<count; i++) {
-        const rarityIndex = Math.min(Math.floor(Math.random() * (2 + tier.value/5)), rarities.length - 1);
-        
-        items.push({
-            id: i,
-            // Ta logique d'image spécifique
-            image: `/assets/${types[Math.floor(Math.random() * types.length)]}2.png`, 
-            rarity: rarities[rarityIndex] || 'common',
-            level: Math.floor(Math.random() * tier.value * 2) + 1,
-            index_damage: Math.floor(Math.random() * 20) + 10, 
-            types: Math.random() > 0.7 ? ['nature'] : [] 
-        });
-    }
-    lootItems.value = items;
-};
-
+// --- ANIMATION ---
 const animateLootItems = () => {
     anime({
         targets: '.loot-item',
@@ -145,17 +140,71 @@ const animateLootItems = () => {
     });
 };
 
+// --- LIFECYCLE ---
 onMounted(async () => {
+    if (!runId) {
+        router.push('/map');
+        return;
+    }
+
+    // Load characters if needed for avatar display
     if (!characterStore.hasCharacters) {
         await characterStore.fetchCharacters();
     }
-    generateLoot();
-    await nextTick();
-    animateLootItems();
+
+    try {
+        // Fetch Run Data
+        const response = await client(`/runs/${runId}`, {
+             method: 'GET',
+             params: {
+                 populate: {
+                     museum: true,
+                     items: {
+                         populate: ['icon', 'rarity', 'tags']
+                     }
+                 }
+             }
+        });
+        
+        run.value = response.data || response;
+        
+        // Process Loot
+        const rawItems = run.value.items || [];
+        const itemsList = Array.isArray(rawItems) ? rawItems : (rawItems.data || []);
+        
+        lootItems.value = itemsList.map(item => {
+             const i = item.attributes || item;
+             const rarity = i.rarity?.name || i.rarity?.data?.attributes?.name || 'common';
+             const tags = (i.tags?.data || i.tags || []).map(t => (t.name || t.attributes?.name || '').toLowerCase());
+             
+             return {
+                 id: item.id,
+                 image: getImageUrl(i.icon),
+                 rarity: rarity,
+                 level: i.level,
+                 index_damage: i.index_damage,
+                 types: tags,
+                 category: i.slot
+             };
+        });
+        
+        // Refresh Guild Stats (Gold/XP)
+        await guildStore.refetchStats();
+        
+        loading.value = false; // Set loading to false FIRST
+        await nextTick();
+        animateLootItems();
+
+    } catch (e) {
+        console.error("Error loading run summary:", e);
+        loading.value = false;
+    }
 });
 </script>
 
 <style scoped>
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.font-pixel { font-family: 'Jersey 10', sans-serif; }
+.pixelated { image-rendering: pixelated; }
 </style>

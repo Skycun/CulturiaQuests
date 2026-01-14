@@ -64,7 +64,10 @@ export default {
         'api::tag.tag.find',
         'api::tag.tag.findOne',
         'api::statistic.statistic.getSummary',
-        'api::visit.visit.openChest'
+        'api::visit.visit.openChest',
+        'api::run.run.startExpedition',
+        'api::run.run.endExpedition',
+        'api::run.run.getActiveRun'
       ];
 
       for (const action of actions) {
