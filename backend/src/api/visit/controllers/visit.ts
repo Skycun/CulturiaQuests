@@ -157,12 +157,21 @@ export default factories.createCoreController('api::visit.visit', ({ strapi }) =
       }
     }
 
-    // 6. Générer loot
+    // 6. Récupérer le maxFloor du joueur (palier maximum atteint)
+    const runs = await strapi.db.query('api::run.run').findMany({
+      where: { guild: { id: guild.id } },
+      select: ['threshold_reached']
+    });
+    const maxFloor = runs.reduce((max, run) => {
+      return run.threshold_reached && run.threshold_reached > max ? run.threshold_reached : max;
+    }, 1);
+
+    // 7. Générer loot (avec maxFloor pour le level des items)
     const { items, gold, exp } = await strapi
       .service('api::visit.visit')
-      .generateChestLoot(guild.documentId, visit.documentId);
+      .generateChestLoot(guild.documentId, visit.documentId, maxFloor);
 
-    // 7. Mettre à jour guild (gold et exp)
+    // 8. Mettre à jour guild (gold et exp)
     await strapi.documents('api::guild.guild').update({
       documentId: guild.documentId,
       data: {
@@ -171,7 +180,7 @@ export default factories.createCoreController('api::visit.visit', ({ strapi }) =
       }
     });
 
-    // 8. Mettre à jour visit
+    // 9. Mettre à jour visit
     const updatedVisit = await strapi.documents('api::visit.visit').update({
       documentId: visit.documentId,
       data: {
