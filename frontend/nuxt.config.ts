@@ -69,4 +69,11 @@ export default defineNuxtConfig({
     },
     cookieName: 'culturia_jwt',
   },
+
+  // Configuration de pinia-plugin-persistedstate
+  // Force l'utilisation de localStorage uniquement pour éviter l'erreur 431
+  // (Request Header Fields Too Large causée par des cookies trop volumineux)
+  piniaPersistedstate: {
+    storage: 'localStorage',
+  },
 })
