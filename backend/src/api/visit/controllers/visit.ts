@@ -96,12 +96,15 @@ export default factories.createCoreController('api::visit.visit', ({ strapi }) =
     // 1. Récupérer guild de l'utilisateur
     const guild = await strapi.db.query('api::guild.guild').findOne({
       where: { user: { id: user.id } },
-      select: ['id', 'documentId', 'gold', 'exp']
+      select: ['id', 'documentId', 'gold', 'exp', 'debug_mode']
     });
 
     if (!guild) {
       return ctx.notFound('Guild not found');
     }
+
+    // Debug log
+    strapi.log.info(`[DEBUG] Opening chest - Guild debug_mode: ${guild.debug_mode}`);
 
     // 2. Récupérer POI
     const poi = await strapi.documents('api::poi.poi').findOne({
@@ -113,10 +116,15 @@ export default factories.createCoreController('api::visit.visit', ({ strapi }) =
       return ctx.notFound('POI not found');
     }
 
-    // 3. Valider distance (<= 50m = 0.05 km)
-    const distance = calculateDistance(userLat, userLng, poi.lat, poi.lng);
-    if (distance > 0.05) {
-      return ctx.badRequest(`You are too far from this chest (${(distance * 1000).toFixed(0)}m). Maximum: 50m.`);
+    // 3. Valider distance (<= 50m = 0.05 km) - bypass if debug mode enabled
+    if (!guild.debug_mode) {
+      const distance = calculateDistance(userLat, userLng, poi.lat, poi.lng);
+      strapi.log.info(`[DEBUG] Distance check - distance: ${(distance * 1000).toFixed(0)}m, maximum: 50m`);
+      if (distance > 0.05) {
+        return ctx.badRequest(`You are too far from this chest (${(distance * 1000).toFixed(0)}m). Maximum: 50m.`);
+      }
+    } else {
+      strapi.log.info('[DEBUG] Distance check bypassed (debug mode enabled)');
     }
 
     // 4. Récupérer ou créer visit

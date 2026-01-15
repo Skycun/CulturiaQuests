@@ -10,6 +10,7 @@ export interface GuildAttributes {
   gold: number
   exp: number | string // Strapi BigInteger can be string in JSON
   scrap: number
+  debug_mode?: boolean
   characters?: { data: Character[] }
   items?: { data: Item[] }
   visits?: { data: Visit[] }
@@ -30,4 +31,5 @@ export interface Guild {
   gold?: number
   exp?: number | string
   scrap?: number
+  debug_mode?: boolean
 }

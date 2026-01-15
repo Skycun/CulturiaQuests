@@ -136,6 +136,38 @@ export default factories.createCoreController('api::guild.guild', ({ strapi }) =
   },
 
   /**
+   * Toggle debug mode for the guild
+   */
+  async toggleDebugMode(ctx) {
+    const user = ctx.state.user;
+    if (!user) {
+      return ctx.unauthorized('You must be logged in');
+    }
+
+    // Get user's guild
+    const guild = await strapi.db.query('api::guild.guild').findOne({
+      where: { user: { id: user.id } },
+      select: ['documentId', 'debug_mode']
+    });
+
+    if (!guild) {
+      return ctx.notFound('Guild not found');
+    }
+
+    // Toggle debug mode
+    const newDebugMode = !guild.debug_mode;
+    const updatedGuild = await strapi.documents('api::guild.guild').update({
+      documentId: guild.documentId,
+      data: {
+        debug_mode: newDebugMode
+      }
+    });
+
+    const sanitizedEntity = await this.sanitizeOutput(updatedGuild, ctx);
+    return this.transformResponse(sanitizedEntity);
+  },
+
+  /**
    * Delete guild and all associated data
    */
   async delete(ctx) {
