@@ -57,11 +57,28 @@ export default factories.createCoreService('api::run.run', ({ strapi }) => ({
     return Math.max(1, tier);
   },
 
-  calculateRewards(tier: number, totalDamage: number) {
+  calculateRewards(tier: number, totalDamage: number, elapsedSeconds: number) {
+    // Gold calculation (based on tier and damage)
     const gold = Math.floor(tier * 250 + totalDamage / 100);
-    const xp = Math.floor(tier * 180 + totalDamage / 150);
+
+    // XP calculation with Gaussian curve on time
+    // Optimal time: 5 minutes (300s), rewards decrease after that
+    const OPTIMAL_TIME = 300; // 5 minutes in seconds
+    const VARIANCE = 180; // Controls the width of the curve (3 minutes variance)
+    const BASE_XP_PER_TIER = 200; // Base XP multiplied by tier
+
+    // Gaussian function: exp(-((t - optimal)^2) / (2 * variance^2))
+    const timeDiff = elapsedSeconds - OPTIMAL_TIME;
+    const gaussianMultiplier = Math.exp(-(timeDiff * timeDiff) / (2 * VARIANCE * VARIANCE));
+
+    // XP = base_xp * tier * gaussian_multiplier
+    // Add a minimum multiplier to ensure some XP is always earned
+    const finalMultiplier = Math.max(0.1, gaussianMultiplier); // Minimum 10% of XP
+    const xp = Math.floor(BASE_XP_PER_TIER * tier * finalMultiplier);
+
+    // Item count (based on tier)
     const itemCount = Math.min(4 + Math.floor(tier / 2), 12);
-    
+
     return { gold, xp, itemCount };
   },
 
