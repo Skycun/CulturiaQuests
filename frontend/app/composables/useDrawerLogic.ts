@@ -4,16 +4,20 @@ import type { Character } from '~/types/character'
  * Composable pour la logique commune des drawers Museum/POI
  *
  * @param distanceToUser - Distance en km entre l'utilisateur et l'élément (ref réactive)
+ * @param debugMode - Mode debug activé (bypass les vérifications de distance)
  * @returns Computed properties et fonctions pour la gestion des drawers
  */
-export function useDrawerLogic(distanceToUser: Ref<number>) {
+export function useDrawerLogic(distanceToUser: Ref<number>, debugMode: Ref<boolean> = ref(false)) {
   const config = useRuntimeConfig()
 
   /**
    * Détermine si l'utilisateur est trop loin de l'élément sélectionné.
    * Seuil : 50 m (0.05 km)
+   * Bypass si le mode debug est activé
    */
   const isTooFar = computed<boolean>(() => {
+    // Si debug mode activé, on n'est jamais trop loin
+    if (debugMode.value) return false
     return distanceToUser.value > 0.05
   })
 

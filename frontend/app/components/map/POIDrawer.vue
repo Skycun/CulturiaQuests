@@ -63,7 +63,11 @@ const props = defineProps<{
   userLng: number
 }>()
 
-const { isTooFar, formattedDistance } = useDrawerLogic(toRef(props, 'distanceToUser'))
+// Get debug mode from guild store
+const guildStore = useGuildStore()
+const debugMode = computed(() => guildStore.debugMode)
+
+const { isTooFar, formattedDistance } = useDrawerLogic(toRef(props, 'distanceToUser'), debugMode)
 const { isAvailable, chestIcon, statusText } =
   useChestState(toRef(props, 'poi'))
 

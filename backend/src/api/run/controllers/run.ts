@@ -89,9 +89,12 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
     // 1. Get Guild
     const guild = await strapi.db.query('api::guild.guild').findOne({
       where: { user: user.id },
-      select: ['documentId']
+      select: ['documentId', 'debug_mode']
     });
     if (!guild) return ctx.badRequest('User has no guild');
+
+    // Debug log
+    strapi.log.info(`[DEBUG] Starting expedition - Guild debug_mode: ${guild.debug_mode}`);
 
     // 2. Fetch Museum (removed NPC check/populate)
     const museum = await strapi.documents('api::museum.museum').findOne({
@@ -100,10 +103,15 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
 
     if (!museum) return ctx.notFound('Museum not found');
 
-    // 3. Validate Distance
-    const dist = getDistanceFromLatLonInM(userLat, userLng, museum.lat, museum.lng);
-    if (dist > (museum.radius || 50)) { // default radius 50m if null
-      return ctx.badRequest('Too far from museum', { distance: dist, radius: museum.radius });
+    // 3. Validate Distance (bypass if debug mode enabled)
+    if (!guild.debug_mode) {
+      const dist = getDistanceFromLatLonInM(userLat, userLng, museum.lat, museum.lng);
+      strapi.log.info(`[DEBUG] Distance check - distance: ${dist}m, radius: ${museum.radius || 50}m`);
+      if (dist > (museum.radius || 50)) { // default radius 50m if null
+        return ctx.badRequest('Too far from museum', { distance: dist, radius: museum.radius });
+      }
+    } else {
+      strapi.log.info('[DEBUG] Distance check bypassed (debug mode enabled)');
     }
 
     // 4. Check active run

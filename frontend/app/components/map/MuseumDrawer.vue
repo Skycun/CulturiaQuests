@@ -119,7 +119,11 @@ defineEmits<{
   'start-expedition': []
 }>()
 
-const { isTooFar, formattedDistance, getCharacterIcon } = useDrawerLogic(toRef(props, 'distanceToUser'))
+// Get debug mode from guild store
+const guildStore = useGuildStore()
+const debugMode = computed(() => guildStore.debugMode)
+
+const { isTooFar, formattedDistance, getCharacterIcon } = useDrawerLogic(toRef(props, 'distanceToUser'), debugMode)
 
 // === PLACEHOLDERS - À connecter avec les vraies données plus tard ===
 

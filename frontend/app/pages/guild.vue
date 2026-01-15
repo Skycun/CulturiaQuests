@@ -55,7 +55,10 @@
                 <div class="text-gray-500 text-sm">
                     Compte actif depuis {{ statsStore.accountDays }} jours
                 </div>
-                <button 
+                <div v-if="debugMode" class="text-yellow-400 text-sm mt-1">
+                    Mode Debug activé
+                </div>
+                <button
                     class="text-gray-500 text-sm mt-2 underline hover:text-gray-300 transition-colors"
                     @click="logout"
                     >
@@ -79,12 +82,18 @@ const { logout: strapiLogout } = useStrapiAuth()
 const guildStore = useGuildStore()
 const statsStore = useStatisticsStore()
 
+// Debug mode from guild store
+const debugMode = computed(() => guildStore.debugMode)
+
 const logout = () => {
     strapiLogout()
     router.push('/')
 }
 
-onMounted(() => {
+onMounted(async () => {
+    // Fetch guild data to ensure debug_mode is up to date
+    await guildStore.fetchGuild()
+
     // Trigger calculation on mount
     statsStore.fetchStatistics()
 })

@@ -29,6 +29,10 @@
       "required": true,
       "default": 0
     },
+    "debug_mode": {
+      "type": "boolean",
+      "default": false
+    },
     "user": {
       "type": "relation",
       "relation": "oneToOne",
