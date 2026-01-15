@@ -3,7 +3,7 @@
     <!-- Card Musée -->
     <div class="bg-white p-4 rounded-2xl grid grid-cols-2 gap-2">
       <img
-        :src="`/assets/map/museum/${museum.tags[0] || 'Art'}.png`"
+        :src="`/assets/map/museum/${firstTag}.png`"
         :alt="museum.name"
         class="w-full h-36 object-contain"
       />
@@ -16,7 +16,7 @@
         </div>
         <div class="flex flex-row-reverse gap-2 flex-wrap">
           <TagCategory
-            v-for="tag in museum.tags"
+            v-for="tag in museumTagsDisplay"
             :key="tag"
             variant="outline"
             :category="tag"
@@ -24,18 +24,7 @@
         </div>
       </div>
     </div>
-
-    <!-- Personnages guilde -->
-    <div class="flex flex-row justify-evenly">
-      <div v-for="char in guildCharacters" :key="char.id" class="bg-white rounded-2xl h-20 w-20">
-        <img
-          :src="getCharacterIcon(char)"
-          class="object-contain"
-          alt="Character icon h-20 w-20"
-        />
-      </div>
-    </div>
-
+    
     <!-- Stats & Synergies -->
     <div class="bg-white p-4 rounded-2xl space-y-3">
       <!-- DPS Total -->
@@ -48,15 +37,13 @@
       <div v-if="activeSynergies.length > 0" class="border-t pt-3">
         <p class="font-pixel text-sm text-gray-700 mb-2">Synergies actives</p>
         <div class="flex flex-wrap gap-2">
-          <div
+          <MapSynergyBadge
             v-for="synergy in activeSynergies"
             :key="synergy.tag"
-            class="flex items-center gap-1 bg-gradient-to-r from-indigo-50 to-purple-50 px-2 py-1 rounded-lg border border-indigo-200"
-          >
-            <span class="text-sm">{{ synergy.icon }}</span>
-            <span class="font-onest text-xs font-medium text-indigo-700">{{ synergy.tag }}</span>
-            <span class="font-pixel text-xs text-green-600">+{{ synergy.bonus }}%</span>
-          </div>
+            :tag="synergy.tag"
+            :icon="synergy.icon"
+            :count="synergy.bonus"
+          />
         </div>
       </div>
 
@@ -100,6 +87,9 @@
 <script setup lang="ts">
 import type { Museum } from '~/types/museum'
 import type { Character } from '~/types/character'
+import { useGuildStore } from '~/stores/guild'
+import { useInventoryStore } from '~/stores/inventory'
+import { useDamageCalculator } from '~/composables/useDamageCalculator'
 
 /**
  * Composant d'affichage du drawer pour un musée sélectionné.
@@ -123,9 +113,13 @@ defineEmits<{
 const guildStore = useGuildStore()
 const debugMode = computed(() => guildStore.debugMode)
 
-const { isTooFar, formattedDistance, getCharacterIcon } = useDrawerLogic(toRef(props, 'distanceToUser'), debugMode)
+// Get inventory store for items
+const inventoryStore = useInventoryStore()
 
-// === PLACEHOLDERS - À connecter avec les vraies données plus tard ===
+// Get damage calculator
+const { calculateItemPower } = useDamageCalculator()
+
+const { isTooFar, formattedDistance, getCharacterIcon } = useDrawerLogic(toRef(props, 'distanceToUser'), debugMode)
 
 /** Map des icônes par catégorie de tag */
 const tagIcons: Record<string, string> = {
@@ -138,43 +132,161 @@ const tagIcons: Record<string, string> = {
 }
 
 /**
- * Calcule le DPS total de l'équipe (placeholder)
- * TODO: Calculer à partir des stats réelles des personnages
+ * Helper pour extraire les tags d'un item en gérant les différentes structures Strapi
  */
-const totalDPS = computed(() => {
-  const baseDPS = props.guildCharacters.length * 500
-  const synergyBonus = activeSynergies.value.reduce((acc, s) => acc + s.bonus, 0)
-  return Math.round(baseDPS * (1 + (synergyBonus + museumBonus.value) / 100))
+const getItemTags = (item: any): string[] => {
+  const tags = item.tags || item.attributes?.tags
+  if (!tags) return []
+
+  const tagData = tags.data || tags
+  if (!Array.isArray(tagData)) return []
+
+  return tagData.map((tag: any) => {
+    const name = tag.name || tag.attributes?.name
+    return name?.toLowerCase() || ''
+  }).filter((name: string) => name !== '')
+}
+
+/**
+ * Helper pour extraire les tags du musée (pour l'affichage)
+ */
+const museumTagsDisplay = computed(() => {
+  const tags = props.museum.tags || props.museum.attributes?.tags
+  if (!tags) return []
+
+  const tagData = tags.data || tags
+  if (!Array.isArray(tagData)) return []
+
+  return tagData.map((tag: any) => {
+    return tag.name || tag.attributes?.name || tag
+  }).filter((name: string) => name)
 })
 
 /**
- * Détecte les synergies actives basées sur les tags des personnages (placeholder)
- * TODO: Récupérer les vrais tags des personnages depuis leurs données
+ * Premier tag du musée pour l'image
+ */
+const firstTag = computed(() => {
+  return museumTagsDisplay.value[0] || 'Art'
+})
+
+/**
+ * Helper pour extraire les tags du musée en lowercase (pour la comparaison)
+ */
+const museumTags = computed(() => {
+  return museumTagsDisplay.value.map((tag: string) => tag.toLowerCase())
+})
+
+/**
+ * Récupère tous les items équipés par les personnages de la guilde
+ */
+const guildItems = computed(() => {
+  const allItems = inventoryStore.items
+  const characterIds = props.guildCharacters.map(c => c.id)
+
+  return allItems.filter(item => {
+    const charId = item.character?.id || item.attributes?.character?.data?.id
+    return charId && characterIds.includes(charId)
+  })
+})
+
+/**
+ * Calcule le DPS brut total de tous les items de la guilde
+ */
+const rawTotalDPS = computed(() => {
+  return guildItems.value.reduce((total, item) => {
+    return total + calculateItemPower(item)
+  }, 0)
+})
+
+/**
+ * Compte le nombre d'items dont les tags correspondent aux tags du musée
+ */
+const matchingItemsCount = computed(() => {
+  if (museumTags.value.length === 0) return 0
+
+  let count = 0
+  for (const item of guildItems.value) {
+    const itemTags = getItemTags(item)
+    // Pour chaque item, vérifier si au moins un de ses tags correspond à un tag du musée
+    const hasMatch = itemTags.some(itemTag => museumTags.value.includes(itemTag))
+    if (hasMatch) count++
+  }
+
+  return count
+})
+
+/**
+ * Tableau des bonus de synergie selon le nombre d'items correspondants
+ */
+const SYNERGY_BONUS = [
+  1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0,
+  2.25, 2.5, 2.75, 3.0, 3.5, 4.0,
+  4.5, 5.0, 5.5, 6.0, 7.0, 8.0,
+  9.0, 10.0, 11.0, 12.0, 13.5, 15.0
+]
+
+/**
+ * Multiplicateur global basé sur le nombre d'items correspondants
+ */
+const globalMultiplier = computed(() => {
+  const index = Math.min(matchingItemsCount.value, SYNERGY_BONUS.length - 1)
+  return SYNERGY_BONUS[index]
+})
+
+/**
+ * Calcule le DPS total avec le multiplicateur de synergie
+ */
+const totalDPS = computed(() => {
+  return Math.floor(rawTotalDPS.value * globalMultiplier.value)
+})
+
+/**
+ * Détecte les synergies actives basées sur les tags des items
  */
 const activeSynergies = computed(() => {
-  // Placeholder: simule des synergies basées sur le nombre de personnages
+  if (museumTags.value.length === 0) return []
+
+  // Compter les items par tag du musée
+  const tagCounts: Record<string, number> = {}
+
+  for (const museumTag of museumTags.value) {
+    tagCounts[museumTag] = 0
+  }
+
+  for (const item of guildItems.value) {
+    const itemTags = getItemTags(item)
+    for (const itemTag of itemTags) {
+      if (tagCounts[itemTag] !== undefined) {
+        tagCounts[itemTag]++
+      }
+    }
+  }
+
+  // Créer les synergies pour chaque tag avec au moins 1 item
   const synergies: Array<{ tag: string; icon: string; bonus: number }> = []
 
-  // Exemple: si on a au moins 2 personnages, on active une synergie fictive
-  if (props.guildCharacters.length >= 2) {
-    synergies.push({ tag: 'Duo', icon: '🤝', bonus: 10 })
-  }
-  if (props.guildCharacters.length >= 3) {
-    synergies.push({ tag: 'Trio', icon: '⚔️', bonus: 15 })
+  for (const [tag, count] of Object.entries(tagCounts)) {
+    if (count > 0) {
+      // Trouver le tag original avec la bonne casse
+      const originalTag = museumTagsDisplay.value.find((t: string) => t.toLowerCase() === tag) || tag
+      const icon = tagIcons[originalTag] || '🏷️'
+
+      synergies.push({
+        tag: originalTag,
+        icon,
+        bonus: count // Affiche le nombre d'items pour ce tag
+      })
+    }
   }
 
   return synergies
 })
 
 /**
- * Calcule le bonus si les personnages matchent le thème du musée (placeholder)
- * TODO: Comparer les tags des personnages avec les tags du musée
+ * Calcule le bonus musée en pourcentage
  */
 const museumBonus = computed(() => {
-  // Placeholder: bonus fictif si le musée a des tags
-  if (props.museum.tags && props.museum.tags.length > 0) {
-    return 5 * props.museum.tags.length
-  }
-  return 0
+  if (globalMultiplier.value <= 1) return 0
+  return Math.round((globalMultiplier.value - 1) * 100)
 })
 </script>
