@@ -205,7 +205,7 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
 
     const runService = strapi.service('api::run.run');
     const tier = runService.calculateTierFromDamage(totalDamage);
-    const { gold, xp, itemCount } = runService.calculateRewards(tier, totalDamage);
+    const { gold, xp, itemCount } = runService.calculateRewards(tier, totalDamage, elapsedSeconds);
 
     // 3. Generate Loot
     const itemService = strapi.service('api::item.item');
