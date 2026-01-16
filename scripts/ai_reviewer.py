@@ -7,14 +7,39 @@ from openai import OpenAI # type: ignore
 import json
 from typing import List, Optional
 from pydantic import BaseModel, ValidationError, Field, field_validator
+from github import Github, GithubException
 
 # --- CONFIGURATION ---
 MODEL_NAME = "gpt-5.1-codex-mini"
 MAX_CONTENT_LENGTH = 80000  # Augmenté car les diffs sont plus compacts que le contenu complet
 MAX_FILES_ANALYZED = 50
 
+# Patterns de fichiers à exclure de l'analyse
+EXCLUDED_PATTERNS = [
+    'package-lock.json',
+    'yarn.lock',
+    'pnpm-lock.yaml',
+    '*.min.js',
+    '*.min.css',
+    '*.bundle.js',
+    'dist/',
+    'build/',
+    'node_modules/',
+    '.nuxt/',
+    '.output/',
+    'coverage/',
+    '.next/',
+    '*.map',
+    '*.generated.',
+]
+
 DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK_URL")
 API_KEY = os.environ.get("OPENAI_API_KEY")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
+GITHUB_EVENT_NAME = os.environ.get("GITHUB_EVENT_NAME")
+GITHUB_BASE_REF = os.environ.get("GITHUB_BASE_REF")
+GITHUB_REPOSITORY = os.environ.get("GITHUB_REPOSITORY")
+GITHUB_PR_NUMBER = os.environ.get("GITHUB_PR_NUMBER")
 
 # Mapping des auteurs Git vers les IDs Discord
 AUTHOR_DISCORD_MAP = {
@@ -55,17 +80,61 @@ class ReviewReport(BaseModel):
         # Supprime les caractères potentiellement problématiques
         return v.replace('`', '').replace('*', '').strip()
 
+def should_analyze_file(filepath: str) -> bool:
+    """Vérifie si un fichier doit être analysé (filtre les fichiers exclus)"""
+    # Vérifie si le fichier existe
+    if not os.path.exists(filepath):
+        return False
+
+    # Vérifie les patterns d'exclusion
+    for pattern in EXCLUDED_PATTERNS:
+        # Pattern avec wildcard
+        if '*' in pattern:
+            extension = pattern.replace('*', '')
+            if filepath.endswith(extension):
+                return False
+        # Pattern de dossier
+        elif pattern.endswith('/'):
+            if pattern.rstrip('/') in filepath.split(os.sep):
+                return False
+        # Pattern exact
+        elif pattern in filepath:
+            return False
+
+    # Vérifie les extensions valides
+    valid_extensions = ('.php', '.vue', '.ts', '.js', '.yaml', '.yml', '.css', '.scss', '.py')
+    return filepath.endswith(valid_extensions)
+
 def get_changed_files():
-    """Récupère la liste des fichiers modifiés dans le dernier commit"""
+    """Récupère la liste des fichiers modifiés (contexte PR ou push)"""
     try:
-        # On compare le HEAD avec le commit précédent
-        result = subprocess.run(
-            ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
-            capture_output=True, text=True, check=True
-        )
+        is_pr = GITHUB_EVENT_NAME == "pull_request"
+
+        if is_pr and GITHUB_BASE_REF:
+            # Pour une PR, comparer avec la branche de base
+            print(f"🔀 Contexte: Pull Request (base: {GITHUB_BASE_REF})")
+            base_branch = f"origin/{GITHUB_BASE_REF}"
+            result = subprocess.run(
+                ["git", "diff", "--name-only", base_branch, "HEAD"],
+                capture_output=True, text=True, check=True
+            )
+        else:
+            # Pour un push, comparer avec le commit précédent
+            print("📤 Contexte: Push direct")
+            result = subprocess.run(
+                ["git", "diff", "--name-only", "HEAD~1", "HEAD"],
+                capture_output=True, text=True, check=True
+            )
+
         files = result.stdout.strip().split('\n')
-        # On ne garde que les fichiers de code pertinents
-        valid_files = [f for f in files if f.endswith(('.php', '.vue', '.ts', '.js', '.yaml', '.yml', '.css', '.py')) and os.path.exists(f)]
+        files = [f for f in files if f]  # Supprime les lignes vides
+
+        # Applique les filtres intelligents
+        valid_files = [f for f in files if should_analyze_file(f)]
+
+        excluded_count = len(files) - len(valid_files)
+        if excluded_count > 0:
+            print(f"📋 {excluded_count} fichier(s) exclu(s) par les filtres")
 
         if len(valid_files) > MAX_FILES_ANALYZED:
             print(f"⚠️ Trop de fichiers modifiés ({len(valid_files)}). Limitation à {MAX_FILES_ANALYZED} fichiers.")
@@ -77,12 +146,21 @@ def get_changed_files():
         return []
 
 def get_file_diff(filepath: str) -> str:
-    """Récupère le diff d'un fichier spécifique"""
+    """Récupère le diff d'un fichier spécifique (contexte PR ou push)"""
     try:
-        result = subprocess.run(
-            ["git", "diff", "HEAD~1", "HEAD", "--", filepath],
-            capture_output=True, text=True, check=True
-        )
+        is_pr = GITHUB_EVENT_NAME == "pull_request"
+
+        if is_pr and GITHUB_BASE_REF:
+            base_branch = f"origin/{GITHUB_BASE_REF}"
+            result = subprocess.run(
+                ["git", "diff", base_branch, "HEAD", "--", filepath],
+                capture_output=True, text=True, check=True
+            )
+        else:
+            result = subprocess.run(
+                ["git", "diff", "HEAD~1", "HEAD", "--", filepath],
+                capture_output=True, text=True, check=True
+            )
         return result.stdout
     except subprocess.CalledProcessError as e:
         print(f"⚠️ Erreur lors de la récupération du diff pour {filepath}: {e}")
@@ -91,10 +169,20 @@ def get_file_diff(filepath: str) -> str:
 def get_file_stats(filepath: str) -> dict:
     """Récupère les statistiques d'un fichier (lignes ajoutées/supprimées)"""
     try:
-        result = subprocess.run(
-            ["git", "diff", "--numstat", "HEAD~1", "HEAD", "--", filepath],
-            capture_output=True, text=True, check=True
-        )
+        is_pr = GITHUB_EVENT_NAME == "pull_request"
+
+        if is_pr and GITHUB_BASE_REF:
+            base_branch = f"origin/{GITHUB_BASE_REF}"
+            result = subprocess.run(
+                ["git", "diff", "--numstat", base_branch, "HEAD", "--", filepath],
+                capture_output=True, text=True, check=True
+            )
+        else:
+            result = subprocess.run(
+                ["git", "diff", "--numstat", "HEAD~1", "HEAD", "--", filepath],
+                capture_output=True, text=True, check=True
+            )
+
         stats = result.stdout.strip().split('\t')
         if len(stats) >= 2:
             return {
@@ -366,6 +454,100 @@ def send_discord_notification(report_json: str, commit_hash: str, commit_message
         print(f"❌ Erreur inattendue lors de l'envoi Discord: {e}")
         return False
 
+def post_github_pr_comment(report_json: str, change_context: str = "") -> bool:
+    """Poste un commentaire de review sur la Pull Request GitHub"""
+    try:
+        # Vérifie si on est dans le contexte d'une PR
+        if GITHUB_EVENT_NAME != "pull_request" or not GITHUB_PR_NUMBER:
+            print("ℹ️ Pas de PR détectée, skip du commentaire GitHub")
+            return False
+
+        if not GITHUB_TOKEN or not GITHUB_REPOSITORY:
+            print("⚠️ GITHUB_TOKEN ou GITHUB_REPOSITORY manquant")
+            return False
+
+        # Nettoyage et parsing du JSON
+        cleaned_json = report_json.replace("```json", "").replace("```", "").strip()
+        start_idx = cleaned_json.find('{')
+        end_idx = cleaned_json.rfind('}')
+
+        if start_idx != -1 and end_idx != -1:
+            cleaned_json = cleaned_json[start_idx:end_idx+1]
+
+        try:
+            raw_data = json.loads(cleaned_json)
+            validated_report = ReviewReport(**raw_data)
+            data = validated_report.model_dump()
+        except (json.JSONDecodeError, ValidationError) as e:
+            print(f"❌ JSON invalide pour GitHub: {e}")
+            return False
+
+        # Connexion à GitHub
+        g = Github(GITHUB_TOKEN)
+        repo = g.get_repo(GITHUB_REPOSITORY)
+        pr = repo.get_pull(int(GITHUB_PR_NUMBER))
+
+        # Construction du commentaire
+        score = data['score_global']
+
+        # Emoji selon le score
+        if score >= 16:
+            emoji = "🌟"
+        elif score >= 13:
+            emoji = "✅"
+        elif score >= 10:
+            emoji = "⚠️"
+        else:
+            emoji = "🔴"
+
+        # Barre de progression visuelle
+        progress_bar = "█" * (score // 2) + "░" * (10 - score // 2)
+
+        points_forts = "\n".join([f"- ✅ {p}" for p in data['points_forts'][:5]])
+        points_faibles = "\n".join([f"- ⚠️ {p}" for p in data['points_faibles'][:5]])
+
+        comment_body = f"""## {emoji} AI Code Review - {score}/20
+
+{progress_bar} `{score}/20`
+
+### 📊 Détails de l'évaluation
+
+| Critère | Score |
+|---------|-------|
+| 🧠 SOLID | {data['details']['SOLID']}/20 |
+| 👀 Clarté | {data['details']['Clarte']}/20 |
+| 🛡️ Sécurité | {data['details']['Securite']}/20 |
+| ⚡ Performance | {data['details']['Performance']}/20 |
+
+### 📝 Résumé
+{data['resume']}
+
+### ✅ Points forts
+{points_forts or "- Aucun point fort identifié"}
+
+### ⚠️ Points à améliorer
+{points_faibles or "- Aucun point faible identifié"}
+
+### 💡 Conseil du mentor
+{data['conseil_mentor']}
+
+---
+📦 {change_context}
+🤖 Analyse par {MODEL_NAME} • [CulturiaQuests CI/CD](https://github.com/{GITHUB_REPOSITORY}/actions)
+"""
+
+        # Poste le commentaire
+        pr.create_issue_comment(comment_body)
+        print(f"✅ Commentaire posté sur PR #{GITHUB_PR_NUMBER}")
+        return True
+
+    except GithubException as e:
+        print(f"❌ Erreur GitHub API: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Erreur inattendue lors du posting GitHub: {e}")
+        return False
+
 if __name__ == "__main__":
     print("="*60)
     print("🤖 AI Code Reviewer - CulturiaQuests")
@@ -473,18 +655,35 @@ Analyse les changements ci-dessous (format diff git).
     report = analyze_code(content_to_analyze)
 
     if report:
-        # Ajout du contexte des changements pour la notification Discord
+        # Ajout du contexte des changements pour les notifications
         change_context = f"{len(changed_files)} fichier(s) • +{total_added}/-{total_deleted} lignes"
-        success = send_discord_notification(report, commit_hash, commit_message, commit_author, change_context)
-        if success:
-            print("\n" + "="*60)
+
+        # Notification Discord
+        discord_success = send_discord_notification(report, commit_hash, commit_message, commit_author, change_context)
+
+        # Commentaire GitHub (si PR)
+        github_success = post_github_pr_comment(report, change_context)
+
+        # Récapitulatif
+        print("\n" + "="*60)
+        if discord_success:
+            print("✅ Notification Discord envoyée")
+        else:
+            print("⚠️ Échec notification Discord")
+
+        if github_success:
+            print("✅ Commentaire GitHub posté")
+        elif GITHUB_EVENT_NAME == "pull_request":
+            print("⚠️ Échec commentaire GitHub")
+
+        print("="*60)
+
+        # Exit code basé sur le succès de l'analyse (pas des notifications)
+        if discord_success or github_success:
             print("✅ Workflow terminé avec succès")
-            print("="*60)
             sys.exit(0)
         else:
-            print("\n" + "="*60)
-            print("⚠️ Analyse terminée mais échec d'envoi Discord")
-            print("="*60)
+            print("⚠️ Analyse terminée mais échec des notifications")
             sys.exit(1)
     else:
         print("\n" + "="*60)
