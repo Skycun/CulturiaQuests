@@ -1,218 +1,286 @@
-# CulturiaQuests
+# 🏰 CulturiaQuests
 
-Ce projet est une application web full-stack de type RPG géolocalisé, comprenant un back-end (API headless) développé avec Strapi et un front-end développé avec Nuxt. Le tout est conteneurisé à l'aide de Docker pour un développement et un déploiement simplifiés.
+<div align="center">
+
+![CulturiaQuests Banner](https://img.shields.io/badge/CulturiaQuests-RPG%20Géolocalisé-8B5CF6?style=for-the-badge&logo=mapbox&logoColor=white)
+
+**Explorez Saint-Lô, découvrez sa culture, vivez l'aventure !**
+
+[![Nuxt](https://img.shields.io/badge/Nuxt%204-00DC82?style=flat-square&logo=nuxt.js&logoColor=white)](https://nuxt.com/)
+[![Strapi](https://img.shields.io/badge/Strapi%20v5-4945FF?style=flat-square&logo=strapi&logoColor=white)](https://strapi.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+*Projet de fin d'études BUT MMI 3ème année*
+
+</div>
 
 ---
 
-## Table des matières
+## 📖 À propos
 
-- [✨ Stack Technique](#-stack-technique)
-- [🚧 État du Développement](#-état-du-développement)
-- [🚀 Démarrage Rapide](#-démarrage-rapide)
-- [📂 Structure du Projet](#-structure-du-projet)
-- [🛠 Dépannage Courant](#-dépannage-courant)
-- [🔧 Scripts Utilitaires](#-scripts-utilitaires)
-- [📝 Notes de Développement](#-notes-de-développement)
-- [🤝 Contribution](#-contribution)
-- [📄 Licence](#-licence)
-- [🦶​ Premier pas](#-premier-pas)
+**CulturiaQuests** est une application web de type **RPG géolocalisé** qui transforme l'exploration culturelle de la ville de **Saint-Lô** en une aventure ludique et immersive. Destinée aux **18-25 ans**, l'application incite les joueurs à découvrir le patrimoine local à travers des quêtes, des personnages et une progression de type jeu de rôle.
+
+### 🎯 Notre mission
+
+Rendre la culture accessible et attractive pour les jeunes adultes en combinant :
+- 🗺️ **Exploration géolocalisée** de lieux culturels réels
+- ⚔️ **Mécaniques RPG** engageantes (quêtes, personnages, équipements)
+- 🏛️ **Découverte du patrimoine** de Saint-Lô
+
 ---
 
-## ✨ Stack Technique
+## ✨ Fonctionnalités
 
-- **Frontend**: [Nuxt 4](https://nuxt.com/) (Vue.js 3 + TypeScript)
-- **Backend**: [Strapi v5](https://strapi.io/) (Headless CMS Node.js + TypeScript)
-- **Base de données**: [PostgreSQL](https://www.postgresql.org/)
-- **Conteneurisation**: [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+### 🗺️ Exploration
+- **Carte interactive** avec les Points d'Intérêt (POI) culturels de Saint-Lô
+- **Géolocalisation** pour valider la visite des lieux
+- **Musées et sites** à découvrir dans la ville
 
-## 🚧 État du Développement
+### ⚔️ Gameplay RPG
+- **Système de quêtes** avec objectifs à compléter
+- **PNJ (Personnages Non-Joueurs)** avec dialogues et histoires
+- **Guilde** personnalisable avec progression (XP, or, niveau)
+- **Personnages jouables** avec différentes classes (Héros, Mage, Archer, Soldat)
+- **Système d'équipement** (armes, casques, charmes) avec raretés
 
-**⚠️ Refonte en cours :** Le projet subit actuellement une refonte majeure de ses types de contenu (Content-Types) Strapi.
-Pour plus de détails sur l'architecture de la base de données et le plan d'implémentation, voir le fichier [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md).
+### 📊 Progression
+- **Expéditions** dans les musées pour gagner des récompenses
+- **Système d'amitié** avec les PNJ
+- **Collection d'objets** et gestion d'inventaire
+- **Journal d'entrées** débloquables
+
+---
+
+## 🛠️ Stack Technique
+
+| Couche | Technologie | Description |
+|--------|-------------|-------------|
+| **Frontend** | [Nuxt 4](https://nuxt.com/) | Framework Vue.js 3 + TypeScript |
+| **Backend** | [Strapi v5](https://strapi.io/) | Headless CMS Node.js + TypeScript |
+| **Base de données** | [PostgreSQL](https://www.postgresql.org/) | Base de données relationnelle |
+| **Conteneurisation** | [Docker](https://www.docker.com/) | Orchestration des services |
+| **Géolocalisation** | strapi-geodata | Gestion des coordonnées GPS |
 
 ---
 
 ## 🚀 Démarrage Rapide
 
-Suivez ces étapes rigoureusement pour installer le projet et éviter les erreurs de première génération (notamment sur Strapi v5).
-
 ### Prérequis
 
-Assurez-vous d'avoir installé sur votre machine :
-- [Node.js](https://nodejs.org/) (Version 20 ou supérieure recommandée)
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) v20+
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- [Git](https://git-scm.com/)
 
-### 1. Cloner le Dépôt
+### Installation
+
+#### 1️⃣ Cloner le dépôt
 
 ```bash
-git clone <URL_DU_DEPOT>
+git clone https://github.com/Skycun/CulturiaQuests.git
 cd CulturiaQuests
 ```
 
-### 2. Configuration des Variables d'Environnement
+#### 2️⃣ Configurer les variables d'environnement
 
-Le projet nécessite deux fichiers de configuration `.env` (un à la racine pour Docker, un dans le backend pour Strapi).
-
-**A. À la racine du projet :**
-Copiez le fichier d'exemple :
-
+**À la racine du projet :**
 ```bash
 cp .env.exemple .env
 ```
 
-**B. Dans le dossier backend :**
-Strapi a besoin de ses propres clés pour construire l'interface d'administration.
-
+**Dans le dossier backend :**
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-> **Note :** Pour la production, modifiez impérativement les clés secrètes (`APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, etc.) dans ces fichiers.
-
-### 3. Installation et Construction Manuelle (Important)
-
-Pour éviter des erreurs d'interface lors du premier lancement (ex: *TypeError: reading 'tours'*), il est nécessaire de construire l'admin panel manuellement une première fois.
-
-Toujours dans le dossier `backend/` :
-
-1. Installez les dépendances :
+#### 3️⃣ Construire le backend (Important pour Strapi v5)
 
 ```bash
+# Dans le dossier backend/
 npm install
-```
-
-2. **Étape Cruciale :** Reconstruisez l'admin panel pour générer les fichiers correctement :
-
-```bash
 npm run build
-```
-
-3. Revenez à la racine du projet :
-
-```bash
 cd ..
 ```
 
-### 4. Lancer l'Application avec Docker
-
-Une fois la préparation terminée, lancez l'ensemble des services :
+#### 4️⃣ Lancer l'application
 
 ```bash
-docker-compose up --build
+docker compose up --build -d
 ```
 
-*(Ajoutez l'option `-d` si vous souhaitez lancer les conteneurs en arrière-plan).*
+#### 5️⃣ Restaurer les données initiales (optionnel)
 
-Les services suivants seront démarrés :
+```bash
+bash scripts/restore-db.sh backups/initial_data.tar.gz
+```
 
-- `database`: Le serveur PostgreSQL.
-- `backend`: L'application Strapi (démarre sur le port 1337).
-- `frontend`: L'application Nuxt (démarre sur le port 3000).
+### 🌐 Accès à l'application
 
-### 5. Accéder à l'Application
+| Service | URL | Description |
+|---------|-----|-------------|
+| 🎮 Frontend | [http://localhost:3000](http://localhost:3000) | Application Nuxt |
+| 🔌 API | [http://localhost:1337/api](http://localhost:1337/api) | API Strapi |
+| ⚙️ Admin | [http://localhost:1337/admin](http://localhost:1337/admin) | Panneau d'administration |
 
-- 🌍 **Frontend (Nuxt)** : [http://localhost:3000](http://localhost:3000)
-- ⚙️ **Backend (API Strapi)** : [http://localhost:1337/api](http://localhost:1337/api)
-- 🔐 **Panneau d'Administration Strapi** : [http://localhost:1337/admin](http://localhost:1337/admin)
-
-> **Premier lancement :** Vous devrez créer le premier compte administrateur ("Super Admin") lors de votre première connexion au panneau d'administration.
+> **💡 Premier lancement :** Créez un compte Super Admin lors de votre première connexion au panneau d'administration.
 
 ---
 
 ## 📂 Structure du Projet
 
 ```
-.
-├── backend/         # Contient l'application Strapi v5 (API)
-│   ├── config/      # Configuration Strapi
-│   ├── src/         # Code source (Content-Types, API, Extensions)
-│   ├── public/      # Fichiers statiques
-│   └── ...
-├── frontend/        # Contient l'application Nuxt 4 (Client)
-│   ├── app/         # Pages, composants, stores (Pinia)
-│   ├── public/      # Fichiers statiques
-│   └── ...
-├── scripts/         # Scripts utilitaires
-│   ├── pois_importer/ # Script d'import de POI (Google Maps)
-│   ├── populate_db/   # Script de seeding de la base de données
-│   └── ai_reviewer.py # Script de revue de code (CI/CD)
-├── .env             # Config Docker (à créer)
-├── .env.exemple     # Modèle de config racine
-├── docker-compose.yml # Orchestration des conteneurs
-└── IMPLEMENTATION_PLAN.md # Plan détaillé des Content-Types
+CulturiaQuests/
+├── 📁 backend/              # API Strapi v5
+│   ├── config/              # Configuration Strapi
+│   ├── src/
+│   │   └── api/             # Content-Types (Guild, Character, Item, Quest, etc.)
+│   └── public/              # Fichiers statiques
+│
+├── 📁 frontend/             # Application Nuxt 4
+│   ├── app/                 # Pages, composants, stores (Pinia)
+│   └── public/              # Assets publics
+│
+├── 📁 scripts/              # Scripts utilitaires
+│   ├── pois_importer/       # Import de POI (Google Maps)
+│   ├── populate_db/         # Seeding de la base de données
+│   └── ai_reviewer.py       # Revue de code IA (CI/CD)
+│
+├── 📁 backups/              # Sauvegardes de la base de données
+├── 📁 docs/                 # Documentation
+├── 📄 docker-compose.yml    # Orchestration Docker
+├── 📄 install.sh            # Script d'installation automatique
+└── 📄 IMPLEMENTATION_PLAN.md # Architecture des Content-Types
 ```
 
 ---
 
-## 🛠 Dépannage Courant
+## 🎮 Architecture du Jeu
 
-**Erreur "reading 'tours' undefined" sur Strapi :**
-Si vous rencontrez cette erreur au lancement, c'est que le build de l'admin est corrompu.
+### Entités principales
 
-1. Arrêtez les conteneurs.
-2. Allez dans le dossier `backend`.
-3. Supprimez les dossiers `.strapi`, `dist` et `node_modules`.
-4. Relancez `npm install` puis `npm run build`.
-
-**Problèmes de connexion à la base de données :**
-Vérifiez que :
-1. Le conteneur PostgreSQL est bien démarré
-2. Les variables d'environnement dans `.env` sont correctes
-3. Les ports ne sont pas en conflit
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│    Guild    │────▶│  Character  │────▶│    Item     │
+│  (Joueur)   │     │   (Héros)   │     │ (Équipement)│
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                                       │
+       ▼                                       ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│    Quest    │────▶│     NPC     │────▶│   Dialog    │
+│  (Mission)  │     │ (Personnage)│     │ (Dialogue)  │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │
+       ▼
+┌─────────────┐     ┌─────────────┐
+│     POI     │     │   Museum    │
+│(Point Intérêt)    │   (Musée)   │
+└─────────────┘     └─────────────┘
+```
 
 ---
 
 ## 🔧 Scripts Utilitaires
 
-Le projet inclut plusieurs scripts utilitaires situés dans le dossier `scripts/` :
-
-1. **POI Importer** (`scripts/pois_importer/`) :
-   - Importe des Points d'Intérêt depuis des sources externes (ex: Google Maps).
-   - Génère des fichiers JSON utilisés ensuite pour le seeding.
-
-2. **Populate DB** (`scripts/populate_db/`) :
-   - Remplit la base de données Strapi avec des données initiales (NPCs, Items, POIs, Dialogues).
-   - Utile pour initialiser un environnement de développement cohérent.
-
-3. **AI Reviewer** (`scripts/ai_reviewer.py`) :
-   - Analyse les changements de code dans les Pull Requests.
-   - Utilisé par le workflow GitHub Actions.
+| Script | Commande | Description |
+|--------|----------|-------------|
+| **Démarrer** | `docker compose up --build -d` | Lance tous les services |
+| **Arrêter** | `docker compose down` | Arrête les conteneurs |
+| **Sauvegarde BDD** | `bash scripts/backup-db.sh` | Crée une sauvegarde |
+| **Restaurer BDD** | `bash scripts/restore-db.sh backups/<fichier>.tar.gz` | Restaure une sauvegarde |
 
 ---
 
-## 📝 Notes de Développement
+## 🛠 Dépannage
 
-- **Strapi v5** : Ce projet utilise Strapi v5 qui introduit des changements significatifs par rapport aux versions précédentes (Factory Pattern, Document Service API).
-- **TypeScript** : Le backend et le frontend utilisent strictement TypeScript pour un meilleur typage et maintenabilité.
-- **Docker** : Tous les services sont conteneurisés pour une meilleure portabilité.
+<details>
+<summary><strong>❌ Erreur "reading 'tours' undefined" sur Strapi</strong></summary>
+
+Le build de l'admin est corrompu. Solution : 
+
+```bash
+cd backend
+rm -rf .strapi dist node_modules
+npm install
+npm run build
+cd ..
+docker compose up --build
+```
+</details>
+
+<details>
+<summary><strong>❌ Problèmes de connexion à la base de données</strong></summary>
+
+1. Vérifiez que le conteneur PostgreSQL est démarré : `docker ps`
+2. Vérifiez les variables dans `.env`
+3. Vérifiez les conflits de ports (5432)
+</details>
+
+---
+
+## 👥 Équipe
+
+<table>
+  <tr>
+    <td align="center">
+      <strong>Brice</strong><br/>
+      <sub>Chef de projet</sub><br/>
+      <sub>Lead Designer</sub><br/>
+      <sub>Lead Developer</sub>
+    </td>
+    <td align="center">
+      <strong>Lelio</strong><br/>
+      <sub>Lead Game Designer</sub><br/>
+      <sub>Developer</sub>
+    </td>
+    <td align="center">
+      <strong>Ethan</strong><br/>
+      <sub>Designer</sub><br/>
+      <sub>Developer</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🎓 Contexte Académique
+
+Ce projet est réalisé dans le cadre du **projet de fin d'études** de 3ème année du **BUT MMI** (Métiers du Multimédia et de l'Internet).
 
 ---
 
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! Veuillez suivre ces étapes :
+Les contributions sont les bienvenues ! Pour contribuer :
 
-1. Fork le projet
-2. Créez une branche pour votre fonctionnalité (`git checkout -b feature/AmazingFeature`)
-3. Commitez vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Poussez sur la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrez une Pull Request
+1. **Fork** le projet
+2. **Créez** une branche (`git checkout -b feature/NouvelleFonctionnalité`)
+3. **Commitez** vos changements (`git commit -m 'Ajout d'une nouvelle fonctionnalité'`)
+4. **Poussez** sur la branche (`git push origin feature/NouvelleFonctionnalité`)
+5. **Ouvrez** une Pull Request
+
+---
+
+## 📝 Notes de Développement
+
+- **Strapi v5** : Utilise le Document Service API et le Factory Pattern
+- **TypeScript** : Typage strict sur tout le projet
+- **Docker** : Environnement conteneurisé pour la portabilité
+- **strapi-geodata** : Plugin pour la gestion des coordonnées GPS avec geohash
 
 ---
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
-## 🦶​ Premier pas
-**Pour lancer :**
-Avoir lancé docker desktop
-`docker compose up --build -d`
+---
 
-**Pour restaurer la base de données avec les données initiales :**
-`bash scripts/restore-db.sh backups/initial_data.tar.gz`
+<div align="center">
 
-**Pour faire une sauvegarde de la base de données :**
-`bash scripts/backup-db.sh`
+**Fait avec ❤️ à Saint-Lô**
+
+*CulturiaQuests © 2025 - Projet BUT MMI*
+
+</div>
