@@ -1,22 +1,41 @@
+# Environment files (NEVER commit these - contain secrets)
 .env
+.env.local
+.env.*.local
 
-
+# Script-specific env files
 scripts/pois_importer/.env
-scripts/pois_importer/node_modules
-scripts/populate_db/node_modules
 scripts/populate_db/.env
 
-# Database backups
+# Node modules
+node_modules/
+scripts/pois_importer/node_modules
+scripts/populate_db/node_modules
+
+# Database backups (except seed data)
 backups/*
 !backups/initial_data.tar.gz
 
+# IDE/Editor specific
 .gemini/
+.grepai/
+.vscode/launch.json
+*.swp
+*.swo
+
+# Credentials and secrets
 gha-creds-*.json
+*.pem
+*.key
 
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
+.pytest_cache/
 
-
-.env
-.grepai/
+# Build artifacts
+dist/
+build/
+.nuxt/
+.output/

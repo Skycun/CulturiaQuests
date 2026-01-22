@@ -1,12 +1,27 @@
 // --- 1. CONFIGURATION ---
-const BASE_URL = 'http://localhost:1337';
+// Load environment variables if dotenv is available
+try {
+  require('dotenv').config();
+} catch (e) {
+  // dotenv not available, rely on environment variables
+}
+
+const BASE_URL = process.env.STRAPI_BASE_URL || 'http://localhost:1337';
 const UPLOAD_URL = `${BASE_URL}/api/upload/files`;
 const API_URL = `${BASE_URL}/api/items`;
 
-// 🔴 TON TOKEN
-const STRAPI_TOKEN = '919c43d984c20aa2e434e2d78a586f92952a824328927c9d61cd4c735d1d80bdd0632952173486bd863b693576a2e206394e33a28ccb2221d9930434ef01a8fd5ed4b5370f486e32dcb5a65023a414d0c37d9f5a099aac6f8b636cc539f67f17d9b0c86cc3653328390e55be4e717b9b9dcc1753dde7688c545a4a2506749c4a'; 
+// API Token - NEVER hardcode secrets, use environment variables
+// Generate token in Strapi Admin: Settings > API Tokens
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN;
 
-const GUILD_ID = 12; 
+if (!STRAPI_TOKEN) {
+  console.error('❌ ERROR: STRAPI_API_TOKEN environment variable is not set.');
+  console.error('   Set it in your .env file or export it before running this script.');
+  console.error('   Generate a token in Strapi Admin: Settings > API Tokens');
+  process.exit(1);
+}
+
+const GUILD_ID = parseInt(process.env.GUILD_ID, 10) || 12; 
 
 const RARITY_MAPPING = {
     common: 1,
