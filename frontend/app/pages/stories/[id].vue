@@ -73,9 +73,16 @@ onMounted(async () => {
 
         // Traitement des dialogues
         const rawDialogs = npc?.dialogs?.data || npc?.dialogs || [];
+
+        // Filtrer uniquement les dialogues de type "journal_entries"
+        const journalDialogs = rawDialogs.filter((dObj) => {
+            const d = dObj.attributes || dObj;
+            return d.text_type === 'journal_entries';
+        });
+
         const entries = [];
 
-        rawDialogs.forEach((dObj) => {
+        journalDialogs.forEach((dObj) => {
             const d = dObj.attributes || dObj;
             const texts = d.dialogues || [];
 
