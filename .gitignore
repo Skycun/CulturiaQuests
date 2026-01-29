@@ -1,13 +1,33 @@
-scripts/pois_importer/.env
-scripts/populate_db/.env
+# ============================================
+# FICHIERS SENSIBLES ET SECRETS
+# ============================================
 
-# Node modules
-node_modules/
-scripts/pois_importer/node_modules
-scripts/populate_db/node_modules
+# Fichiers d'environnement (.env)
+.env
+.env.*
+!.env.example
+!.env.exemple
+*.env
+backend/.env
+frontend/.env
+scripts/**/.env
 
-# Database backups (except seed data)
+# Credentials et secrets
+gha-creds-*.json
+**/credentials.json
+**/secrets.json
+*.pem
+*.key
+*.cert
+
+# ============================================
+# BACKUPS ET DONNÉES
+# ============================================
+
+# Database backups (sauf données initiales)
+>>>>>>> fa6b5dc (🔒 Security: Improve .gitignore and remove .env from tracking)
 backups/*
+!backups/.gitkeep
 !backups/initial_data.tar.gz
 
 # IDE/Editor specific
@@ -22,11 +42,148 @@ gha-creds-*.json
 *.pem
 *.key
 
-# Python cache
+# Autres backups
+*.backup
+*.tar.gz
+*.sql
+*.dump
+backend/public/uploads.backup_*
+
+# ============================================
+# NODE.JS ET NPM
+# ============================================
+
+# Dependencies
+node_modules/
+**/node_modules/
+package-lock.json.bak
+
+# Build outputs
+dist/
+build/
+.output/
+.nuxt/
+.cache/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# ============================================
+# STRAPI
+# ============================================
+
+# Strapi cache et build
+backend/.strapi/
+backend/.cache/
+backend/dist/
+backend/build/
+backend/exports/
+backend/.tmp/
+
+# Uploads (peuvent être volumineux)
+# backend/public/uploads/*
+# !backend/public/uploads/.gitkeep
+
+# ============================================
+# NUXT / VUE
+# ============================================
+
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+
+# ============================================
+# DATABASE
+# ============================================
+
+*.sqlite
+*.sqlite3
+*.db
+
+# ============================================
+# DOCKER
+# ============================================
+
+# Docker volumes (données locales)
+.docker/
+docker-compose.override.yml
+
+# ============================================
+# IDE ET ÉDITEURS
+# ============================================
+
+# VSCode
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ============================================
+# SYSTÈMES D'EXPLOITATION
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# OUTILS DE DÉVELOPPEMENT
+# ============================================
+
+# Python (pour scripts)
 __pycache__/
+
 *.pyc
 *.pyo
 .pytest_cache/
+
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+
+# TypeScript
+*.tsbuildinfo
 
 
 .grepai/
@@ -36,3 +193,35 @@ dist/
 build/
 .nuxt/
 .output/
+
+# AI assistants
+.gemini/
+.grepai/
+.cursor/
+.aider*
+
+# Tests et coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Temp files
+*.tmp
+*.temp
+.temp/
+tmp/
+
+# ============================================
+# FICHIERS PROJET SPÉCIFIQUES
+# ============================================
+
+# Scripts d'import de POIs (peuvent contenir des clés API)
+scripts/pois_importer/.env
+scripts/pois_importer/node_modules
+scripts/populate_db/.env
+scripts/populate_db/node_modules
+
+# Outputs de scripts
+scripts/**/*.json
+!scripts/**/*.example.json
+pois-output-*.json
