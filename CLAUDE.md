@@ -40,6 +40,17 @@ npm run build      # Production build
 npm run generate   # Static site generation
 ```
 
+### Tests E2E (Playwright)
+```bash
+cd frontend
+npx playwright install  # Install browsers (first time only)
+npm run test           # Run all tests
+npm run test:ui        # Run tests with UI mode
+npm run test:headed    # Run tests in headed mode (visible browser)
+npm run test:debug     # Debug tests
+npm run test:report    # Show HTML test report
+```
+
 ### Database Operations
 ```bash
 bash scripts/backup-db.sh                           # Create database backup
