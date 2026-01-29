@@ -24,23 +24,8 @@ gha-creds-*.json
 # BACKUPS ET DONNÉES
 # ============================================
 
-# Database backups (sauf données initiales)
->>>>>>> fa6b5dc (🔒 Security: Improve .gitignore and remove .env from tracking)
+# Database backups (TOUS exclus pour sécurité)
 backups/*
-!backups/.gitkeep
-!backups/initial_data.tar.gz
-
-# IDE/Editor specific
-.gemini/
-.grepai/
-.vscode/launch.json
-*.swp
-*.swo
-
-# Credentials and secrets
-gha-creds-*.json
-*.pem
-*.key
 
 # Autres backups
 *.backup
@@ -98,7 +83,6 @@ backend/.tmp/
 .output/
 .nitro/
 .cache/
-dist/
 
 # ============================================
 # DATABASE
@@ -168,11 +152,6 @@ $RECYCLE.BIN/
 
 # Python (pour scripts)
 __pycache__/
-
-*.pyc
-*.pyo
-.pytest_cache/
-
 *.py[cod]
 *$py.class
 *.so
@@ -184,15 +163,6 @@ venv/
 
 # TypeScript
 *.tsbuildinfo
-
-
-.grepai/
-.env
-# Build artifacts
-dist/
-build/
-.nuxt/
-.output/
 
 # AI assistants
 .gemini/
