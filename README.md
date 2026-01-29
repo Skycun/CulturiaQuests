@@ -110,11 +110,11 @@ cd ..
 docker compose up --build -d
 ```
 
-#### 5️⃣ Restaurer les données initiales (optionnel)
+#### 5️⃣ Créer votre premier compte admin
 
-```bash
-bash scripts/restore-db.sh backups/initial_data.tar.gz
-```
+Lors de votre première connexion sur [http://localhost:1337/admin](http://localhost:1337/admin), vous devrez créer un compte Super Admin.
+
+> **Note** : Les données initiales de démonstration ne sont pas fournies dans le dépôt public.
 
 ### 🌐 Accès à l'application
 
@@ -147,7 +147,6 @@ CulturiaQuests/
 │   ├── populate_db/         # Seeding de la base de données
 │   └── ai_reviewer.py       # Revue de code IA (CI/CD)
 │
-├── 📁 backups/              # Sauvegardes de la base de données
 ├── 📁 docs/                 # Documentation
 ├── 📄 docker-compose.yml    # Orchestration Docker
 ├── 📄 install.sh            # Script d'installation automatique
@@ -188,7 +187,7 @@ CulturiaQuests/
 | **Démarrer** | `docker compose up --build -d` | Lance tous les services |
 | **Arrêter** | `docker compose down` | Arrête les conteneurs |
 | **Sauvegarde BDD** | `bash scripts/backup-db.sh` | Crée une sauvegarde |
-| **Restaurer BDD** | `bash scripts/restore-db.sh backups/<fichier>.tar.gz` | Restaure une sauvegarde |
+| **Restaurer BDD** | `bash scripts/restore-db.sh <fichier>.tar.gz` | Restaure une sauvegarde |
 
 ---
 
@@ -250,15 +249,21 @@ Ce projet est réalisé dans le cadre du **projet de fin d'études** de 3ème an
 
 ---
 
-## 🤝 Contribution
+## ⚠️ Droits d'Auteur et Licence
 
-Les contributions sont les bienvenues ! Pour contribuer :
+**Ce projet est protégé par le droit d'auteur.**
 
-1. **Fork** le projet
-2. **Créez** une branche (`git checkout -b feature/NouvelleFonctionnalité`)
-3. **Commitez** vos changements (`git commit -m 'Ajout d'une nouvelle fonctionnalité'`)
-4. **Poussez** sur la branche (`git push origin feature/NouvelleFonctionnalité`)
-5. **Ouvrez** une Pull Request
+Ce dépôt est public **uniquement à des fins de consultation** pour permettre la présentation de notre projet de fin d'études. Le code source est la propriété exclusive de ses auteurs et de l'IUT Grand Ouest Normandie.
+
+**Vous n'êtes PAS autorisé à :**
+- Copier ou reproduire ce code
+- Modifier ou créer des œuvres dérivées
+- Distribuer ou publier ce code
+- Utiliser ce code dans vos propres projets
+
+Pour toute demande d'utilisation, veuillez contacter les auteurs.
+
+Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 ---
 
@@ -273,7 +278,14 @@ Les contributions sont les bienvenues ! Pour contribuer :
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+```
+Copyright (c) 2025 Brice Ledanois, Ethan Raulin, Lelio Buton
+IUT Grand Ouest Normandie - Université de Caen Normandie
+
+ALL RIGHTS RESERVED
+```
+
+Ce code est protégé par le droit d'auteur. Voir le fichier [LICENSE](LICENSE) pour les détails complets.
 
 ---
 
@@ -282,5 +294,9 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 **Fait avec ❤️ à Saint-Lô**
 
 *CulturiaQuests © 2025 - Projet BUT MMI*
+*Brice Ledanois, Ethan Raulin, Lelio Buton*
+*IUT Grand Ouest Normandie - Université de Caen Normandie*
+
+**Tous droits réservés**
 
 </div>
