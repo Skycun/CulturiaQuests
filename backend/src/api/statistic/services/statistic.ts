@@ -30,7 +30,7 @@ export default ({ strapi }) => ({
     const guildId = guild.id;
 
     // --- Parallel Data Fetching (Optimized Selects) ---
-    const [runs, visits, items, quests, user] = await Promise.all([
+    const [runs, visits, items, quests, user, mostVisitedPoi] = await Promise.all([
       // Runs: Need dates for time, dps for damage, threshold, gold
       strapi.db.query('api::run.run').findMany({
         where: { guild: guildId },
@@ -60,6 +60,13 @@ export default ({ strapi }) => ({
       strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: userId },
         select: ['createdAt']
+      }),
+      // Most Visited POI
+      strapi.db.query('api::visit.visit').findMany({
+        where: { guild: guildId },
+        orderBy: { open_count: 'desc' },
+        limit: 1,
+        populate: { poi: { select: ['name'] } }
       })
     ]);
 
@@ -138,6 +145,9 @@ export default ({ strapi }) => ({
       }
     }
 
+    // 6. Most Visited POI
+    const mostVisitedPoiName = mostVisitedPoi[0]?.poi?.name || null;
+
     return {
       totalExpeditions: runs.length,
       totalTime,
@@ -145,6 +155,7 @@ export default ({ strapi }) => ({
       totalDamage,
       totalPoiVisits,
       totalDistinctPois: visits.length,
+      mostVisitedPoiName,
       totalItemsCollected: items.length,
       totalItemsScrapped,
       totalScrapAccumulated,

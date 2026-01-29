@@ -27,4 +27,5 @@ export interface Museum {
   geohash?: string
   radius?: number
   location?: GeoJSON
+  tags?: { data: Tag[] } | Tag[] // Support both wrapped and direct array
 }

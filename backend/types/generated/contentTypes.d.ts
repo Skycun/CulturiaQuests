@@ -554,6 +554,7 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    debug_mode: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     exp: Schema.Attribute.BigInteger & Schema.Attribute.DefaultTo<'0'>;
     friendships: Schema.Attribute.Relation<
       'oneToMany',

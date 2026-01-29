@@ -9,6 +9,7 @@ export interface GuildStatistics {
   totalDamage: number
   totalPoiVisits: number
   totalDistinctPois: number
+  mostVisitedPoiName: string | null
   totalItemsCollected: number
   totalItemsScrapped: number
   totalScrapAccumulated: number
@@ -29,6 +30,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const totalDamage = ref(0)
   const totalPoiVisits = ref(0)
   const totalDistinctPois = ref(0)
+  const mostVisitedPoiName = ref<string | null>(null)
   const totalItemsCollected = ref(0)
   const totalItemsScrapped = ref(0)
   const totalScrapAccumulated = ref(0)
@@ -84,6 +86,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
       totalDamage.value = data.totalDamage || 0
       totalPoiVisits.value = data.totalPoiVisits || 0
       totalDistinctPois.value = data.totalDistinctPois || 0
+      mostVisitedPoiName.value = data.mostVisitedPoiName || null
       totalItemsCollected.value = data.totalItemsCollected || 0
       totalItemsScrapped.value = data.totalItemsScrapped || 0
       totalScrapAccumulated.value = data.totalScrapAccumulated || 0
@@ -109,6 +112,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     totalDamage,
     totalPoiVisits,
     totalDistinctPois,
+    mostVisitedPoiName,
     totalItemsCollected,
     totalItemsScrapped,
     totalScrapAccumulated,

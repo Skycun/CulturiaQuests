@@ -7,6 +7,10 @@ export const useRunStore = defineStore('run', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  // État pour l'interaction NPC (après start-expedition avec questRolled=true)
+  const lastQuestRolled = ref(false)
+  const lastNpcDialog = ref<string[]>([])
+
   // Getters
   const hasRuns = computed(() => runs.value.length > 0)
   const runCount = computed(() => runs.value.length)
@@ -83,11 +87,100 @@ export const useRunStore = defineStore('run', () => {
     }
   }
 
+  async function startExpedition(museumDocumentId: string, userLat: number, userLng: number) {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await client<any>('/runs/start-expedition', {
+        method: 'POST',
+        body: { museumDocumentId, userLat, userLng },
+      })
+
+      const { run, questRolled, dialog } = response
+      if (run) {
+        addRun(run)
+      }
+      // Stocker pour la page npc-interaction
+      lastQuestRolled.value = questRolled || false
+      lastNpcDialog.value = dialog || []
+      return { run, questRolled, dialog }
+    } catch (e: any) {
+      console.error('Failed to start expedition:', e)
+      error.value = e?.error?.message || e?.message || 'Failed to start expedition'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function endExpedition(runDocumentId: string) {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await client<any>('/runs/end-expedition', {
+        method: 'POST',
+        body: { runDocumentId },
+      })
+
+      const { run, rewards, questSuccess } = response
+      
+      if (run) {
+        const index = runs.value.findIndex(r => r.documentId === run.documentId || r.id === run.id)
+        if (index !== -1) {
+          runs.value[index] = run
+        } else {
+          runs.value.push(run)
+        }
+      }
+      return { run, rewards, questSuccess }
+    } catch (e: any) {
+      console.error('Failed to end expedition:', e)
+      error.value = e?.error?.message || e?.message || 'Failed to end expedition'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchActiveRun() {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await client<any>('/runs/active', { method: 'GET' })
+      const run = response.data || response || response.run // Handle potential nesting
+      
+      if (run) {
+         const index = runs.value.findIndex(r => r.documentId === run.documentId || r.id === run.id)
+         if (index !== -1) {
+            runs.value[index] = run
+         } else {
+            runs.value.push(run)
+         }
+         return run
+      }
+      return null
+    } catch (e: any) {
+      console.error('Failed to fetch active run:', e)
+      // Don't set global error for this silent check
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     runs,
     loading,
     error,
+    lastQuestRolled,
+    lastNpcDialog,
     // Getters
     hasRuns,
     runCount,
@@ -101,6 +194,9 @@ export const useRunStore = defineStore('run', () => {
     addRun,
     updateRun,
     fetchRuns,
+    startExpedition,
+    endExpedition,
+    fetchActiveRun,
   }
 }, {
   persist: {

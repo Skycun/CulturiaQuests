@@ -20,6 +20,7 @@ export const useGuildStore = defineStore('guild', () => {
   const exp = computed(() => guild.value?.exp ?? guild.value?.attributes?.exp ?? 0)
   const scrap = computed(() => guild.value?.scrap ?? guild.value?.attributes?.scrap ?? 0)
   const name = computed(() => guild.value?.name ?? guild.value?.attributes?.name ?? '')
+  const debugMode = computed(() => guild.value?.debug_mode ?? guild.value?.attributes?.debug_mode ?? false)
 
   /**
    * Calcule le niveau de la guilde à partir de l'XP
@@ -157,7 +158,7 @@ export const useGuildStore = defineStore('guild', () => {
   }
 
   /**
-   * Refetch only the guild stats (gold, exp, scrap)
+   * Refetch only the guild stats (gold, exp, scrap, debug_mode)
    */
   async function refetchStats() {
     const client = useStrapiClient()
@@ -166,7 +167,7 @@ export const useGuildStore = defineStore('guild', () => {
       const response = await client<any>('/guilds', {
         method: 'GET',
         params: {
-          fields: ['name', 'gold', 'exp', 'scrap'],
+          fields: ['name', 'gold', 'exp', 'scrap', 'debug_mode'],
         },
       })
 
@@ -179,6 +180,7 @@ export const useGuildStore = defineStore('guild', () => {
           gold: guildData.gold ?? guildData.attributes?.gold,
           exp: guildData.exp ?? guildData.attributes?.exp,
           scrap: guildData.scrap ?? guildData.attributes?.scrap,
+          debug_mode: guildData.debug_mode ?? guildData.attributes?.debug_mode,
         }
       }
     } catch (e: any) {
@@ -261,6 +263,7 @@ export const useGuildStore = defineStore('guild', () => {
     scrap,
     name,
     level,
+    debugMode,
     // Actions
     setGuild,
     clearGuild,

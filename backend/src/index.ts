@@ -57,7 +57,17 @@ export default {
       const actions = [
         'api::guild.guild.setup',
         'api::item.item.getItemIcons',
-        'api::statistic.statistic.getSummary'
+        'api::museum.museum.find',
+        'api::museum.museum.findOne',
+        'api::poi.poi.find',
+        'api::poi.poi.findOne',
+        'api::tag.tag.find',
+        'api::tag.tag.findOne',
+        'api::statistic.statistic.getSummary',
+        'api::visit.visit.openChest',
+        'api::run.run.startExpedition',
+        'api::run.run.endExpedition',
+        'api::run.run.getActiveRun'
       ];
 
       for (const action of actions) {
