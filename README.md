@@ -279,7 +279,7 @@ Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 ## 📄 Licence
 
 ```
-Copyright (c) 2025 Brice Ledanois, Ethan Raulin, Lelio Buton
+Copyright (c) 2026 Brice Ledanois, Ethan Raulin, Lelio Buton
 IUT Grand Ouest Normandie - Université de Caen Normandie
 
 ALL RIGHTS RESERVED
@@ -293,7 +293,7 @@ Ce code est protégé par le droit d'auteur. Voir le fichier [LICENSE](LICENSE) 
 
 **Fait avec ❤️ à Saint-Lô**
 
-*CulturiaQuests © 2025 - Projet BUT MMI*
+*CulturiaQuests © 2026 - Projet BUT MMI*
 *Brice Ledanois, Ethan Raulin, Lelio Buton*
 *IUT Grand Ouest Normandie - Université de Caen Normandie*
 
