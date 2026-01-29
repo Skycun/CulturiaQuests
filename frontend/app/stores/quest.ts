@@ -123,8 +123,7 @@ export const useQuestStore = defineStore('quest', () => {
     updateQuestProgress,
     fetchQuests,
   }
-}, {
-  persist: {
-    pick: ['quests'],
-  },
 })
+// Persistance supprimée - les quests sont rechargés via guildStore.fetchAll()
+// Les quêtes contiennent des relations imbriquées (npc, poi_a, poi_b)
+// et leur état change fréquemment - le serveur est la source de vérité

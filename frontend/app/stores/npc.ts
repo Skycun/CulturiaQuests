@@ -289,6 +289,9 @@ export const useNpcStore = defineStore('npc', () => {
   }
 }, {
   persist: {
-    pick: ['npcs', 'storiesSortMethod'],
+    // Seule la préférence de tri est persistée (~10 bytes)
+    // La liste des NPCs n'est plus persistée car elle est rechargée via API
+    // et causait l'erreur 431 avec ses données volumineuses
+    pick: ['storiesSortMethod'],
   },
 })

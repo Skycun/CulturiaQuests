@@ -170,8 +170,7 @@ export const useFriendshipStore = defineStore('friendship', () => {
     updateFriendship,
     fetchFriendships,
   }
-}, {
-  persist: {
-    pick: ['friendships'],
-  },
 })
+// Persistance supprimée - les friendships sont rechargés via guildStore.fetchAll()
+// Les friendships contiennent des données NPC imbriquées qui gonflaient les cookies
+// Le serveur est la source de vérité pour les relations joueur-NPC

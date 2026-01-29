@@ -17,6 +17,12 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
   ],
 
+  // Configuration pinia-plugin-persistedstate
+  // Force localStorage pour éviter l'erreur 431 (cookies trop volumineux)
+  piniaPluginPersistedstate: {
+    storage: 'localStorage',
+  },
+
   // CSS principal
   css: ['~/assets/css/main.css'],
 

@@ -67,9 +67,10 @@ const handleSubmit = async () => {
       password: form.value.password,
     })
 
-    // Fetch user's guild after login
+    // Fetch all user data after login (guild + characters, items, quests, etc.)
+    // Utilise fetchAll() pour précharger toutes les données en une seule requête
     if (user.value?.id) {
-      await guildStore.fetchGuild()
+      await guildStore.fetchAll()
     }
 
     // Redirect to home page

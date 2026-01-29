@@ -131,8 +131,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     fetchItems,
     fetchItemIcons,
   }
-}, {
-  persist: {
-    pick: ['items'],
-  },
 })
+// Persistance supprimée - les items sont rechargés via guildStore.fetchAll()
+// Cela évite l'erreur 431 (cookies trop volumineux) car les items
+// contiennent beaucoup de données imbriquées (rarity, tags, icon, character)

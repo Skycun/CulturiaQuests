@@ -86,8 +86,7 @@ export const useVisitStore = defineStore('visit', () => {
     updateVisit,
     fetchVisits,
   }
-}, {
-  persist: {
-    pick: ['visits'],
-  },
 })
+// Persistance supprimée - les visits sont rechargés via guildStore.fetchAll()
+// L'historique des visites s'accumule, ce qui causait l'erreur 431
+// Le serveur est la source de vérité pour l'historique des visites
