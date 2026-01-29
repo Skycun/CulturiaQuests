@@ -1,6 +1,8 @@
 <template>
-  <div class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-[10000]">
-
+  <div 
+    v-show="isFooterVisible"
+    class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-[10000] transition-opacity duration-300"
+    :class="{ 'opacity-0 pointer-events-none': !isFooterVisible }">
 
     <NuxtLink
       v-for="item in navItems"
@@ -16,7 +18,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
+import { useFooterVisibility } from '~/composables/useFooterVisibility'
 
 const navItems = ref([
   { name: 'Journaux', icon: 'bxs-book-bookmark', path: '/stories' },
@@ -24,7 +27,9 @@ const navItems = ref([
   { name: 'Carte', icon: 'bxs-map-alt', path: '/map' },
   { name: 'Social', icon: 'bxs-user-account', path: '/social' },
   { name: 'Guilde', icon: 'bxs-home-alt-2', path: '/guild' },
-]);
+])
+
+const { isFooterVisible } = useFooterVisibility()
 </script>
 
 <style scoped>
