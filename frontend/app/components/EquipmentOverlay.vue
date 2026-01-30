@@ -68,17 +68,18 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { useGuildStore } from '~/stores/guild';
-import { useInventoryStore } from '~/stores/inventory';
-import { useDamageCalculator } from '~/composables/useDamageCalculator';
+import { ref, computed, watch } from 'vue'
+import { useGuildStore } from '~/stores/guild'
+import { useInventoryStore } from '~/stores/inventory'
+import { useDamageCalculator } from '~/composables/useDamageCalculator'
+import { useFooterVisibility } from '~/composables/useFooterVisibility'
 
-import OverlayHeader from './equipment/OverlayHeader.vue';
-import InventoryGrid from './equipment/InventoryGrid.vue';
-import ActionFooter from './equipment/ActionFooter.vue';
-import TopPanelEquip from './equipment/TopPanelEquip.vue';
-import TopPanelRecycle from './equipment/TopPanelRecycle.vue';
-import TopPanelUpgrade from './equipment/TopPanelUpgrade.vue';
+import OverlayHeader from './equipment/OverlayHeader.vue'
+import InventoryGrid from './equipment/InventoryGrid.vue'
+import ActionFooter from './equipment/ActionFooter.vue'
+import TopPanelEquip from './equipment/TopPanelEquip.vue'
+import TopPanelRecycle from './equipment/TopPanelRecycle.vue'
+import TopPanelUpgrade from './equipment/TopPanelUpgrade.vue'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -86,13 +87,14 @@ const props = defineProps({
   initialSlot: String,
   allInventory: Array,
   loading: Boolean
-});
-const emit = defineEmits(['close', 'equip']);
+})
+const emit = defineEmits(['close', 'equip'])
 
-const guildStore = useGuildStore();
-const inventoryStore = useInventoryStore();
-const client = useStrapiClient();
-const { calculateItemPower } = useDamageCalculator();
+const guildStore = useGuildStore()
+const inventoryStore = useInventoryStore()
+const client = useStrapiClient()
+const { calculateItemPower } = useDamageCalculator()
+const { hideFooter, showFooter } = useFooterVisibility()
 
 const activeSlot = ref('weapon');
 const selectedItemId = ref(null);
@@ -120,12 +122,19 @@ const headerTitle = computed(() => {
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    if (props.initialSlot) activeSlot.value = props.initialSlot;
-    resetAllModes();
+    if (props.initialSlot) activeSlot.value = props.initialSlot
+    resetAllModes()
+    hideFooter() // Masquer le footer quand l'overlay s'ouvre
+  } else {
+    showFooter() // Réafficher le footer quand l'overlay se ferme
   }
-});
+})
 
-const closeModal = () => { resetAllModes(); emit('close'); };
+const closeModal = () => { 
+  resetAllModes()
+  showFooter() // Réafficher le footer à la fermeture
+  emit('close')
+}
 const resetAllModes = () => {
     selectedItemId.value = null;
     isRecycleMode.value = false;

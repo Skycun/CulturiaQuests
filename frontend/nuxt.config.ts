@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     '@nuxtjs/strapi',
     '@nuxtjs/device',
     'pinia-plugin-persistedstate/nuxt',
+    '@nuxtjs/leaflet',
   ],
 
   // Configuration pinia-plugin-persistedstate
@@ -73,5 +74,12 @@ export default defineNuxtConfig({
       secure: process.env.NODE_ENV === 'production',
     },
     cookieName: 'culturia_jwt',
+  },
+
+  // Configuration de pinia-plugin-persistedstate
+  // Force l'utilisation de localStorage uniquement pour éviter l'erreur 431
+  // (Request Header Fields Too Large causée par des cookies trop volumineux)
+  piniaPersistedstate: {
+    storage: 'localStorage',
   },
 })

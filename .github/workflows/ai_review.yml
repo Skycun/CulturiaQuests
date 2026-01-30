@@ -3,35 +3,64 @@ name: 🤖 AI Code Review
 on:
   push:
     branches:
-      - main
-      - develop
+      - '**'  # Toutes les branches
+    branches-ignore:
+      - 'dependabot/**'  # Ignorer les branches automatiques
+      - 'renovate/**'
     paths:
       - '**.vue'
       - '**.ts'
       - '**.js'
-      # J'ajoute le script python pour que tu puisses tester en modifiant le script lui-même
-      - 'scripts/**.py' 
+      - '**.css'
+      - '**.scss'
+      - '**.yaml'
+      - '**.yml'
+      - 'scripts/**.py'
+
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.vue'
+      - '**.ts'
+      - '**.js'
+      - '**.css'
+      - '**.scss'
+      - '**.yaml'
+      - '**.yml'
+      - 'scripts/**.py'
 
 jobs:
   ai_review:
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: read
+      pull-requests: write  # Permission pour commenter les PRs
+
     steps:
       - name: 📥 Récupération du code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Important pour pouvoir comparer avec le commit précédent
+          fetch-depth: 0  # Fetch complet pour comparaison avec base de PR
 
       - name: 🐍 Installation de Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+          cache: 'pip'  # Cache automatique des dépendances
 
       - name: 📦 Installation des dépendances
-        run: pip install openai requests pydantic
+        run: |
+          pip install --upgrade pip
+          pip install openai requests pydantic PyGithub
 
       - name: 🧠 Lancement de l'analyse IA
+        id: ai_review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: python scripts/ai_reviewer.py

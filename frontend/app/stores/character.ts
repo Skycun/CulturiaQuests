@@ -88,7 +88,7 @@ export const useCharacterStore = defineStore('character', () => {
     iconsLoading.value = true
 
     try {
-      const response = await client<any>('/character/list-icons', {
+      const response = await client<any>('/character-icons', {
         method: 'GET',
       })
 

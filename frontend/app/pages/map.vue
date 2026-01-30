@@ -1,7 +1,217 @@
 <template>
+  <div class="min-h-screen bg-gray-100 font-sans">
+    <main class="h-[100vh] w-full relative">
+      <!-- Geolocation request -->
+      <GeolocationRequest
+        @allow="handleGeolocationAllow"
+        @deny="handleGeolocationDeny"
+      />
 
+      <!-- Loading state -->
+      <MapLoadingState :loading="geolocLoading">
+        Localisation en cours...
+      </MapLoadingState>
+
+      <!-- Carte Leaflet -->
+      <ClientOnly>
+        <LMap
+          ref="mapRef"
+          :zoom="13"
+          :center="[userLat, userLng]"
+          :use-global-leaflet="false"
+          class="h-full w-full"
+        >
+          <LTileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a> contributors"
+            layer-type="base"
+            name="OpenStreetMap"
+          />
+
+          <!-- Marqueurs extraits -->
+          <MapMarkers
+            :museums="validMuseums"
+            :pois="validPOIs"
+            :user-lat="userLat"
+            :user-lng="userLng"
+            @select-museum="selectItem"
+            @select-poi="selectItem"
+          />
+        </LMap>
+      </ClientOnly>
+
+      <!-- Drawer Information -->
+      <BottomDrawer v-model="isDrawerOpen">
+        <MapDrawerContent
+          :selected-item="selectedItem"
+          :guild-characters="guildCharacters"
+          :distance-to-user="distanceToSelectedItem"
+          :user-lat="userLat"
+          :user-lng="userLng"
+          @start-expedition="handleStartExpedition"
+        />
+      </BottomDrawer>
+    </main>
+  </div>
 </template>
 
-<script setup>
-    
+<script setup lang="ts">
+import { useMuseumStore } from '~/stores/museum'
+import { usePOIStore } from '~/stores/poi'
+import { useGuildStore } from '~/stores/guild'
+import { useRunStore } from '~/stores/run'
+import { useGeolocation } from '~/composables/useGeolocation'
+import { useMapInteraction } from '~/composables/useMapInteraction'
+import { calculateDistance } from '~/utils/geolocation'
+import type { Museum } from '~/types/museum'
+import type { Poi } from '~/types/poi'
+
+type LocationItem = Museum | Poi
+
+definePageMeta({
+  layout: 'default',
+})
+
+// Stores
+const museumStore = useMuseumStore()
+const poiStore = usePOIStore()
+const guildStore = useGuildStore()
+const runStore = useRunStore()
+
+// Composables
+const geolocation = useGeolocation({
+  defaultLat: 49.1167,  // Saint-Lô
+  defaultLng: -1.0833,
+  reloadThresholdKm: 5
+})
+
+const mapInteraction = useMapInteraction()
+
+// Refs
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapRef = ref<any>(null) // Type any car Leaflet map non typé
+const nearbyMuseums = ref<Museum[]>([])
+const nearbyPOIs = ref<Poi[]>([])
+const selectedItem = ref<LocationItem | null>(null)
+const isDrawerOpen = ref(false)
+const expeditionLoading = ref(false)
+const expeditionError = ref<string | null>(null)
+
+// Computed - Guild characters
+const guildCharacters = computed(() => {
+  const guild = guildStore.guild
+  if (!guild) return []
+
+  // Support structure Strapi v4/v5
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const charactersData = guild.attributes?.characters || (guild as any).characters
+  if (!charactersData) return []
+
+  const chars = charactersData.data || charactersData
+  return Array.isArray(chars) ? chars : []
+})
+
+// Computed - Valid markers (filtrer les coordonnées invalides)
+const validMuseums = computed<Museum[]>(() =>
+  nearbyMuseums.value.filter((m) => m.lat !== undefined && m.lng !== undefined)
+)
+
+const validPOIs = computed<Poi[]>(() =>
+  nearbyPOIs.value.filter((p) => p.lat !== undefined && p.lng !== undefined)
+)
+
+// Computed - Distance to selected item
+const distanceToSelectedItem = computed<number>(() => {
+  if (!selectedItem.value) return 0
+
+  const itemLat = selectedItem.value.lat
+  const itemLng = selectedItem.value.lng
+
+  if (itemLat === undefined || itemLng === undefined) return 0
+
+  return calculateDistance(userLat.value, userLng.value, itemLat, itemLng)
+})
+
+// Destructure geolocation state
+const { userLat, userLng, geolocLoading } = geolocation
+
+// Handlers
+function handleGeolocationAllow(): void {
+  fetchNearbyLocations()
+  geolocation.startTracking()
+}
+
+function handleGeolocationDeny(): void {
+  console.log('User declined geolocation, using Saint-Lô default')
+  fetchNearbyLocations()
+}
+
+function selectItem(item: LocationItem) {
+  selectedItem.value = item
+  isDrawerOpen.value = true
+  mapInteraction.flyToItem(mapRef.value, item)
+}
+
+async function handleStartExpedition() {
+  if (!selectedItem.value) return
+
+  const museumId = selectedItem.value.documentId
+  if (!museumId) {
+    console.error("Museum has no documentId")
+    return
+  }
+
+  expeditionLoading.value = true
+  expeditionError.value = null
+
+  try {
+    const result = await runStore.startExpedition(museumId, userLat.value, userLng.value)
+
+    if (result.questRolled) {
+      // NPC tiré → page interaction NPC avec dialogues
+      navigateTo('/npc-interaction')
+    } else {
+      // Pas de NPC → directement à l'expédition
+      navigateTo('/expedition')
+    }
+  } catch (e: any) {
+    console.error('Failed to start expedition:', e)
+    expeditionError.value = e?.error?.message || e?.message || 'Erreur lors du lancement'
+  } finally {
+    expeditionLoading.value = false
+  }
+}
+
+// Fetch nearby locations
+async function fetchNearbyLocations(): Promise<void> {
+  const radius = 10 // 10 km
+
+  const [museums, pois] = await Promise.all([
+    museumStore.fetchNearby(radius, userLat.value, userLng.value),
+    poiStore.fetchNearby(radius, userLat.value, userLng.value)
+  ])
+
+  nearbyMuseums.value = museums
+  nearbyPOIs.value = pois
+
+  console.log(`Found ${museums.length} museums and ${pois.length} POIs within ${radius}km`)
+}
+
+// Register geolocation callbacks
+geolocation.registerCallbacks({
+  onFirstPosition: (lat, lng) => {
+    console.log('First position obtained:', lat, lng)
+    fetchNearbyLocations()
+    mapInteraction.flyToCoords(mapRef.value, lat, lng, 13, 1.5)
+  },
+  onDistanceThresholdReached: (distance) => {
+    console.log(`User moved ${distance.toFixed(2)}km, reloading locations...`)
+    fetchNearbyLocations()
+  }
+})
+
+// Lifecycle
+onMounted(() => {
+  guildStore.fetchAll()
+})
 </script>

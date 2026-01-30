@@ -1,7 +1,7 @@
 <template>
   <span 
     :class="[
-      'inline-block rounded-full px-6 py-1.5 text-base font-bold transition-colors border-2 text-center select-none',
+      'inline-block rounded-full px-4 py-1 text-xs font-onest font-semibold transition-colors border-2 text-center select-none',
       computedClasses
     ]"
   >
@@ -15,23 +15,23 @@ import { computed } from 'vue';
 const props = defineProps({
   label: String,
   // On enlève les 'validator' stricts pour pouvoir gérer l'erreur nous-mêmes
-  category: { type: String, default: 'histoire' }, 
+  category: { type: String, default: 'history' }, 
   variant: { type: String, default: 'filled' }
 });
 
 // 1. Dictionnaire pour l'affichage du texte
 const labels = {
-  histoire: 'Histoire',
+  history: 'Histoire',
   art: 'Art',
-  societe: 'Société',
+  society: 'Société',
   nature: 'Nature',
   science: 'Science',
-  savoir: 'Savoir-Faire'
+  make: 'Savoir-Faire'
 };
 
 // 2. Dictionnaire des styles valides
 const styles = {
-  histoire: {
+  history: {
     filled: 'bg-orange-500 border-orange-500 text-white',
     outline: 'border-orange-500 text-orange-500'
   },
@@ -39,7 +39,7 @@ const styles = {
     filled: 'bg-sky-500 border-sky-500 text-white',
     outline: 'border-sky-500 text-sky-500'
   },
-  societe: {
+  society: {
     filled: 'bg-red-600 border-red-600 text-white',
     outline: 'border-red-600 text-red-600'
   },
@@ -51,7 +51,7 @@ const styles = {
     filled: 'bg-purple-600 border-purple-600 text-white',
     outline: 'border-purple-600 text-purple-600'
   },
-  savoir: {
+  make: {
     filled: 'bg-amber-700 border-amber-700 text-white',
     outline: 'border-amber-700 text-amber-700'
   }
