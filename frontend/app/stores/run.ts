@@ -203,9 +203,3 @@ export const useRunStore = defineStore('run', () => {
 // Persistance supprimée - les runs sont rechargés via guildStore.fetchAll()
 // L'historique des runs s'accumule indéfiniment, ce qui causait l'erreur 431
 // Le serveur est la source de vérité pour l'historique des sessions
-
-}, {
-  persist: {
-    pick: ['runs'],
-  },
-})

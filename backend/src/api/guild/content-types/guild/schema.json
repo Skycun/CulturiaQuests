@@ -73,6 +73,18 @@
       "relation": "oneToMany",
       "target": "api::quest.quest",
       "mappedBy": "guild"
+    },
+    "player_friendships_sent": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::player-friendship.player-friendship",
+      "mappedBy": "requester"
+    },
+    "player_friendships_received": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::player-friendship.player-friendship",
+      "mappedBy": "receiver"
     }
   }
 }

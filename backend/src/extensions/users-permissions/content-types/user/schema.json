@@ -73,6 +73,10 @@
     },
     "age": {
       "type": "integer"
+    },
+    "friend_requests_enabled": {
+      "type": "boolean",
+      "default": true
     }
   }
 }
