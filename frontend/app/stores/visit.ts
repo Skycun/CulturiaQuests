@@ -186,5 +186,9 @@ export const useVisitStore = defineStore('visit', () => {
     openChest,
   }
 })
+// Persistance supprimée - les visits sont rechargés via guildStore.fetchAll()
+// L'historique des visites s'accumule, ce qui causait l'erreur 431
+// Le serveur est la source de vérité pour l'historique des visites
+
 // Note: Persistence disabled to prevent 431 errors with large visit data
 // Visits are loaded automatically via guildStore.fetchAll() on login

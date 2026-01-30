@@ -206,8 +206,7 @@ export const useCharacterStore = defineStore('character', () => {
     saveCharacter,
     deleteCharacter,
   }
-}, {
-  persist: {
-    pick: ['characters'],
-  },
 })
+// Persistance supprimée - les characters sont rechargés via guildStore.fetchAll()
+// Bien que petit, cela évite les données obsolètes si le joueur
+// modifie son personnage depuis un autre appareil
