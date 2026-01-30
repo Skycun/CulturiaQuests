@@ -67,7 +67,15 @@ export default {
         'api::visit.visit.openChest',
         'api::run.run.startExpedition',
         'api::run.run.endExpedition',
-        'api::run.run.getActiveRun'
+        'api::run.run.getActiveRun',
+        // Player friendship permissions
+        'api::player-friendship.player-friendship.find',
+        'api::player-friendship.player-friendship.searchUser',
+        'api::player-friendship.player-friendship.sendRequest',
+        'api::player-friendship.player-friendship.acceptRequest',
+        'api::player-friendship.player-friendship.rejectRequest',
+        'api::player-friendship.player-friendship.removeFriend',
+        'api::player-friendship.player-friendship.toggleFriendRequests',
       ];
 
       for (const action of actions) {

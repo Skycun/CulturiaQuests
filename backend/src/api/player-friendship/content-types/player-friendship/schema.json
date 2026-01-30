@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "player_friendships",
+  "info": {
+    "singularName": "player-friendship",
+    "pluralName": "player-friendships",
+    "displayName": "Player Friendship"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "accepted", "rejected"],
+      "required": true,
+      "default": "pending"
+    },
+    "requester": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "player_friendships_sent"
+    },
+    "receiver": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "player_friendships_received"
+    }
+  }
+}

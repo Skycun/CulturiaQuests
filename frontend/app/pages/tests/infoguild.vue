@@ -3,8 +3,7 @@ import { useGuildStore } from '~/stores/guild'
 
 const user = useStrapiUser()
 const guildStore = useGuildStore()
-const { logout } = useStrapiAuth()
-const router = useRouter()
+const { logout } = useLogout()
 
 const isAuthenticated = computed(() => !!user.value)
 const guild = computed(() => guildStore.guild)
@@ -20,9 +19,8 @@ onMounted(async () => {
   }
 })
 
-const handleLogout = async () => {
-  await logout()
-  router.push('/tests/login')
+const handleLogout = () => {
+  logout('/tests/login')
 }
 
 const handleDeleteGuild = async () => {
@@ -31,8 +29,7 @@ const handleDeleteGuild = async () => {
     await guildStore.deleteGuild()
     showDeleteConfirm.value = false
     // Redirect to login after successful deletion
-    await logout()
-    router.push('/tests/login')
+    logout('/tests/login')
   } catch (error: any) {
     deleteError.value = error?.message || 'Failed to delete guild'
     console.error('Delete guild error:', error)
