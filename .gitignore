@@ -173,6 +173,7 @@ venv/
 # Tests et coverage
 coverage/
 .nyc_output/
+test-results/
 *.lcov
 
 # Temp files
