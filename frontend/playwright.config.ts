@@ -17,11 +17,9 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'chromium',
+      name: 'firefox',
       use: {
-        ...devices['Desktop Chrome'],
-        // Don't specify channel when using CDP connection
-        ...(process.env.CDP_URL ? {} : { launchOptions: { args: ['--no-sandbox'] } }),
+        ...devices['Desktop Firefox'],
       },
     },
   ],
