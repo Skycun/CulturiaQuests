@@ -1,13 +1,11 @@
 <script setup lang="ts">
 const user = useStrapiUser()
-const { logout } = useStrapiAuth()
-const router = useRouter()
+const { logout } = useLogout()
 
 const isAuthenticated = computed(() => !!user.value)
 
-const handleLogout = async () => {
-  await logout()
-  router.push('/tests/login')
+const handleLogout = () => {
+  logout('/tests/login')
 }
 
 // Layout de test

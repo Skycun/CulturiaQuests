@@ -568,6 +568,14 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::guild.guild'> &
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
+    player_friendships_received: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::player-friendship.player-friendship'
+    >;
+    player_friendships_sent: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::player-friendship.player-friendship'
+    >;
     publishedAt: Schema.Attribute.DateTime;
     quests: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
@@ -705,6 +713,39 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<0>;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPlayerFriendshipPlayerFriendship
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'player_friendships';
+  info: {
+    displayName: 'Player Friendship';
+    pluralName: 'player-friendships';
+    singularName: 'player-friendship';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::player-friendship.player-friendship'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    receiver: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    requester: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    status: Schema.Attribute.Enumeration<['pending', 'accepted', 'rejected']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1395,6 +1436,8 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    friend_requests_enabled: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
     guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -1444,6 +1487,7 @@ declare module '@strapi/strapi' {
       'api::item.item': ApiItemItem;
       'api::museum.museum': ApiMuseumMuseum;
       'api::npc.npc': ApiNpcNpc;
+      'api::player-friendship.player-friendship': ApiPlayerFriendshipPlayerFriendship;
       'api::poi.poi': ApiPoiPoi;
       'api::quest.quest': ApiQuestQuest;
       'api::rarity.rarity': ApiRarityRarity;

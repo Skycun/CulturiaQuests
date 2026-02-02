@@ -60,7 +60,7 @@
                 </div>
                 <button
                     class="text-gray-500 text-sm mt-2 underline hover:text-gray-300 transition-colors"
-                    @click="logout"
+                    @click="handleLogout"
                     >
                     Se déconnecter
                 </button>
@@ -78,16 +78,15 @@ import PixelButton from '~/components/form/PixelButton.vue'
 import GuildStatRow from '~/components/guild/GuildStatRow.vue'
 
 const router = useRouter()
-const { logout: strapiLogout } = useStrapiAuth()
+const { logout } = useLogout()
 const guildStore = useGuildStore()
 const statsStore = useStatisticsStore()
 
 // Debug mode from guild store
 const debugMode = computed(() => guildStore.debugMode)
 
-const logout = () => {
-    strapiLogout()
-    router.push('/')
+const handleLogout = () => {
+    logout('/')
 }
 
 onMounted(async () => {
