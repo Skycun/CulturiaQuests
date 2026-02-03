@@ -1,45 +1,5 @@
 import { factories } from '@strapi/strapi';
 
-/**
- * Update the guild's quiz_streak based on consecutive days
- */
-async function updateQuizStreak(
-  strapi: any,
-  guild: { id: number; documentId: string; quiz_streak: number | null },
-  todayDate: string
-) {
-  const previousAttempt = await strapi.db.query('api::quiz-attempt.quiz-attempt').findOne({
-    where: {
-      guild: { id: guild.id },
-      session: {
-        date: { $ne: todayDate },
-      },
-    },
-    orderBy: { completed_at: 'desc' },
-    populate: ['session'],
-  });
-
-  let newStreak = 1;
-
-  if (previousAttempt?.session?.date) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    if (previousAttempt.session.date === yesterdayStr) {
-      newStreak = (guild.quiz_streak || 0) + 1;
-    }
-  }
-
-  await strapi.documents('api::guild.guild').update({
-    documentId: guild.documentId,
-    data: { quiz_streak: newStreak },
-  });
-
-  strapi.log.info(`[QuizAttempt] Updated quiz_streak for guild ${guild.documentId}: ${newStreak}`);
-  return newStreak;
-}
-
 export default factories.createCoreController('api::quiz-attempt.quiz-attempt', ({ strapi }) => ({
   /**
    * GET /api/quiz-attempts/today
@@ -51,24 +11,20 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       return ctx.unauthorized('You must be logged in');
     }
 
-    // Récupérer la guild de l'utilisateur
-    const guild = await strapi.db.query('api::guild.guild').findOne({
-      where: { user: { id: user.id } },
-      select: ['id', 'documentId'],
-    });
+    const service = strapi.service('api::quiz-attempt.quiz-attempt');
 
+    // R1 — Utilise le helper du service
+    const guild = await service.getUserGuild(user.id);
     if (!guild) {
       return ctx.notFound('Guild not found');
     }
 
-    // Récupérer la session du jour
     const session = await strapi.service('api::quiz-session.quiz-session').getTodaySession();
-
     if (!session) {
       return ctx.notFound('No quiz available for today. Please try again later.');
     }
 
-    // Vérifier si l'utilisateur a déjà tenté aujourd'hui
+    // Vérifier si déjà tenté
     const existingAttempt = await strapi.db.query('api::quiz-attempt.quiz-attempt').findOne({
       where: {
         guild: { id: guild.id },
@@ -119,29 +75,21 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
 
     const { sessionId, answers, timeSpentSeconds } = ctx.request.body;
 
-    // Validation des données
     if (!sessionId || !answers || !Array.isArray(answers)) {
       return ctx.badRequest('Invalid submission. sessionId and answers array required.');
     }
 
-    // Récupérer la guild
-    const guild = await strapi.db.query('api::guild.guild').findOne({
-      where: { user: { id: user.id } },
-      select: ['id', 'documentId', 'gold', 'exp', 'quiz_streak'],
-    });
+    const service = strapi.service('api::quiz-attempt.quiz-attempt');
 
+    // R1 — Utilise le helper du service
+    const guild = await service.getUserGuild(user.id, ['id', 'documentId', 'gold', 'exp', 'quiz_streak']);
     if (!guild) {
       return ctx.notFound('Guild not found');
     }
 
-    // Récupérer la session avec questions
     const session = await strapi.db.query('api::quiz-session.quiz-session').findOne({
       where: { documentId: sessionId },
-      populate: {
-        questions: {
-          orderBy: { order: 'asc' },
-        },
-      },
+      populate: { questions: { orderBy: { order: 'asc' } } },
     });
 
     if (!session) {
@@ -153,23 +101,14 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     }
 
     // Vérifier si déjà tenté
-    const existingAttempt = await strapi.db.query('api::quiz-attempt.quiz-attempt').findOne({
-      where: {
-        guild: { id: guild.id },
-        session: { documentId: sessionId },
-      },
-    });
-
-    if (existingAttempt) {
+    const alreadyAttempted = await service.hasExistingAttempt(guild.id, sessionId);
+    if (alreadyAttempted) {
       return ctx.badRequest('You have already completed this quiz');
     }
 
-    // Calculer le score
-    const quizAttemptService = strapi.service('api::quiz-attempt.quiz-attempt');
-    const result = quizAttemptService.calculateScore(session.questions, answers);
-
-    // Générer les récompenses
-    const rewards = await quizAttemptService.generateRewards(guild.documentId, result.totalScore);
+    // Calculer score et générer récompenses
+    const result = service.calculateScore(session.questions, answers);
+    const rewards = await service.generateRewards(guild.documentId, result.totalScore);
 
     // Créer l'attempt
     const attempt = await strapi.documents('api::quiz-attempt.quiz-attempt').create({
@@ -184,17 +123,9 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       },
     });
 
-    // Mettre à jour la guild: gold, exp
-    await strapi.documents('api::guild.guild').update({
-      documentId: guild.documentId,
-      data: {
-        gold: (guild.gold || 0) + rewards.gold,
-        exp: String(BigInt(guild.exp || 0) + BigInt(rewards.exp)),
-      },
-    });
-
-    // Mettre à jour le streak
-    const newStreak = await updateQuizStreak(strapi, guild, session.date);
+    // R2 — Utilise les méthodes du service pour appliquer rewards et streak
+    await service.applyRewardsToGuild(guild.documentId, guild.gold, guild.exp, rewards);
+    const newStreak = await service.updateQuizStreak(guild, session.date);
 
     return ctx.send({
       data: {
@@ -221,17 +152,15 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       return ctx.unauthorized('You must be logged in');
     }
 
-    const guild = await strapi.db.query('api::guild.guild').findOne({
-      where: { user: { id: user.id } },
-      select: ['id', 'documentId', 'name'],
-    });
+    const service = strapi.service('api::quiz-attempt.quiz-attempt');
 
+    // R1 — Utilise le helper du service
+    const guild = await service.getUserGuild(user.id, ['id', 'documentId', 'name']);
     if (!guild) {
       return ctx.notFound('Guild not found');
     }
 
     const session = await strapi.service('api::quiz-session.quiz-session').getTodaySession();
-
     if (!session) {
       return ctx.send({ data: [] });
     }
@@ -248,15 +177,11 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       },
     });
 
-    // Extraire les documentIds des amis
     const friendGuildIds = friendships.map((f: any) =>
       f.requester.documentId === guild.documentId ? f.receiver.documentId : f.requester.documentId
     );
-
-    // Ajouter soi-même pour être dans le leaderboard
     friendGuildIds.push(guild.documentId);
 
-    // Récupérer les attempts du jour pour ces guilds
     const attempts = await strapi.db.query('api::quiz-attempt.quiz-attempt').findMany({
       where: {
         session: { documentId: session.documentId },
@@ -265,17 +190,12 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       populate: {
         guild: {
           select: ['documentId', 'name', 'quiz_streak'],
-          populate: {
-            user: {
-              select: ['username'],
-            },
-          },
+          populate: { user: { select: ['username'] } },
         },
       },
       orderBy: { score: 'desc' },
     });
 
-    // Formater le leaderboard
     const leaderboard = attempts.map((attempt: any, index: number) => ({
       rank: index + 1,
       username: attempt.guild.user?.username || 'Unknown',
@@ -301,22 +221,17 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     const { limit = 30 } = ctx.query;
     const sanitizedLimit = Math.min(Math.max(parseInt(limit as string) || 30, 1), 100);
 
-    const guild = await strapi.db.query('api::guild.guild').findOne({
-      where: { user: { id: user.id } },
-      select: ['id', 'documentId'],
-    });
+    const service = strapi.service('api::quiz-attempt.quiz-attempt');
 
+    // R1 — Utilise le helper du service
+    const guild = await service.getUserGuild(user.id);
     if (!guild) {
       return ctx.notFound('Guild not found');
     }
 
     const attempts = await strapi.db.query('api::quiz-attempt.quiz-attempt').findMany({
       where: { guild: { id: guild.id } },
-      populate: {
-        session: {
-          select: ['documentId', 'date'],
-        },
-      },
+      populate: { session: { select: ['documentId', 'date'] } },
       orderBy: { completed_at: 'desc' },
       limit: sanitizedLimit,
     });
@@ -333,7 +248,7 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     return ctx.send({ data: history });
   },
 
-  // Keep the default CRUD methods with user filtering
+  // CRUD overrides avec filtrage utilisateur
   async create(ctx) {
     return ctx.badRequest('Use POST /api/quiz-attempts/submit instead');
   },
@@ -345,14 +260,9 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     }
 
     const sanitizedQuery = await this.sanitizeQuery(ctx);
-
     sanitizedQuery.filters = {
       ...((sanitizedQuery.filters as any) || {}),
-      guild: {
-        user: {
-          id: user.id,
-        },
-      },
+      guild: { user: { id: user.id } },
     };
 
     const results = await strapi.documents('api::quiz-attempt.quiz-attempt').findMany(sanitizedQuery);
@@ -368,14 +278,9 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
 
     const { id } = ctx.params;
     const sanitizedQuery = await this.sanitizeQuery(ctx);
-
     sanitizedQuery.filters = {
       ...((sanitizedQuery.filters as any) || {}),
-      guild: {
-        user: {
-          id: user.id,
-        },
-      },
+      guild: { user: { id: user.id } },
     };
 
     const document = await strapi.documents('api::quiz-attempt.quiz-attempt').findOne({

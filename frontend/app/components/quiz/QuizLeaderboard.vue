@@ -1,27 +1,21 @@
 <script setup lang="ts">
-interface LeaderboardEntry {
-  rank: number
-  username: string
-  score: number
-  streak: number
-  isMe: boolean
-}
+import type { LeaderboardEntry } from '~/types/quiz'
 
 defineProps<{
   entries: LeaderboardEntry[]
 }>()
 
-function getRankEmoji(rank: number) {
-  if (rank === 1) return '🥇'
-  if (rank === 2) return '🥈'
-  if (rank === 3) return '🥉'
+function getRankEmoji(rank: number): string {
+  if (rank === 1) return '1st'
+  if (rank === 2) return '2nd'
+  if (rank === 3) return '3rd'
   return ''
 }
 </script>
 
 <template>
   <div v-if="entries.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
-    <h3 class="text-lg font-semibold mb-3">🏅 Classement du jour</h3>
+    <h3 class="text-lg font-semibold mb-3">Classement du jour</h3>
     <div class="space-y-2">
       <div
         v-for="entry in entries"
@@ -36,7 +30,7 @@ function getRankEmoji(rank: number) {
         </div>
         <div class="text-right">
           <span class="font-semibold">{{ entry.score }} pts</span>
-          <span class="text-xs text-gray-500 ml-2">🔥{{ entry.streak }}</span>
+          <span class="text-xs text-gray-500 ml-2">{{ entry.streak }} jours</span>
         </div>
       </div>
     </div>

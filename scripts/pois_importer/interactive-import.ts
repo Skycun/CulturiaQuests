@@ -243,23 +243,41 @@ async function categorizeWithGemini(place: any, details: PlaceDetails): Promise<
   }
   `;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    // Clean markdown code blocks if present
-    const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error("Gemini Error:", e);
-    // Fallback default
-    return {
-        categories: [],
-        reasoning: "Erreur IA",
-        isPubliclyAccessible: false,
-        accessType: "inconnu",
-        radiusMeters: 50
-    };
+  let attempts = 0;
+  const maxAttempts = 5;
+  let delay = 1000;
+
+  while (attempts < maxAttempts) {
+    try {
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      // Clean markdown code blocks if present
+      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(jsonStr);
+    } catch (e: any) {
+      attempts++;
+      const isOverloaded = e.message?.includes('503') || e.message?.includes('429');
+      
+      if (isOverloaded && attempts < maxAttempts) {
+        // process.stdout.write(`\n   ⚠️  Gemini overload (503/429). Retry ${attempts}/${maxAttempts} in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+        continue;
+      }
+      
+      console.error("\nGemini Error:", e);
+      break; // Exit loop on non-retriable error or max attempts
+    }
   }
+
+  // Fallback default
+  return {
+      categories: [],
+      reasoning: "Erreur IA ou Overload",
+      isPubliclyAccessible: false,
+      accessType: "inconnu",
+      radiusMeters: 50
+  };
 }
 
 // ===== MAIN FLOW =====
@@ -293,40 +311,71 @@ async function main() {
   // 3. Search
   const places = await searchNearby(location.lat, location.lng, DEFAULT_RADIUS);
 
-  // 4. Batch Process with Gemini
-  console.log(`\n🤖 Analyse IA de ${places.length} lieux en cours...`);
+  // 4. Batch Process with Gemini (Parallel + Dashboard)
+  const poiStates = new Array(places.length).fill('pending'); // pending, processing, accepted, rejected
+  const recentLogs: string[] = [];
+  const validPOIs: any[] = [];
   
-  const processedPOIs = [];
-  const validPOIs = [];
-
-  let count = 0;
-  for (const place of places) {
-    // Basic filter
-    if (!place.types.some((t: string) => CULTURAL_TYPES.includes(t))) continue;
-
-    count++;
-    process.stdout.write(`   [${count}/${places.length}] ${place.name}... `);
-
-    // Fetch details
-    const details = await fetchPlaceDetails(place.place_id);
+  // Dashboard Renderer
+  const renderDashboard = () => {
+    // ANSI: Clear Screen & Home Cursor
+    process.stdout.write('\x1B[2J\x1B[0f');
     
-    // Analyze
-    const analysis = await categorizeWithGemini(place, details);
+    console.log('🌍 CulturiaQuests - Dashboard Analyse IA\n');
     
-    const poiData = {
-      name: place.name,
-      original_types: place.types,
-      vicinity: place.vicinity,
-      rating: place.rating,
-      latitude: place.geometry.location.lat,
-      longitude: place.geometry.location.lng,
-      gemini_analysis: analysis
-    };
+    // Stats
+    const accepted = poiStates.filter(s => s === 'accepted').length;
+    const rejected = poiStates.filter(s => s === 'rejected').length;
+    const processing = poiStates.filter(s => s === 'processing').length;
+    const pending = poiStates.filter(s => s === 'pending').length;
+    
+    // Progress Bar
+    const progress = Math.round(((places.length - pending) / places.length) * 100);
+    const progressBar = `[${'='.repeat(Math.floor(progress / 5))}${' '.repeat(20 - Math.floor(progress / 5))}] ${progress}%`;
 
-    processedPOIs.push(poiData);
+    console.log(`📊 Total: ${places.length} | ✅ Validés: ${accepted} | ❌ Rejetés: ${rejected} | 🤖 En cours: ${processing} | ${progressBar}`);
+    console.log(''.padEnd(60, '-'));
 
-    if (analysis.isPubliclyAccessible) {
-        console.log(`✅ Validé (${analysis.categories[0] || '?'})`);
+    // Visual Grid (GitHub Style)
+    // ⬜ Pending (\x1b[90m) | 🟦 Processing (\x1b[34m) | 🟩 Accepted (\x1b[32m) | 🟥 Rejected (\x1b[31m)
+    let grid = '';
+    const width = 50; // blocks per line
+    
+    poiStates.forEach((s, i) => {
+       let symbol = '\x1b[90m■\x1b[0m'; // Gray (Pending)
+       if (s === 'processing') symbol = '\x1b[34m■\x1b[0m'; // Blue
+       if (s === 'accepted') symbol = '\x1b[32m■\x1b[0m';   // Green
+       if (s === 'rejected') symbol = '\x1b[31m■\x1b[0m';   // Red
+       
+       grid += symbol + ' ';
+       if ((i + 1) % width === 0) grid += '\n';
+    });
+    console.log(grid + '\n');
+    
+    // Recent Logs
+    console.log('--- Dernière activité ---');
+    if (recentLogs.length === 0) console.log('(Démarrage...)');
+    recentLogs.slice(-5).forEach(log => console.log(log));
+  };
+
+  // Helper function for single place processing
+  const processPlace = async (place: any, index: number) => {
+    // Check filter
+    if (!place.types.some((t: string) => CULTURAL_TYPES.includes(t))) {
+        poiStates[index] = 'rejected';
+        return;
+    }
+
+    poiStates[index] = 'processing';
+    renderDashboard();
+
+    try {
+      const details = await fetchPlaceDetails(place.place_id);
+      const analysis = await categorizeWithGemini(place, details);
+      
+      if (analysis.isPubliclyAccessible) {
+        poiStates[index] = 'accepted';
+        recentLogs.push(`✅ ${place.name.substring(0, 40)}... (${analysis.categories[0]})`);
         
         // Prepare Strapi Format
         const isMuseum = place.types.some((t: string) => ['museum', 'art_gallery', 'aquarium', 'zoo'].includes(t));
@@ -343,13 +392,27 @@ async function main() {
             radiusMeters: analysis.radiusMeters,
             rating: place.rating
         });
-    } else {
-        console.log(`❌ Rejeté`);
+      } else {
+        poiStates[index] = 'rejected';
+        recentLogs.push(`❌ ${place.name.substring(0, 40)}...`);
+      }
+    } catch (e) {
+      poiStates[index] = 'rejected';
+      recentLogs.push(`⚠️ Erreur: ${place.name.substring(0, 20)}...`);
     }
+    
+    renderDashboard();
+  };
 
-    // Small delay to avoid rate limits
-    await new Promise(resolve => setTimeout(resolve, 500));
+  // Execute in chunks
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < places.length; i += BATCH_SIZE) {
+    // Map slice to preserve original index
+    const batch = places.slice(i, i + BATCH_SIZE).map((p, idx) => ({ place: p, index: i + idx }));
+    await Promise.all(batch.map(item => processPlace(item.place, item.index)));
   }
+
+  console.log(`\n✅ Analyse terminée.`);
 
   // 5. Save JSON
   const exportDir = path.join(__dirname, 'exports');
