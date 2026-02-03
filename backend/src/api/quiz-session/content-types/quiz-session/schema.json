@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quiz_sessions",
+  "info": {
+    "singularName": "quiz-session",
+    "pluralName": "quiz-sessions",
+    "displayName": "Quiz Session"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true,
+      "unique": true
+    },
+    "questions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-question.quiz-question",
+      "mappedBy": "session"
+    },
+    "attempts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-attempt.quiz-attempt",
+      "mappedBy": "session"
+    },
+    "generation_status": {
+      "type": "enumeration",
+      "enum": ["pending", "generating", "completed", "failed"],
+      "default": "pending"
+    },
+    "generation_error": {
+      "type": "text"
+    },
+    "generated_at": {
+      "type": "datetime"
+    }
+  }
+}

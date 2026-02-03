@@ -76,6 +76,11 @@ export default {
         'api::player-friendship.player-friendship.rejectRequest',
         'api::player-friendship.player-friendship.removeFriend',
         'api::player-friendship.player-friendship.toggleFriendRequests',
+        // Quiz permissions
+        'api::quiz-attempt.quiz-attempt.getTodayQuiz',
+        'api::quiz-attempt.quiz-attempt.submitQuiz',
+        'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
+        'api::quiz-attempt.quiz-attempt.getMyHistory',
       ];
 
       for (const action of actions) {
