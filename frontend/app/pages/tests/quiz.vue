@@ -5,132 +5,98 @@ const client = useStrapiClient()
 // --- Données ---
 const loading = ref(false)
 const error = ref<string | null>(null)
-const sessions = ref<any[]>([])
-const selectedSessionId = ref<string | null>(null)
+const sessionId = ref<string | null>(null)
+const sessionDate = ref<string | null>(null)
 const questions = ref<any[]>([])
-const guildDocumentId = ref<string | null>(null)
 
 // --- État du quiz ---
 const currentIndex = ref(0)
-const answers = ref<Record<number, string>>({}) // order -> réponse choisie
+const answers = ref<Record<string, string>>({}) // questionId -> réponse
 const quizFinished = ref(false)
 const startTime = ref<number>(0)
 const finishedAt = ref<number>(0)
 
-// --- Soumission ---
+// --- Résultats ---
 const submitting = ref(false)
-const submitResult = ref<{ success: boolean; message: string } | null>(null)
-
-// --- Tentative existante ---
+const submitResult = ref<any | null>(null)
+const alreadyCompleted = ref(false)
 const existingAttempt = ref<any | null>(null)
+
+// --- Leaderboard ---
+const leaderboard = ref<any[]>([])
+const leaderboardLoading = ref(false)
 
 const isAuthenticated = computed(() => !!user.value)
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
-const selectedAnswer = computed(() => (currentQuestion.value ? answers.value[currentQuestion.value.order] : null) || null)
+const selectedAnswer = computed(() => (currentQuestion.value ? answers.value[currentQuestion.value.documentId] : null) || null)
+const answeredCount = computed(() => Object.keys(answers.value).length)
 
-// Score selon les règles du plan : QCM = 200 binaire, Timeline = 0-250 proportionnel
-const score = computed(() => {
+// Score calculé côté client (pour affichage en temps réel)
+const liveScore = computed(() => {
   let total = 0
   for (const q of questions.value) {
-    const ans = answers.value[q.order]
+    const ans = answers.value[q.documentId]
     if (ans === undefined) continue
     if (q.question_type === 'qcm') {
-      total += ans === q.correct_answer ? 200 : 0
-    } else {
-      const correct = parseInt(q.correct_answer, 10)
-      const guessed = parseInt(ans, 10)
-      const range = q.timeline_range ? q.timeline_range.max - q.timeline_range.min : 100
-      const distance = Math.abs(correct - guessed)
-      total += Math.max(0, Math.round(250 * (1 - distance / range)))
+      // On ne connaît pas la réponse, on compte juste les réponses données
+      total += 0 // Score réel calculé côté serveur
     }
   }
   return total
 })
 
-// Score par question pour l'écran de résultats
-function questionScore(q: any): number {
-  const ans = answers.value[q.order]
-  if (ans === undefined) return 0
-  if (q.question_type === 'qcm') return ans === q.correct_answer ? 200 : 0
-  const correct = parseInt(q.correct_answer, 10)
-  const guessed = parseInt(ans, 10)
-  const range = q.timeline_range ? q.timeline_range.max - q.timeline_range.min : 100
-  return Math.max(0, Math.round(250 * (1 - Math.abs(correct - guessed) / range)))
-}
-
-// --- Fetches ---
-async function fetchSessions() {
+// --- Fetch quiz du jour ---
+async function fetchTodayQuiz() {
   loading.value = true
   error.value = null
-  try {
-    const res = await client<any>('/quiz-sessions?sort=date:desc&filters[generation_status][$eq]=completed', { method: 'GET' })
-    sessions.value = res.data || []
-    if (sessions.value.length > 0 && !selectedSessionId.value) {
-      selectedSessionId.value = sessions.value[0].documentId
-    }
-  } catch (e: any) {
-    error.value = e?.message || 'Erreur'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function fetchGuild() {
-  try {
-    const res = await client<any>('/guilds?limit=1', { method: 'GET' })
-    if (res.data && res.data.length > 0) {
-      guildDocumentId.value = res.data[0].documentId
-    }
-  } catch (e: any) {
-    console.error('Guild fetch error:', e)
-  }
-}
-
-async function checkExistingAttempt(sessionDocId: string) {
-  try {
-    const res = await client<any>(
-      `/quiz-attempts?filters[session][documentId][$eq]=${sessionDocId}`,
-      { method: 'GET' }
-    )
-    return res.data && res.data.length > 0 ? res.data[0] : null
-  } catch {
-    return null
-  }
-}
-
-async function loadQuestions(sessionDocId: string) {
-  loading.value = true
+  alreadyCompleted.value = false
   existingAttempt.value = null
-  try {
-    // Vérifier si une tentative existe déjà
-    const attempt = await checkExistingAttempt(sessionDocId)
-    if (attempt) {
-      existingAttempt.value = attempt
-      loading.value = false
-      return
-    }
 
-    const res = await client<any>(
-      `/quiz-questions?filters[session][documentId][$eq]=${sessionDocId}&sort=order&populate=tag`,
-      { method: 'GET' }
-    )
-    questions.value = res.data || []
-    currentIndex.value = 0
-    answers.value = {}
-    quizFinished.value = false
-    submitResult.value = null
-    startTime.value = Date.now()
+  try {
+    const res = await client<any>('/quiz-attempts/today', { method: 'GET' })
+
+    if (res.data.alreadyCompleted) {
+      alreadyCompleted.value = true
+      existingAttempt.value = res.data.attempt
+      await fetchLeaderboard()
+    } else {
+      sessionId.value = res.data.sessionId
+      sessionDate.value = res.data.date
+      questions.value = res.data.questions || []
+      currentIndex.value = 0
+      answers.value = {}
+      quizFinished.value = false
+      submitResult.value = null
+      startTime.value = Date.now()
+    }
   } catch (e: any) {
-    error.value = e?.message || 'Erreur'
+    if (e?.error?.status === 404) {
+      error.value = 'Aucun quiz disponible pour aujourd\'hui. Revenez plus tard !'
+    } else {
+      error.value = e?.error?.message || e?.message || 'Erreur'
+    }
   } finally {
     loading.value = false
+  }
+}
+
+// --- Fetch leaderboard ---
+async function fetchLeaderboard() {
+  leaderboardLoading.value = true
+  try {
+    const res = await client<any>('/quiz-attempts/leaderboard', { method: 'GET' })
+    leaderboard.value = res.data || []
+  } catch (e: any) {
+    console.error('Leaderboard error:', e)
+  } finally {
+    leaderboardLoading.value = false
   }
 }
 
 // --- Actions quiz ---
 function selectAnswer(answer: string) {
   if (quizFinished.value || !currentQuestion.value) return
-  answers.value[currentQuestion.value.order] = answer
+  answers.value[currentQuestion.value.documentId] = answer
 }
 
 function onSliderInput(e: Event) {
@@ -150,60 +116,87 @@ function prevQuestion() {
   if (currentIndex.value > 0) currentIndex.value--
 }
 
-function restartQuiz() {
-  if (selectedSessionId.value) loadQuestions(selectedSessionId.value)
-}
-
-// --- Soumission de tentative ---
-async function submitAttempt() {
-  if (!guildDocumentId.value || !selectedSessionId.value) {
-    error.value = 'Guild ou session non trouvé'
+// --- Soumission ---
+async function submitQuiz() {
+  if (!sessionId.value) {
+    error.value = 'Session non trouvée'
     return
   }
+
   submitting.value = true
   error.value = null
+
   try {
-    await client<any>('/quiz-attempts', {
+    // Formater les réponses pour l'API
+    const formattedAnswers = questions.value.map((q) => ({
+      questionId: q.documentId,
+      answer: answers.value[q.documentId] || '',
+    }))
+
+    const timeSpent = Math.round((finishedAt.value - startTime.value) / 1000)
+
+    const res = await client<any>('/quiz-attempts/submit', {
       method: 'POST',
       body: {
-        data: {
-          guild: guildDocumentId.value,
-          session: selectedSessionId.value,
-          score: score.value,
-          answers: answers.value,
-          completed_at: new Date().toISOString(),
-          time_spent_seconds: Math.round((finishedAt.value - startTime.value) / 1000),
-        },
+        sessionId: sessionId.value,
+        answers: formattedAnswers,
+        timeSpentSeconds: timeSpent,
       },
     })
-    submitResult.value = { success: true, message: 'Tentative soumise avec succès !' }
+
+    submitResult.value = res.data
+    await fetchLeaderboard()
   } catch (e: any) {
-    submitResult.value = { success: false, message: e?.message || 'Erreur lors de la soumission' }
+    error.value = e?.error?.message || e?.message || 'Erreur lors de la soumission'
   } finally {
     submitting.value = false
   }
 }
 
-// --- Lifecycle + watchers ---
+// --- Lifecycle ---
 onMounted(async () => {
   if (isAuthenticated.value) {
-    await Promise.all([fetchSessions(), fetchGuild()])
+    await fetchTodayQuiz()
   }
-})
-
-watch(selectedSessionId, (newVal) => {
-  if (newVal) loadQuestions(newVal)
 })
 
 definePageMeta({
   layout: 'test',
 })
+
+// Helpers
+function getTierColor(tier: string) {
+  const colors: Record<string, string> = {
+    platinum: 'bg-gradient-to-r from-cyan-400 to-blue-500 text-white',
+    gold: 'bg-gradient-to-r from-amber-400 to-yellow-500 text-white',
+    silver: 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800',
+    bronze: 'bg-gradient-to-r from-orange-600 to-orange-800 text-white',
+  }
+  return colors[tier] || 'bg-gray-200'
+}
+
+function getTierLabel(tier: string) {
+  const labels: Record<string, string> = {
+    platinum: '🏆 Platine',
+    gold: '🥇 Or',
+    silver: '🥈 Argent',
+    bronze: '🥉 Bronze',
+  }
+  return labels[tier] || tier
+}
+
+function getRankEmoji(rank: number) {
+  if (rank === 1) return '🥇'
+  if (rank === 2) return '🥈'
+  if (rank === 3) return '🥉'
+  return ''
+}
 </script>
 
 <template>
   <div class="p-6 max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-2">Quiz — Prototype</h1>
-    <p class="text-gray-500 mb-6">Prototype interactif pour tester le backend quiz.</p>
+    <h1 class="text-3xl font-bold mb-2">Quiz Quotidien</h1>
+    <p class="text-gray-500 mb-6">Testez vos connaissances culturelles !</p>
 
     <!-- Auth -->
     <div v-if="!isAuthenticated" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -216,74 +209,186 @@ definePageMeta({
     <!-- Error -->
     <div v-if="error" class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
       <p class="text-red-700">{{ error }}</p>
+      <button class="mt-2 text-sm text-red-600 underline" @click="fetchTodayQuiz">Réessayer</button>
     </div>
 
-    <div v-if="isAuthenticated" class="space-y-6">
-      <!-- Sélecteur de session -->
-      <div v-if="sessions.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
-        <label class="block text-sm font-medium text-gray-600 mb-1">Session du quiz</label>
-        <select v-model="selectedSessionId" class="w-full border rounded px-3 py-2">
-          <option v-for="s in sessions" :key="s.documentId" :value="s.documentId">{{ s.date }}</option>
-        </select>
-      </div>
+    <!-- Loading -->
+    <div v-if="loading" class="text-center text-gray-500 py-8">Chargement du quiz...</div>
 
-      <div v-else-if="!loading" class="bg-gray-50 border rounded p-6 text-center text-gray-500">
-        Aucune session disponible. Exécutez
-        <code class="bg-gray-200 px-1 rounded">generate-quiz-questions.ts --save</code>.
-      </div>
-
-      <!-- Loading -->
-      <div v-if="loading" class="text-center text-gray-500 py-8">Chargement...</div>
-
-      <!-- === DÉJÀ JOUÉ === -->
-      <template v-else-if="existingAttempt">
+    <div v-else-if="isAuthenticated" class="space-y-6">
+      <!-- === DÉJÀ COMPLÉTÉ === -->
+      <template v-if="alreadyCompleted && existingAttempt">
         <div class="bg-white border rounded-lg p-6 shadow-sm text-center">
           <div class="text-6xl mb-4">🏆</div>
           <h2 class="text-2xl font-bold mb-2">Quiz déjà complété !</h2>
-          <p class="text-gray-500 mb-4">Vous avez déjà participé à ce quiz.</p>
+          <p class="text-gray-500 mb-4">Vous avez déjà participé au quiz d'aujourd'hui.</p>
           <p class="mb-2">
             <span class="text-5xl font-bold text-blue-600">{{ existingAttempt.score }}</span>
-            <span class="text-lg text-gray-400"> / 2500</span>
+            <span class="text-lg text-gray-400"> / 2000</span>
           </p>
-          <p class="text-sm text-gray-500">
+          <p v-if="existingAttempt.time_spent_seconds" class="text-sm text-gray-500">
             Temps : {{ existingAttempt.time_spent_seconds }}s
           </p>
+        </div>
+
+        <!-- Leaderboard -->
+        <div v-if="leaderboard.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
+          <h3 class="text-lg font-semibold mb-3">🏅 Classement du jour</h3>
+          <div class="space-y-2">
+            <div
+              v-for="entry in leaderboard"
+              :key="entry.username"
+              class="flex items-center justify-between p-2 rounded"
+              :class="entry.isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'"
+            >
+              <div class="flex items-center gap-2">
+                <span class="font-bold w-8">{{ getRankEmoji(entry.rank) }}{{ entry.rank }}</span>
+                <span :class="entry.isMe ? 'font-semibold' : ''">{{ entry.username }}</span>
+                <span v-if="entry.isMe" class="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Vous</span>
+              </div>
+              <div class="text-right">
+                <span class="font-semibold">{{ entry.score }} pts</span>
+                <span class="text-xs text-gray-500 ml-2">🔥{{ entry.streak }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- === RÉSULTATS APRÈS SOUMISSION === -->
+      <template v-else-if="submitResult">
+        <div class="bg-white border rounded-lg p-6 shadow-sm">
+          <!-- Score + Tier -->
+          <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold mb-2">Résultats</h2>
+            <p class="mb-2">
+              <span class="text-5xl font-bold text-blue-600">{{ submitResult.score }}</span>
+              <span class="text-lg text-gray-400"> / 2000</span>
+            </p>
+            <span
+              class="inline-block px-4 py-1 rounded-full text-sm font-semibold"
+              :class="getTierColor(submitResult.rewards.tier)"
+            >
+              {{ getTierLabel(submitResult.rewards.tier) }}
+            </span>
+            <p class="text-sm text-gray-500 mt-2">🔥 Streak: {{ submitResult.newStreak }} jour(s)</p>
+          </div>
+
+          <!-- Récompenses -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 class="font-semibold mb-3">🎁 Récompenses</h3>
+            <div class="flex gap-4 justify-center mb-3">
+              <div class="text-center">
+                <span class="text-2xl">🪙</span>
+                <p class="font-bold text-yellow-600">+{{ submitResult.rewards.gold }}</p>
+                <p class="text-xs text-gray-500">Gold</p>
+              </div>
+              <div class="text-center">
+                <span class="text-2xl">⭐</span>
+                <p class="font-bold text-purple-600">+{{ submitResult.rewards.exp }}</p>
+                <p class="text-xs text-gray-500">XP</p>
+              </div>
+            </div>
+            <div v-if="submitResult.rewards.items.length > 0" class="border-t pt-3">
+              <p class="text-sm text-gray-600 mb-2">Items obtenus :</p>
+              <div class="space-y-1">
+                <div
+                  v-for="item in submitResult.rewards.items"
+                  :key="item.documentId"
+                  class="text-sm bg-white px-2 py-1 rounded border"
+                >
+                  {{ item.name }} <span class="text-gray-400">({{ item.rarity }})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détail des réponses -->
+          <div class="space-y-2">
+            <h3 class="font-semibold mb-2">📝 Détail des réponses</h3>
+            <div
+              v-for="(ans, i) in submitResult.detailedAnswers"
+              :key="ans.questionId"
+              class="p-3 rounded-lg text-sm"
+              :class="ans.isCorrect ? 'bg-green-50' : 'bg-red-50'"
+            >
+              <div class="flex justify-between items-start">
+                <p class="flex-1">
+                  <span class="font-medium">{{ i + 1 }}.</span>
+                  {{ ans.questionText }}
+                </p>
+                <span class="font-semibold ml-2" :class="ans.isCorrect ? 'text-green-600' : 'text-red-600'">
+                  +{{ ans.score }}
+                </span>
+              </div>
+              <p class="text-xs mt-1">
+                <span v-if="!ans.isCorrect" class="text-red-600">Votre réponse: {{ ans.userAnswer }}</span>
+                <span :class="ans.isCorrect ? 'text-green-600' : 'text-gray-600'">
+                  {{ ans.isCorrect ? '✓' : '→' }} {{ ans.correctAnswer }}
+                </span>
+              </p>
+              <p v-if="ans.explanation" class="text-xs text-gray-500 mt-1 italic">💡 {{ ans.explanation }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div v-if="leaderboard.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
+          <h3 class="text-lg font-semibold mb-3">🏅 Classement du jour</h3>
+          <div class="space-y-2">
+            <div
+              v-for="entry in leaderboard"
+              :key="entry.username"
+              class="flex items-center justify-between p-2 rounded"
+              :class="entry.isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'"
+            >
+              <div class="flex items-center gap-2">
+                <span class="font-bold w-8">{{ getRankEmoji(entry.rank) }}{{ entry.rank }}</span>
+                <span :class="entry.isMe ? 'font-semibold' : ''">{{ entry.username }}</span>
+                <span v-if="entry.isMe" class="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Vous</span>
+              </div>
+              <div class="text-right">
+                <span class="font-semibold">{{ entry.score }} pts</span>
+                <span class="text-xs text-gray-500 ml-2">🔥{{ entry.streak }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </template>
 
       <!-- === QUIZ EN COURS === -->
       <template v-else-if="questions.length > 0 && !quizFinished">
-        <!-- Barre de progression + score -->
+        <!-- Barre de progression + compteur -->
         <div class="space-y-1">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-semibold text-blue-600">{{ score }} pts</span>
+            <span class="text-sm font-semibold text-blue-600">{{ answeredCount }}/{{ questions.length }} répondu</span>
             <span class="text-sm text-gray-500">{{ currentIndex + 1 }} / {{ questions.length }}</span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2">
             <div
               class="bg-blue-600 h-2 rounded-full transition-all"
-              :style="{ width: ((currentIndex + 1) / questions.length * 100) + '%' }"
+              :style="{ width: ((currentIndex + 1) / questions.length) * 100 + '%' }"
             />
           </div>
         </div>
 
         <!-- Carte question -->
         <div class="bg-white border rounded-lg p-6 shadow-sm">
-          <!-- Type + tag -->
           <div class="flex items-center gap-2 mb-3">
             <span
               class="text-xs font-bold text-white px-2 py-0.5 rounded"
               :class="currentQuestion.question_type === 'qcm' ? 'bg-blue-500' : 'bg-purple-500'"
-            >{{ currentQuestion.question_type === 'qcm' ? 'QCM' : 'Timeline' }}</span>
+            >
+              {{ currentQuestion.question_type === 'qcm' ? 'QCM' : 'Timeline' }}
+            </span>
             <span v-if="currentQuestion.tag" class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
               {{ currentQuestion.tag.name }}
             </span>
           </div>
 
-          <!-- Texte de la question -->
           <p class="text-lg font-semibold mb-4">{{ currentQuestion.question_text }}</p>
 
-          <!-- QCM : boutons d'options -->
+          <!-- QCM -->
           <div v-if="currentQuestion.question_type === 'qcm' && currentQuestion.options" class="space-y-2">
             <button
               v-for="(opt, i) in currentQuestion.options"
@@ -300,18 +405,23 @@ definePageMeta({
             </button>
           </div>
 
-          <!-- Timeline : slider année -->
+          <!-- Timeline -->
           <div v-else-if="currentQuestion.question_type === 'timeline'" class="space-y-3">
             <div class="flex items-center gap-3">
               <span class="text-sm text-gray-500 w-14 text-right">{{ currentQuestion.timeline_range?.min }}</span>
               <input
                 type="range"
-                class="flex-1"
+                class="flex-1 h-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-lg appearance-none cursor-pointer"
                 :min="currentQuestion.timeline_range?.min || 1900"
                 :max="currentQuestion.timeline_range?.max || 2025"
-                :value="selectedAnswer || Math.round(((currentQuestion.timeline_range?.min || 1900) + (currentQuestion.timeline_range?.max || 2025)) / 2)"
+                :value="
+                  selectedAnswer ||
+                  Math.round(
+                    ((currentQuestion.timeline_range?.min || 1900) + (currentQuestion.timeline_range?.max || 2025)) / 2
+                  )
+                "
                 @input="onSliderInput"
-              >
+              />
               <span class="text-sm text-gray-500 w-14">{{ currentQuestion.timeline_range?.max }}</span>
             </div>
             <p class="text-center">
@@ -340,79 +450,35 @@ definePageMeta({
         </div>
       </template>
 
-      <!-- === RÉSULTATS === -->
-      <template v-else-if="quizFinished">
-        <div class="bg-white border rounded-lg p-6 shadow-sm">
-          <h2 class="text-2xl font-bold text-center mb-1">Résultats</h2>
-          <p class="text-center">
-            <span class="text-5xl font-bold text-blue-600">{{ score }}</span>
-            <span class="text-lg text-gray-400"> / 2500</span>
+      <!-- === ÉCRAN DE CONFIRMATION AVANT SOUMISSION === -->
+      <template v-else-if="quizFinished && !submitResult">
+        <div class="bg-white border rounded-lg p-6 shadow-sm text-center">
+          <h2 class="text-2xl font-bold mb-4">Prêt à soumettre ?</h2>
+          <p class="text-gray-500 mb-4">
+            Vous avez répondu à {{ answeredCount }} questions sur {{ questions.length }}.
           </p>
-          <p class="text-center text-sm text-gray-500 mb-6">
-            Temps : {{ Math.round((finishedAt - startTime) / 1000) }}s
+          <p class="text-sm text-gray-400 mb-6">
+            Temps écoulé : {{ Math.round((finishedAt - startTime) / 1000) }}s
           </p>
 
-          <!-- Détail par question -->
-          <div class="space-y-2">
-            <div
-              v-for="q in questions"
-              :key="q.documentId"
-              class="flex items-center justify-between p-3 rounded-lg"
-              :class="questionScore(q) > 0 ? 'bg-green-50' : 'bg-red-50'"
-            >
-              <p class="text-sm truncate mr-4">{{ q.order }}. {{ q.question_text }}</p>
-              <div class="text-right shrink-0">
-                <span class="text-sm font-semibold">+{{ questionScore(q) }}</span>
-                <span v-if="q.question_type === 'timeline'" class="block text-xs text-gray-500">
-                  {{ answers[q.order] }} → {{ q.correct_answer }}
-                </span>
-                <span v-else class="block text-xs" :class="questionScore(q) > 0 ? 'text-green-600' : 'text-red-500'">
-                  {{ questionScore(q) > 0 ? 'Correct' : 'Incorrect' }}
-                </span>
-              </div>
-            </div>
-          </div>
+          <button
+            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
+            :disabled="submitting"
+            @click="submitQuiz"
+          >
+            {{ submitting ? 'Soumission en cours...' : '🚀 Soumettre mes réponses' }}
+          </button>
 
-          <!-- Soumettre tentative -->
-          <div class="mt-6 text-center space-y-3">
-            <button
-              v-if="!submitResult"
-              class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
-              :disabled="submitting || !guildDocumentId"
-              @click="submitAttempt"
-            >
-              {{ submitting ? 'Soumission...' : 'Soumettre la tentative' }}
-            </button>
-
-            <p v-if="!guildDocumentId && !submitting && !submitResult" class="text-sm text-gray-400">
-              Guild non trouvé — impossible de soumettre
-            </p>
-
-            <div
-              v-if="submitResult"
-              class="p-3 rounded-lg text-sm"
-              :class="submitResult.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
-            >
-              {{ submitResult.message }}
-            </div>
-
-            <button class="text-sm text-blue-600 hover:underline" @click="restartQuiz">
-              Recommencer
-            </button>
-          </div>
+          <button class="block mx-auto mt-4 text-sm text-gray-500 hover:underline" @click="quizFinished = false">
+            ← Revoir mes réponses
+          </button>
         </div>
-
-        <!-- Debug -->
-        <details class="bg-gray-50 border rounded-lg p-4">
-          <summary class="cursor-pointer font-medium text-gray-700">Debug</summary>
-          <div class="mt-3 space-y-2 text-xs font-mono">
-            <p><strong>Guild :</strong> {{ guildDocumentId || 'non trouvé' }}</p>
-            <p><strong>Session :</strong> {{ selectedSessionId }}</p>
-            <p class="font-semibold mt-2">Réponses envoyées :</p>
-            <pre class="bg-white p-2 rounded overflow-auto max-h-32">{{ JSON.stringify(answers, null, 2) }}</pre>
-          </div>
-        </details>
       </template>
+
+      <!-- Aucune session -->
+      <div v-else-if="!loading && questions.length === 0 && !alreadyCompleted" class="bg-gray-50 border rounded p-6 text-center text-gray-500">
+        Aucun quiz disponible pour aujourd'hui.
+      </div>
     </div>
   </div>
 </template>
