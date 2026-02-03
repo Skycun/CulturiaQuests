@@ -225,8 +225,8 @@ Ajouter aux `attributes` existants:
 ```
 
 **Rationale:**
-- `quiz_streak` = nombre total de jours où le quiz a été fait (non-consécutif)
-- Ne se reset jamais, juste un compteur de participation
+- `quiz_streak` = nombre de jours consécutifs où le quiz a été fait
+- Se reset à 0 si la guild rate un jour sans faire le quiz
 
 ## Diagramme des Relations
 

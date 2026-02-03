@@ -83,6 +83,11 @@ export default {
         'api::user-settings.user-settings.updateSettings',
         'api::user-settings.user-settings.uploadAvatar',
         'api::user-settings.user-settings.removeAvatar',
+        // Quiz permissions
+        'api::quiz-attempt.quiz-attempt.getTodayQuiz',
+        'api::quiz-attempt.quiz-attempt.submitQuiz',
+        'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
+        'api::quiz-attempt.quiz-attempt.getMyHistory',
       ];
 
       for (const action of actions) {

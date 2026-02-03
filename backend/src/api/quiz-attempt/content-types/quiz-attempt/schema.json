@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quiz_attempts",
+  "info": {
+    "singularName": "quiz-attempt",
+    "pluralName": "quiz-attempts",
+    "displayName": "Quiz Attempt"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "guild": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "quiz_attempts"
+    },
+    "session": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::quiz-session.quiz-session",
+      "inversedBy": "attempts"
+    },
+    "score": {
+      "type": "integer",
+      "required": true,
+      "default": 0,
+      "min": 0,
+      "max": 2500
+    },
+    "answers": {
+      "type": "json",
+      "required": true
+    },
+    "completed_at": {
+      "type": "datetime",
+      "required": true
+    },
+    "time_spent_seconds": {
+      "type": "integer"
+    },
+    "rewards": {
+      "type": "json"
+    }
+  }
+}
