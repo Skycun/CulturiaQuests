@@ -299,6 +299,7 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     }
 
     const { limit = 30 } = ctx.query;
+    const sanitizedLimit = Math.min(Math.max(parseInt(limit as string) || 30, 1), 100);
 
     const guild = await strapi.db.query('api::guild.guild').findOne({
       where: { user: { id: user.id } },
@@ -317,7 +318,7 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
         },
       },
       orderBy: { completed_at: 'desc' },
-      limit: parseInt(limit as string),
+      limit: sanitizedLimit,
     });
 
     const history = attempts.map((attempt: any) => ({

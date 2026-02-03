@@ -31,20 +31,6 @@ const currentQuestion = computed(() => questions.value[currentIndex.value] || nu
 const selectedAnswer = computed(() => (currentQuestion.value ? answers.value[currentQuestion.value.documentId] : null) || null)
 const answeredCount = computed(() => Object.keys(answers.value).length)
 
-// Score calculé côté client (pour affichage en temps réel)
-const liveScore = computed(() => {
-  let total = 0
-  for (const q of questions.value) {
-    const ans = answers.value[q.documentId]
-    if (ans === undefined) continue
-    if (q.question_type === 'qcm') {
-      // On ne connaît pas la réponse, on compte juste les réponses données
-      total += 0 // Score réel calculé côté serveur
-    }
-  }
-  return total
-})
-
 // --- Fetch quiz du jour ---
 async function fetchTodayQuiz() {
   loading.value = true
@@ -184,13 +170,6 @@ function getTierLabel(tier: string) {
   }
   return labels[tier] || tier
 }
-
-function getRankEmoji(rank: number) {
-  if (rank === 1) return '🥇'
-  if (rank === 2) return '🥈'
-  if (rank === 3) return '🥉'
-  return ''
-}
 </script>
 
 <template>
@@ -224,35 +203,14 @@ function getRankEmoji(rank: number) {
           <p class="text-gray-500 mb-4">Vous avez déjà participé au quiz d'aujourd'hui.</p>
           <p class="mb-2">
             <span class="text-5xl font-bold text-blue-600">{{ existingAttempt.score }}</span>
-            <span class="text-lg text-gray-400"> / 2000</span>
+            <span class="text-lg text-gray-400"> / 2150</span>
           </p>
           <p v-if="existingAttempt.time_spent_seconds" class="text-sm text-gray-500">
             Temps : {{ existingAttempt.time_spent_seconds }}s
           </p>
         </div>
 
-        <!-- Leaderboard -->
-        <div v-if="leaderboard.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
-          <h3 class="text-lg font-semibold mb-3">🏅 Classement du jour</h3>
-          <div class="space-y-2">
-            <div
-              v-for="entry in leaderboard"
-              :key="entry.username"
-              class="flex items-center justify-between p-2 rounded"
-              :class="entry.isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'"
-            >
-              <div class="flex items-center gap-2">
-                <span class="font-bold w-8">{{ getRankEmoji(entry.rank) }}{{ entry.rank }}</span>
-                <span :class="entry.isMe ? 'font-semibold' : ''">{{ entry.username }}</span>
-                <span v-if="entry.isMe" class="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Vous</span>
-              </div>
-              <div class="text-right">
-                <span class="font-semibold">{{ entry.score }} pts</span>
-                <span class="text-xs text-gray-500 ml-2">🔥{{ entry.streak }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <QuizLeaderboard :entries="leaderboard" />
       </template>
 
       <!-- === RÉSULTATS APRÈS SOUMISSION === -->
@@ -263,7 +221,7 @@ function getRankEmoji(rank: number) {
             <h2 class="text-2xl font-bold mb-2">Résultats</h2>
             <p class="mb-2">
               <span class="text-5xl font-bold text-blue-600">{{ submitResult.score }}</span>
-              <span class="text-lg text-gray-400"> / 2000</span>
+              <span class="text-lg text-gray-400"> / 2150</span>
             </p>
             <span
               class="inline-block px-4 py-1 rounded-full text-sm font-semibold"
@@ -332,28 +290,7 @@ function getRankEmoji(rank: number) {
           </div>
         </div>
 
-        <!-- Leaderboard -->
-        <div v-if="leaderboard.length > 0" class="bg-white border rounded-lg p-4 shadow-sm">
-          <h3 class="text-lg font-semibold mb-3">🏅 Classement du jour</h3>
-          <div class="space-y-2">
-            <div
-              v-for="entry in leaderboard"
-              :key="entry.username"
-              class="flex items-center justify-between p-2 rounded"
-              :class="entry.isMe ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50'"
-            >
-              <div class="flex items-center gap-2">
-                <span class="font-bold w-8">{{ getRankEmoji(entry.rank) }}{{ entry.rank }}</span>
-                <span :class="entry.isMe ? 'font-semibold' : ''">{{ entry.username }}</span>
-                <span v-if="entry.isMe" class="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Vous</span>
-              </div>
-              <div class="text-right">
-                <span class="font-semibold">{{ entry.score }} pts</span>
-                <span class="text-xs text-gray-500 ml-2">🔥{{ entry.streak }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <QuizLeaderboard :entries="leaderboard" />
       </template>
 
       <!-- === QUIZ EN COURS === -->

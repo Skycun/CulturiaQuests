@@ -135,27 +135,19 @@ definePageMeta({
           <!-- Texte -->
           <p class="font-medium mb-2">{{ q.question_text }}</p>
 
-          <!-- Options QCM avec réponse correcte marquée -->
+          <!-- Options QCM -->
           <div v-if="q.question_type === 'qcm' && q.options" class="ml-4 space-y-1">
-            <div v-for="(opt, i) in q.options" :key="i" class="text-sm flex items-center gap-2">
-              <span :class="opt === q.correct_answer ? 'text-green-600 font-bold' : 'text-gray-600'">
-                {{ String.fromCharCode(65 + i) }}.
-              </span>
-              <span :class="opt === q.correct_answer ? 'text-green-600 font-semibold' : ''">{{ opt }}</span>
-              <span v-if="opt === q.correct_answer" class="text-green-500 text-xs">(correct)</span>
+            <div v-for="(opt, i) in q.options" :key="i" class="text-sm text-gray-600">
+              <span>{{ String.fromCharCode(65 + i) }}.</span> {{ opt }}
             </div>
           </div>
 
-          <!-- Timeline: réponse + plage -->
+          <!-- Timeline: plage uniquement (réponse correcte masquée server-side) -->
           <div v-else-if="q.question_type === 'timeline'" class="ml-4 text-sm text-gray-600">
-            <span>Réponse : <strong class="text-green-600">{{ q.correct_answer }}</strong></span>
-            <span v-if="q.timeline_range" class="ml-3 text-gray-400">
-              (plage : {{ q.timeline_range.min }} – {{ q.timeline_range.max }})
+            <span v-if="q.timeline_range">
+              Plage : {{ q.timeline_range.min }} – {{ q.timeline_range.max }}
             </span>
           </div>
-
-          <!-- Explication -->
-          <p v-if="q.explanation" class="mt-2 text-sm text-gray-500 italic">💡 {{ q.explanation }}</p>
         </div>
       </div>
 
