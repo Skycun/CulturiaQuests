@@ -77,6 +77,13 @@ export default {
         'api::player-friendship.player-friendship.removeFriend',
         'api::player-friendship.player-friendship.toggleFriendRequests',
         // Quiz permissions
+        'api::quiz-session.quiz-session.find',
+        'api::quiz-session.quiz-session.findOne',
+        'api::quiz-question.quiz-question.find',
+        'api::quiz-question.quiz-question.findOne',
+        'api::quiz-attempt.quiz-attempt.find',
+        'api::quiz-attempt.quiz-attempt.findOne',
+        'api::quiz-attempt.quiz-attempt.create',
         'api::quiz-attempt.quiz-attempt.getTodayQuiz',
         'api::quiz-attempt.quiz-attempt.submitQuiz',
         'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
