@@ -15,7 +15,7 @@ async function fetchSessions() {
   loading.value = true
   error.value = null
   try {
-    const res = await client<any>('/quiz-sessions?sort=-date', { method: 'GET' })
+    const res = await client<any>('/quiz-sessions?sort=date:desc', { method: 'GET' })
     sessions.value = res.data || []
   } catch (e: any) {
     error.value = e?.message || 'Erreur lors de la récupération des sessions'

@@ -21,6 +21,9 @@ const finishedAt = ref<number>(0)
 const submitting = ref(false)
 const submitResult = ref<{ success: boolean; message: string } | null>(null)
 
+// --- Tentative existante ---
+const existingAttempt = ref<any | null>(null)
+
 const isAuthenticated = computed(() => !!user.value)
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null)
 const selectedAnswer = computed(() => (currentQuestion.value ? answers.value[currentQuestion.value.order] : null) || null)
@@ -60,7 +63,7 @@ async function fetchSessions() {
   loading.value = true
   error.value = null
   try {
-    const res = await client<any>('/quiz-sessions?sort=-date&filters[generation_status][$eq]=completed', { method: 'GET' })
+    const res = await client<any>('/quiz-sessions?sort=date:desc&filters[generation_status][$eq]=completed', { method: 'GET' })
     sessions.value = res.data || []
     if (sessions.value.length > 0 && !selectedSessionId.value) {
       selectedSessionId.value = sessions.value[0].documentId
@@ -83,9 +86,30 @@ async function fetchGuild() {
   }
 }
 
+async function checkExistingAttempt(sessionDocId: string) {
+  try {
+    const res = await client<any>(
+      `/quiz-attempts?filters[session][documentId][$eq]=${sessionDocId}`,
+      { method: 'GET' }
+    )
+    return res.data && res.data.length > 0 ? res.data[0] : null
+  } catch {
+    return null
+  }
+}
+
 async function loadQuestions(sessionDocId: string) {
   loading.value = true
+  existingAttempt.value = null
   try {
+    // Vérifier si une tentative existe déjà
+    const attempt = await checkExistingAttempt(sessionDocId)
+    if (attempt) {
+      existingAttempt.value = attempt
+      loading.value = false
+      return
+    }
+
     const res = await client<any>(
       `/quiz-questions?filters[session][documentId][$eq]=${sessionDocId}&sort=order&populate=tag`,
       { method: 'GET' }
@@ -211,17 +235,36 @@ definePageMeta({
       <!-- Loading -->
       <div v-if="loading" class="text-center text-gray-500 py-8">Chargement...</div>
 
+      <!-- === DÉJÀ JOUÉ === -->
+      <template v-else-if="existingAttempt">
+        <div class="bg-white border rounded-lg p-6 shadow-sm text-center">
+          <div class="text-6xl mb-4">🏆</div>
+          <h2 class="text-2xl font-bold mb-2">Quiz déjà complété !</h2>
+          <p class="text-gray-500 mb-4">Vous avez déjà participé à ce quiz.</p>
+          <p class="mb-2">
+            <span class="text-5xl font-bold text-blue-600">{{ existingAttempt.score }}</span>
+            <span class="text-lg text-gray-400"> / 2500</span>
+          </p>
+          <p class="text-sm text-gray-500">
+            Temps : {{ existingAttempt.time_spent_seconds }}s
+          </p>
+        </div>
+      </template>
+
       <!-- === QUIZ EN COURS === -->
       <template v-else-if="questions.length > 0 && !quizFinished">
-        <!-- Barre de progression -->
+        <!-- Barre de progression + score -->
         <div class="space-y-1">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-semibold text-blue-600">{{ score }} pts</span>
+            <span class="text-sm text-gray-500">{{ currentIndex + 1 }} / {{ questions.length }}</span>
+          </div>
           <div class="w-full bg-gray-200 rounded-full h-2">
             <div
               class="bg-blue-600 h-2 rounded-full transition-all"
               :style="{ width: ((currentIndex + 1) / questions.length * 100) + '%' }"
             />
           </div>
-          <p class="text-sm text-gray-500 text-right">{{ currentIndex + 1 }} / {{ questions.length }}</p>
         </div>
 
         <!-- Carte question -->
