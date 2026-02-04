@@ -77,6 +77,12 @@
     "friend_requests_enabled": {
       "type": "boolean",
       "default": true
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
     }
   }
 }
