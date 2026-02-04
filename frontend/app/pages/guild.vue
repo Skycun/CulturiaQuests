@@ -24,7 +24,7 @@
                 </h2>
             </div>
 
-            <div class="relative z-10 w-full flex justify-center mb-[100px]\">
+            <div class="relative z-10 w-full flex justify-center mb-[100px]">
                 <PixelButton variant="filled" color="darker-red" @click="router.push('/quests')">
                     Quêtes
                 </PixelButton>
