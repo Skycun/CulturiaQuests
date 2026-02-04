@@ -76,6 +76,11 @@ export default {
         'api::player-friendship.player-friendship.rejectRequest',
         'api::player-friendship.player-friendship.removeFriend',
         'api::player-friendship.player-friendship.toggleFriendRequests',
+        // User settings permissions
+        'api::user-settings.user-settings.getSettings',
+        'api::user-settings.user-settings.updateSettings',
+        'api::user-settings.user-settings.uploadAvatar',
+        'api::user-settings.user-settings.removeAvatar',
       ];
 
       for (const action of actions) {
