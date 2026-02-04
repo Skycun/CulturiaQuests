@@ -75,9 +75,15 @@ export default {
         }
       }
 
-      // Uploader la version redimensionnée via le service upload
+      // Écrire le buffer dans un fichier temporaire (requis par le service upload Strapi)
+      const fs = await import('fs/promises');
+      const os = await import('os');
+      const path = await import('path');
       const uniqueId = crypto.randomBytes(8).toString('hex');
       const fileName = `avatar_${user.id}_${uniqueId}.webp`;
+      const tmpPath = path.join(os.tmpdir(), fileName);
+
+      await fs.writeFile(tmpPath, avatarBuffer);
 
       const [newFile] = await strapi.plugin('upload').service('upload').upload({
         data: {
@@ -90,9 +96,12 @@ export default {
           name: fileName,
           type: 'image/webp',
           size: avatarBuffer.length,
-          buffer: avatarBuffer,
+          path: tmpPath,
         },
       });
+
+      // Nettoyer le fichier temporaire
+      await fs.unlink(tmpPath).catch(() => {});
 
       // Associer le nouveau fichier à l'utilisateur
       await strapi.db.query('plugin::users-permissions.user').update({
