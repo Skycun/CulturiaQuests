@@ -96,7 +96,7 @@ export default {
           name: fileName,
           type: 'image/webp',
           size: avatarBuffer.length,
-          path: tmpPath,
+          filepath: tmpPath,
         },
       });
 
