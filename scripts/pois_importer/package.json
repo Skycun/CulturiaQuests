@@ -3,9 +3,10 @@
   "type": "module",
   "scripts": {
     "import:city": "tsx interactive-import.ts",
-    "import:manche": "tsx manche-import.ts",
+    "import:comcom": "tsx comcom-import.ts",
     "import:json": "tsx import-from-json.ts",
-    "import:legacy": "tsx pois-importer.ts"
+    "import:legacy": "tsx pois-importer.ts",
+    "generate:comcoms": "tsx generate-comcoms-data.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
