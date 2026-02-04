@@ -49,13 +49,19 @@ export function useUserAvatar() {
       url = avatarData.formats[size].url
     }
 
-    // If URL is already absolute, return it
+    // Accepter uniquement les chemins relatifs vers /uploads/ ou les URLs vers le domaine Strapi configuré
+    const baseUrl = config.public.strapi.url || 'http://localhost:1337'
     if (url.startsWith('http://') || url.startsWith('https://')) {
+      if (!url.startsWith(baseUrl)) {
+        return PLACEHOLDER_URL
+      }
       return url
     }
 
-    // Prepend the Strapi base URL
-    const baseUrl = config.public.strapi.url || 'http://localhost:1337'
+    if (!url.startsWith('/uploads/')) {
+      return PLACEHOLDER_URL
+    }
+
     return `${baseUrl}${url}`
   }
 
@@ -131,11 +137,7 @@ export function useUserAvatar() {
       // Envoyer via JSON au controller custom (auth géré automatiquement par useStrapiClient)
       const response = await client<{ data: { avatar: AvatarData }, message: string }>('/user-settings/avatar', {
         method: 'POST',
-        body: {
-          base64,
-          name: file.name,
-          type: file.type,
-        },
+        body: { base64 },
       })
 
       avatar.value = response.data.avatar

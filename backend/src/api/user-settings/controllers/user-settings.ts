@@ -20,15 +20,15 @@ export default {
       return ctx.unauthorized('You must be logged in');
     }
 
-    const { base64, name, type } = ctx.request.body;
+    const { base64 } = ctx.request.body;
     if (!base64) {
       return ctx.badRequest('base64 is required');
     }
 
-    // Valider le type MIME
-    if (!ALLOWED_MIME_TYPES.includes(type)) {
-      return ctx.badRequest(`Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`);
-    }
+    const fs = await import('fs/promises');
+    const os = await import('os');
+    const path = await import('path');
+    let tmpPath: string | null = null;
 
     try {
       // Décoder le base64 (format: "data:image/png;base64,<données>")
@@ -38,6 +38,12 @@ export default {
       // Valider la taille du fichier décodé
       if (fileBuffer.length > MAX_FILE_SIZE) {
         return ctx.badRequest('File size exceeds 4MB');
+      }
+
+      // Vérifier que c'est bien une image via Sharp (valide le contenu, pas le type déclaré)
+      const metadata = await sharp(fileBuffer).metadata();
+      if (!metadata.format || !['png', 'jpeg', 'webp', 'gif', 'tiff'].includes(metadata.format)) {
+        return ctx.badRequest('File is not a valid image');
       }
 
       // Redimensionner en 256x256 WebP
@@ -55,7 +61,7 @@ export default {
         avatarFolder = await strapi.db.query('plugin::upload.folder').create({
           data: {
             name: 'avatars',
-            pathId: Math.floor(Math.random() * 1000000),
+            pathId: crypto.randomInt(1, 1000000),
             path: '/avatars',
           },
         });
@@ -76,12 +82,9 @@ export default {
       }
 
       // Écrire le buffer dans un fichier temporaire (requis par le service upload Strapi)
-      const fs = await import('fs/promises');
-      const os = await import('os');
-      const path = await import('path');
       const uniqueId = crypto.randomBytes(8).toString('hex');
       const fileName = `avatar_${user.id}_${uniqueId}.webp`;
-      const tmpPath = path.join(os.tmpdir(), fileName);
+      tmpPath = path.join(os.tmpdir(), fileName);
 
       await fs.writeFile(tmpPath, avatarBuffer);
 
@@ -99,9 +102,6 @@ export default {
           filepath: tmpPath,
         },
       });
-
-      // Nettoyer le fichier temporaire
-      await fs.unlink(tmpPath).catch(() => {});
 
       // Associer le nouveau fichier à l'utilisateur
       await strapi.db.query('plugin::users-permissions.user').update({
@@ -123,6 +123,11 @@ export default {
     } catch (error) {
       strapi.log.error('Error uploading avatar:', error);
       return ctx.internalServerError('Failed to upload avatar');
+    } finally {
+      // Nettoyer le fichier temporaire dans tous les cas
+      if (tmpPath) {
+        await fs.unlink(tmpPath).catch(() => {});
+      }
     }
   },
 
