@@ -1,25 +1,20 @@
 /**
  * user-settings controller
- * Handles user profile settings including avatar upload
+ * Handles user profile settings including avatar upload with resize
  */
-import type { Core } from '@strapi/strapi';
 import sharp from 'sharp';
 import path from 'path';
 import crypto from 'crypto';
 
-// Maximum file size in bytes (4MB)
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
-// Allowed MIME types
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
-// Avatar dimensions
 const AVATAR_SIZE = 256;
 const AVATAR_THUMBNAIL_SIZE = 64;
 
 export default {
   /**
-   * Upload or update user avatar
-   * Accepts multipart form data with 'avatar' field
-   * Creates resized versions and stores in media library
+   * Receive a fileId (already uploaded via /api/upload),
+   * resize to 256x256 WebP, store in avatars folder, and associate to user.
    */
   async uploadAvatar(ctx) {
     const user = ctx.state.user;
@@ -27,54 +22,48 @@ export default {
       return ctx.unauthorized('You must be logged in');
     }
 
-    // Get uploaded file from request
-    const { files } = ctx.request;
-    if (!files || !files.avatar) {
-      return ctx.badRequest('No avatar file provided');
-    }
-
-    const uploadedFile = Array.isArray(files.avatar) ? files.avatar[0] : files.avatar;
-
-    // Validate file size
-    if (uploadedFile.size > MAX_FILE_SIZE) {
-      return ctx.badRequest(`File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`);
-    }
-
-    // Validate MIME type
-    if (!ALLOWED_MIME_TYPES.includes(uploadedFile.type)) {
-      return ctx.badRequest(`Invalid file type. Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`);
+    const { fileId } = ctx.request.body;
+    if (!fileId) {
+      return ctx.badRequest('fileId is required');
     }
 
     try {
-      const strapi = (global as any).strapi as Core.Strapi;
+      // Récupérer les infos du fichier uploadé
+      const fileInfo = await strapi.db.query('plugin::upload.file').findOne({
+        where: { id: fileId },
+      });
 
-      // Generate unique filename
-      const uniqueId = crypto.randomBytes(8).toString('hex');
-      const baseName = `avatar_${user.id}_${uniqueId}`;
+      if (!fileInfo) {
+        return ctx.notFound('Uploaded file not found');
+      }
 
-      // Read the uploaded file
+      // Valider le type MIME
+      if (!ALLOWED_MIME_TYPES.includes(fileInfo.mime)) {
+        await strapi.plugin('upload').service('upload').remove(fileInfo);
+        return ctx.badRequest(`Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`);
+      }
+
+      // Valider la taille
+      if (fileInfo.size > MAX_FILE_SIZE) {
+        await strapi.plugin('upload').service('upload').remove(fileInfo);
+        return ctx.badRequest('File size exceeds 4MB');
+      }
+
+      // Lire le fichier depuis le disque
       const fs = await import('fs/promises');
-      const fileBuffer = await fs.readFile(uploadedFile.path);
+      const filePath = path.join(process.cwd(), 'public', fileInfo.url);
+      const fileBuffer = await fs.readFile(filePath);
 
-      // Create resized avatar (main version)
+      // Redimensionner en 256x256 WebP
       const avatarBuffer = await sharp(fileBuffer)
-        .resize(AVATAR_SIZE, AVATAR_SIZE, {
-          fit: 'cover',
-          position: 'center',
-        })
+        .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover', position: 'center' })
         .webp({ quality: 85 })
         .toBuffer();
 
-      // Create thumbnail version
-      const thumbnailBuffer = await sharp(fileBuffer)
-        .resize(AVATAR_THUMBNAIL_SIZE, AVATAR_THUMBNAIL_SIZE, {
-          fit: 'cover',
-          position: 'center',
-        })
-        .webp({ quality: 80 })
-        .toBuffer();
+      // Supprimer le fichier original uploadé
+      await strapi.plugin('upload').service('upload').remove(fileInfo);
 
-      // Get or create 'avatars' folder in media library
+      // Créer ou récupérer le dossier 'avatars'
       let avatarFolder = await strapi.db.query('plugin::upload.folder').findOne({
         where: { name: 'avatars' },
       });
@@ -89,7 +78,7 @@ export default {
         });
       }
 
-      // Delete old avatar files if they exist
+      // Supprimer l'ancien avatar de l'utilisateur si existant
       const currentUser = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         populate: { avatar: true },
@@ -97,51 +86,44 @@ export default {
 
       if (currentUser?.avatar) {
         try {
-          // Delete main avatar file
           await strapi.plugin('upload').service('upload').remove(currentUser.avatar);
         } catch (err) {
           strapi.log.warn('Could not delete old avatar:', err);
         }
       }
 
-      // Upload main avatar using Strapi's upload service
-      const mainAvatarFile = {
-        name: `${baseName}.webp`,
-        type: 'image/webp',
-        size: avatarBuffer.length,
-        buffer: avatarBuffer,
-      };
+      // Uploader la version redimensionnée via le service upload
+      const uniqueId = crypto.randomBytes(8).toString('hex');
+      const fileName = `avatar_${user.id}_${uniqueId}.webp`;
 
-      const [uploadedAvatar] = await strapi.plugin('upload').service('upload').upload({
+      const [newFile] = await strapi.plugin('upload').service('upload').upload({
         data: {
           fileInfo: {
-            name: mainAvatarFile.name,
+            name: fileName,
             folder: avatarFolder.id,
           },
         },
-        files: mainAvatarFile,
+        files: {
+          name: fileName,
+          type: 'image/webp',
+          size: avatarBuffer.length,
+          buffer: avatarBuffer,
+        },
       });
 
-      // Update user with new avatar
+      // Associer le nouveau fichier à l'utilisateur
       await strapi.db.query('plugin::users-permissions.user').update({
         where: { id: user.id },
-        data: { avatar: uploadedAvatar.id },
+        data: { avatar: newFile.id },
       });
-
-      // Clean up temp file
-      try {
-        await fs.unlink(uploadedFile.path);
-      } catch (err) {
-        // Ignore cleanup errors
-      }
 
       return ctx.send({
         data: {
           avatar: {
-            id: uploadedAvatar.id,
-            documentId: uploadedAvatar.documentId,
-            url: uploadedAvatar.url,
-            formats: uploadedAvatar.formats,
+            id: newFile.id,
+            documentId: newFile.documentId,
+            url: newFile.url,
+            formats: newFile.formats,
           },
         },
         message: 'Avatar uploaded successfully',
@@ -162,9 +144,6 @@ export default {
     }
 
     try {
-      const strapi = (global as any).strapi as Core.Strapi;
-
-      // Get current user with avatar
       const currentUser = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         populate: { avatar: true },
@@ -174,14 +153,12 @@ export default {
         return ctx.badRequest('No avatar to remove');
       }
 
-      // Delete avatar file
       try {
-        await strapi.plugins.upload.services.upload.remove(currentUser.avatar);
+        await strapi.plugin('upload').service('upload').remove(currentUser.avatar);
       } catch (err) {
         strapi.log.warn('Could not delete avatar file:', err);
       }
 
-      // Remove avatar reference from user
       await strapi.db.query('plugin::users-permissions.user').update({
         where: { id: user.id },
         data: { avatar: null },
@@ -206,8 +183,6 @@ export default {
     }
 
     try {
-      const strapi = (global as any).strapi as Core.Strapi;
-
       const currentUser = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         select: ['id', 'username', 'email', 'friend_requests_enabled'],
@@ -244,8 +219,6 @@ export default {
     const { friend_requests_enabled } = ctx.request.body;
 
     try {
-      const strapi = (global as any).strapi as Core.Strapi;
-
       const updateData: Record<string, any> = {};
 
       if (typeof friend_requests_enabled === 'boolean') {
