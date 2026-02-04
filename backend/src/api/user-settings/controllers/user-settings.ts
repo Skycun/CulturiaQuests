@@ -3,18 +3,16 @@
  * Handles user profile settings including avatar upload with resize
  */
 import sharp from 'sharp';
-import path from 'path';
 import crypto from 'crypto';
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 const AVATAR_SIZE = 256;
-const AVATAR_THUMBNAIL_SIZE = 64;
 
 export default {
   /**
-   * Receive a fileId (already uploaded via /api/upload),
-   * resize to 256x256 WebP, store in avatars folder, and associate to user.
+   * Receive a base64-encoded image, resize to 256x256 WebP,
+   * store in avatars folder, and associate to user.
    */
   async uploadAvatar(ctx) {
     const user = ctx.state.user;
@@ -22,46 +20,31 @@ export default {
       return ctx.unauthorized('You must be logged in');
     }
 
-    const { fileId } = ctx.request.body;
-    if (!fileId) {
-      return ctx.badRequest('fileId is required');
+    const { base64, name, type } = ctx.request.body;
+    if (!base64) {
+      return ctx.badRequest('base64 is required');
+    }
+
+    // Valider le type MIME
+    if (!ALLOWED_MIME_TYPES.includes(type)) {
+      return ctx.badRequest(`Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`);
     }
 
     try {
-      // Récupérer les infos du fichier uploadé
-      const fileInfo = await strapi.db.query('plugin::upload.file').findOne({
-        where: { id: fileId },
-      });
+      // Décoder le base64 (format: "data:image/png;base64,<données>")
+      const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
+      const fileBuffer = Buffer.from(base64Data, 'base64');
 
-      if (!fileInfo) {
-        return ctx.notFound('Uploaded file not found');
-      }
-
-      // Valider le type MIME
-      if (!ALLOWED_MIME_TYPES.includes(fileInfo.mime)) {
-        await strapi.plugin('upload').service('upload').remove(fileInfo);
-        return ctx.badRequest(`Invalid file type. Allowed: ${ALLOWED_MIME_TYPES.join(', ')}`);
-      }
-
-      // Valider la taille
-      if (fileInfo.size > MAX_FILE_SIZE) {
-        await strapi.plugin('upload').service('upload').remove(fileInfo);
+      // Valider la taille du fichier décodé
+      if (fileBuffer.length > MAX_FILE_SIZE) {
         return ctx.badRequest('File size exceeds 4MB');
       }
-
-      // Lire le fichier depuis le disque
-      const fs = await import('fs/promises');
-      const filePath = path.join(process.cwd(), 'public', fileInfo.url);
-      const fileBuffer = await fs.readFile(filePath);
 
       // Redimensionner en 256x256 WebP
       const avatarBuffer = await sharp(fileBuffer)
         .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover', position: 'center' })
         .webp({ quality: 85 })
         .toBuffer();
-
-      // Supprimer le fichier original uploadé
-      await strapi.plugin('upload').service('upload').remove(fileInfo);
 
       // Créer ou récupérer le dossier 'avatars'
       let avatarFolder = await strapi.db.query('plugin::upload.folder').findOne({
