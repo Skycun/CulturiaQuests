@@ -118,23 +118,24 @@ export function useUserAvatar() {
     }
 
     try {
-      // Étape 1 : upload via l'endpoint natif Strapi (gère le multipart)
-      const formData = new FormData()
-      formData.append('files', file)
-
-      const uploadedFile = await client<{ id: number }>('/upload', {
-        method: 'POST',
-        body: formData,
+      // Encoder le fichier en base64 pour éviter les problèmes multipart cross-origin
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
       })
 
-      const fileId = Array.isArray(uploadedFile) ? (uploadedFile as any[])[0].id : uploadedFile.id
+      uploadProgress.value = 30
 
-      uploadProgress.value = 50
-
-      // Étape 2 : resize + association côté backend
+      // Envoyer via JSON au controller custom (auth géré automatiquement par useStrapiClient)
       const response = await client<{ data: { avatar: AvatarData }, message: string }>('/user-settings/avatar', {
         method: 'POST',
-        body: { fileId },
+        body: {
+          base64,
+          name: file.name,
+          type: file.type,
+        },
       })
 
       avatar.value = response.data.avatar
