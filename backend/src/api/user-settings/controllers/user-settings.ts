@@ -55,7 +55,7 @@ export default {
         avatarFolder = await strapi.db.query('plugin::upload.folder').create({
           data: {
             name: 'avatars',
-            pathId: crypto.randomBytes(8).toString('hex'),
+            pathId: Math.floor(Math.random() * 1000000),
             path: '/avatars',
           },
         });
