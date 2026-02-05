@@ -16,7 +16,7 @@
       <ClientOnly>
         <LMap
           ref="mapRef"
-          :zoom="13"
+          v-model:zoom="currentZoom"
           :center="[userLat, userLng]"
           :use-global-leaflet="false"
           class="h-full w-full"
@@ -28,6 +28,10 @@
             name="OpenStreetMap"
           />
 
+          <!-- Zones (Com-coms) -->
+          <ZoneLayer :zones="visibleZones" />
+          <ZoneLabels :zones="visibleZones" :zoom="currentZoom" />
+
           <!-- Marqueurs extraits -->
           <MapMarkers
             :museums="validMuseums"
@@ -37,6 +41,9 @@
             @select-museum="selectItem"
             @select-poi="selectItem"
           />
+          
+          <!-- Brouillard de guerre -->
+          <FogLayer v-if="mapRef?.leafletObject" :map="mapRef.leafletObject" />
         </LMap>
       </ClientOnly>
 
@@ -60,9 +67,15 @@ import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
 import { useGuildStore } from '~/stores/guild'
 import { useRunStore } from '~/stores/run'
+import { useFogStore } from '~/stores/fog'
+import { useZoneStore } from '~/stores/zone'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useMapInteraction } from '~/composables/useMapInteraction'
 import { calculateDistance } from '~/utils/geolocation'
+import MapMarkers from '~/components/map/MapMarkers.vue'
+import ZoneLayer from '~/components/map/ZoneLayer.vue'
+import ZoneLabels from '~/components/map/ZoneLabels.vue'
+import FogLayer from '~/components/map/FogLayer.vue'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 
@@ -77,6 +90,8 @@ const museumStore = useMuseumStore()
 const poiStore = usePOIStore()
 const guildStore = useGuildStore()
 const runStore = useRunStore()
+const fogStore = useFogStore()
+const zoneStore = useZoneStore()
 
 // Composables
 const geolocation = useGeolocation({
@@ -90,12 +105,14 @@ const mapInteraction = useMapInteraction()
 // Refs
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapRef = ref<any>(null) // Type any car Leaflet map non typé
-const nearbyMuseums = ref<Museum[]>([])
-const nearbyPOIs = ref<Poi[]>([])
+const currentZoom = ref(13)
 const selectedItem = ref<LocationItem | null>(null)
 const isDrawerOpen = ref(false)
 const expeditionLoading = ref(false)
 const expeditionError = ref<string | null>(null)
+
+// Computed - Zones visibles selon le zoom
+const visibleZones = computed(() => zoneStore.getZonesForZoom(currentZoom.value))
 
 // Computed - Guild characters
 const guildCharacters = computed(() => {
@@ -112,12 +129,13 @@ const guildCharacters = computed(() => {
 })
 
 // Computed - Valid markers (filtrer les coordonnées invalides)
+// On utilise directement le store qui contient TOUS les items chargés
 const validMuseums = computed<Museum[]>(() =>
-  nearbyMuseums.value.filter((m) => m.lat !== undefined && m.lng !== undefined)
+  museumStore.museums.filter((m) => m.lat !== undefined && m.lng !== undefined)
 )
 
 const validPOIs = computed<Poi[]>(() =>
-  nearbyPOIs.value.filter((p) => p.lat !== undefined && p.lng !== undefined)
+  poiStore.pois.filter((p) => p.lat !== undefined && p.lng !== undefined)
 )
 
 // Computed - Distance to selected item
@@ -137,13 +155,11 @@ const { userLat, userLng, geolocLoading } = geolocation
 
 // Handlers
 function handleGeolocationAllow(): void {
-  fetchNearbyLocations()
   geolocation.startTracking()
 }
 
 function handleGeolocationDeny(): void {
-  console.log('User declined geolocation, using Saint-Lô default')
-  fetchNearbyLocations()
+  console.log('User declined geolocation')
 }
 
 function selectItem(item: LocationItem) {
@@ -182,36 +198,33 @@ async function handleStartExpedition() {
   }
 }
 
-// Fetch nearby locations
-async function fetchNearbyLocations(): Promise<void> {
-  const radius = 10 // 10 km
-
-  const [museums, pois] = await Promise.all([
-    museumStore.fetchNearby(radius, userLat.value, userLng.value),
-    poiStore.fetchNearby(radius, userLat.value, userLng.value)
-  ])
-
-  nearbyMuseums.value = museums
-  nearbyPOIs.value = pois
-
-  console.log(`Found ${museums.length} museums and ${pois.length} POIs within ${radius}km`)
+// Fetch ALL locations (Global load)
+async function fetchAllLocations(): Promise<void> {
+  // Charge tout en parallèle si le store est vide ou pour rafraîchir
+  if (!museumStore.hasMuseums) museumStore.fetchAll()
+  if (!poiStore.hasPOIs) poiStore.fetchAll()
 }
 
 // Register geolocation callbacks
 geolocation.registerCallbacks({
   onFirstPosition: (lat, lng) => {
     console.log('First position obtained:', lat, lng)
-    fetchNearbyLocations()
-    mapInteraction.flyToCoords(mapRef.value, lat, lng, 13, 1.5)
+    if (mapRef.value?.leafletObject) {
+      mapInteraction.flyToCoords(mapRef.value, lat, lng, 13, 1.5)
+    }
+    // Enregistre la position initiale
+    fogStore.addPosition(lat, lng)
   },
-  onDistanceThresholdReached: (distance) => {
-    console.log(`User moved ${distance.toFixed(2)}km, reloading locations...`)
-    fetchNearbyLocations()
-  }
+  onPositionUpdate: (lat, lng) => {
+    // Enregistre le déplacement
+    fogStore.addPosition(lat, lng)
+  },
+  // Plus de rechargement par distance nécessaire car on a tout chargé
 })
 
 // Lifecycle
 onMounted(() => {
   guildStore.fetchAll()
+  fetchAllLocations() // Chargement global au démarrage
 })
 </script>

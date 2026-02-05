@@ -1,15 +1,13 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import type { Museum } from '~/types/museum'
-import { filterByDistance } from '~/utils/geolocation'
+import { get, set } from 'idb-keyval'
 import { extractTags } from '~/utils/strapiHelpers'
 
-/**
- * Normalise un objet Museum brut Strapi en structure flat.
- * Extrait les données depuis attributes ou directement selon la structure v4/v5.
- *
- * @param raw - Museum brut retourné par l'API Strapi
- * @returns Museum normalisé avec accès direct aux propriétés
- */
+const DB_KEY = 'museums-data'
+const DB_VERSION_KEY = 'museums-version'
+const CURRENT_DATA_VERSION = '2.0'
+
 function normalizeMuseum(raw: any): Museum {
   return {
     id: raw.id,
@@ -20,116 +18,69 @@ function normalizeMuseum(raw: any): Museum {
     geohash: raw.geohash || raw.attributes?.geohash,
     radius: raw.radius ?? raw.attributes?.radius,
     location: raw.location || raw.attributes?.location,
-    tags: extractTags(raw), // Extrait les tags depuis structure v4/v5
+    tags: extractTags(raw),
     runs: raw.runs || raw.attributes?.runs,
-    // Garder attributes originaux pour compatibilité
     attributes: raw.attributes
   }
 }
 
 export const useMuseumStore = defineStore('museum', () => {
-  // State
   const museums = ref<Museum[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const isInitialized = ref(false)
 
-  // Getters
   const hasMuseums = computed(() => museums.value.length > 0)
-  const museumCount = computed(() => museums.value.length)
 
-  const getMuseumById = computed(() => {
-    return (documentId: string) => museums.value.find(m => m.documentId === documentId)
-  })
+  async function init() {
+    if (isInitialized.value) return
+    const storedVersion = await get(DB_VERSION_KEY)
+    const storedData = await get(DB_KEY)
 
-  // Actions - Setters
-  function setMuseums(data: Museum[]) {
-    museums.value = data
+    if (storedVersion === CURRENT_DATA_VERSION && storedData) {
+      museums.value = storedData
+      isInitialized.value = true
+    } else {
+      await fetchAll()
+    }
   }
 
-  function clearMuseums() {
-    museums.value = []
-    error.value = null
-  }
-
-  // Actions - API Calls
-  /**
-   * Fetch all museums from the API
-   */
   async function fetchAll() {
-    const client = useStrapiClient()
+    const config = useRuntimeConfig()
     loading.value = true
-    error.value = null
+    const allMuseums: any[] = []
+    let page = 1
+    let hasMore = true
 
     try {
-      console.log('🔄 Fetching museums with tags...')
-
-      const response = await client<any>('/museums', {
-        method: 'GET',
-        query: {
-          populate: 'tags'
+      while (hasMore) {
+        const response: any = await $fetch(`${config.public.strapi.url}/api/museums`, {
+          query: {
+            'pagination[page]': page,
+            'pagination[pageSize]': 100,
+            populate: 'tags'
+          }
+        })
+        const data = response.data || []
+        allMuseums.push(...data)
+        
+        if (response.meta?.pagination && page < response.meta.pagination.pageCount) {
+          page++
+        } else {
+          hasMore = false
         }
-      })
-
-      console.log('📦 Full API response:', response)
-
-      const data = response.data || response
-
-      // DEBUG: Log first museum to see structure
-      if (Array.isArray(data) && data.length > 0) {
-        console.log('🏛️ First museum structure (raw):', JSON.stringify(data[0], null, 2))
       }
 
-      // Normaliser les données à la source
-      const normalizedMuseums = Array.isArray(data) ? data.map(normalizeMuseum) : []
-
-      // DEBUG: Log first normalized museum
-      if (normalizedMuseums.length > 0) {
-        console.log('✅ First museum structure (normalized):', JSON.stringify(normalizedMuseums[0], null, 2))
-      }
-
-      setMuseums(normalizedMuseums)
+      museums.value = allMuseums.map(normalizeMuseum)
+      await set(DB_KEY, museums.value)
+      await set(DB_VERSION_KEY, CURRENT_DATA_VERSION)
+      isInitialized.value = true
     } catch (e: any) {
-      console.error('Failed to fetch museums:', e)
-      error.value = e?.message || 'Failed to fetch museums'
+      error.value = e.message
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * Fetch museums within a specific radius from a center point.
-   * This method first fetches all museums if not already loaded, then filters them client-side.
-   *
-   * @param radius - Search radius in kilometers
-   * @param lat - Center point latitude in degrees
-   * @param lng - Center point longitude in degrees
-   * @returns Array of museums within the specified radius
-   */
-  async function fetchNearby(radius: number, lat: number, lng: number): Promise<Museum[]> {
-    // Always fetch fresh data to ensure we have tags populated
-    await fetchAll()
-
-    // Filter by distance client-side
-    return filterByDistance(museums.value, lat, lng, radius)
-  }
-
-  return {
-    // State
-    museums,
-    loading,
-    error,
-    // Getters
-    hasMuseums,
-    museumCount,
-    getMuseumById,
-    // Actions
-    setMuseums,
-    clearMuseums,
-    fetchAll,
-    fetchNearby,
-  }
-}, {
-  persist: {
-    pick: ['museums'],
-  },
+  return { museums, loading, error, isInitialized, init, fetchAll, hasMuseums }
 })

@@ -19,6 +19,8 @@
     "@strapi/plugin-users-permissions": "5.31.1",
     "@strapi/strapi": "5.31.1",
     "better-sqlite3": "12.4.1",
+    "node-cron": "^4.2.1",
+    "openai": "^6.17.0",
     "pg": "^8.16.3",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

@@ -12,8 +12,9 @@
 8. [Store Run](#store-run)
 9. [Store Friendship](#store-friendship)
 10. [Store Npc](#store-npc)
-11. [Exemples d'utilisation](#exemples-dutilisation)
-12. [Bonnes pratiques](#bonnes-pratiques)
+11. [Store Zone](#store-zone)
+12. [Exemples d'utilisation](#exemples-dutilisation)
+13. [Bonnes pratiques](#bonnes-pratiques)
 
 ---
 
@@ -31,6 +32,8 @@ Un store est un conteneur qui centralise :
 ### Persistance
 
 Tous les stores utilisent `pinia-plugin-persistedstate` pour sauvegarder automatiquement les données dans le localStorage du navigateur.
+
+**Exception notable :** Le `Store Zone` utilise **IndexedDB** (`idb-keyval`) car le volume de données géographiques (~1500 polygones complexes) est trop important pour le LocalStorage (limité à ~5Mo).
 
 ---
 
@@ -731,6 +734,49 @@ onMounted(async () => {
 
 ---
 
+## Store Zone
+
+**Fichier :** `/frontend/app/stores/zone.ts`
+
+### Description
+
+Gère les données géographiques (carte) de l'application : Régions, Départements et Communautés de Communes (EPCI).
+
+Contrairement aux autres stores, il utilise **IndexedDB** pour le cache afin de stocker les lourds fichiers GeoJSON sans ralentir le navigateur ni saturer le LocalStorage.
+
+### State
+
+| Propriété | Type | Description |
+|-----------|------|-------------|
+| `regions` | `Region[]` | Liste des régions |
+| `departments` | `Department[]` | Liste des départements |
+| `comcoms` | `Comcom[]` | Liste des communautés de communes (EPCI) |
+| `loading` | `boolean` | État de chargement global |
+| `error` | `string \| null` | Erreur éventuelle |
+| `isInitialized` | `boolean` | Indique si les données sont chargées (cache ou API) |
+
+### Getters
+
+| Getter | Type | Description |
+|--------|------|-------------|
+| `getZonesForZoom(zoom)` | `GeoZone[]` | Retourne la collection appropriée selon le niveau de zoom (Regions < 6, Depts 6-10, Comcoms > 10) |
+
+### Actions principales
+
+#### `init()`
+
+Charge intelligemment les 3 collections en parallèle.
+1. Vérifie le cache IndexedDB (`idb-keyval`).
+2. Si cache vide ou version obsolète : Télécharge depuis l'API Strapi (paginé) et met en cache.
+3. Si cache valide : Hydrate le state depuis IndexedDB (très rapide).
+
+```typescript
+const zoneStore = useZoneStore()
+await zoneStore.init()
+```
+
+---
+
 ## Exemples d'utilisation
 
 ### Charger toutes les données au démarrage de l'application
@@ -919,6 +965,7 @@ import type { Item } from '~/types/item'
 | **Run** | `run.ts` | Sessions de jeu dans les musées |
 | **Friendship** | `friendship.ts` | Amitiés avec les NPCs |
 | **Npc** | `npc.ts` | Données des NPCs et formatage des journaux (Stories) |
+| **Zone** | `zone.ts` | Carte (Régions, Départements, Comcoms) + Cache IndexedDB |
 
 ---
 

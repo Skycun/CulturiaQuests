@@ -73,6 +73,12 @@
       "relation": "oneToMany",
       "target": "api::quest.quest",
       "mappedBy": "guild"
+    },
+    "progressions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::progression.progression",
+      "mappedBy": "guild"
     }
   }
 }

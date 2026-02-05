@@ -1,14 +1,12 @@
 import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import type { Poi } from '~/types/poi'
-import { filterByDistance } from '~/utils/geolocation'
+import { get, set } from 'idb-keyval'
 
-/**
- * Normalise un objet POI brut Strapi en structure flat.
- * Extrait les données depuis attributes ou directement selon la structure v4/v5.
- *
- * @param raw - POI brut retourné par l'API Strapi
- * @returns POI normalisé avec accès direct aux propriétés
- */
+const DB_KEY = 'pois-data'
+const DB_VERSION_KEY = 'pois-version'
+const CURRENT_DATA_VERSION = '2.0'
+
 function normalizePoi(raw: any): Poi {
   return {
     id: raw.id,
@@ -21,99 +19,66 @@ function normalizePoi(raw: any): Poi {
     visits: raw.visits || raw.attributes?.visits,
     quests_a: raw.quests_a || raw.attributes?.quests_a,
     quests_b: raw.quests_b || raw.attributes?.quests_b,
-    // Garder attributes originaux pour compatibilité
     attributes: raw.attributes
   }
 }
 
 export const usePOIStore = defineStore('poi', () => {
-  // State
   const pois = ref<Poi[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const isInitialized = ref(false)
 
-  // Getters
   const hasPOIs = computed(() => pois.value.length > 0)
-  const poiCount = computed(() => pois.value.length)
 
-  const getPOIById = computed(() => {
-    return (documentId: string) => pois.value.find(p => p.documentId === documentId)
-  })
+  async function init() {
+    if (isInitialized.value) return
+    const storedVersion = await get(DB_VERSION_KEY)
+    const storedData = await get(DB_KEY)
 
-  // Actions - Setters
-  function setPOIs(data: Poi[]) {
-    pois.value = data
+    if (storedVersion === CURRENT_DATA_VERSION && storedData) {
+      pois.value = storedData
+      isInitialized.value = true
+    } else {
+      await fetchAll()
+    }
   }
 
-  function clearPOIs() {
-    pois.value = []
-    error.value = null
-  }
-
-  // Actions - API Calls
-  /**
-   * Fetch all POIs from the API
-   */
   async function fetchAll() {
-    const client = useStrapiClient()
+    const config = useRuntimeConfig()
     loading.value = true
-    error.value = null
+    const allPois: any[] = []
+    let page = 1
+    let hasMore = true
 
     try {
-      const response = await client<any>('/pois', {
-        method: 'GET',
-      })
+      while (hasMore) {
+        const response: any = await $fetch(`${config.public.strapi.url}/api/pois`, {
+          query: {
+            'pagination[page]': page,
+            'pagination[pageSize]': 100,
+          }
+        })
+        const data = response.data || []
+        allPois.push(...data)
+        
+        if (response.meta?.pagination && page < response.meta.pagination.pageCount) {
+          page++
+        } else {
+          hasMore = false
+        }
+      }
 
-      const data = response.data || response
-
-      // Normaliser les données à la source
-      const normalizedPOIs = Array.isArray(data) ? data.map(normalizePoi) : []
-
-      setPOIs(normalizedPOIs)
+      pois.value = allPois.map(normalizePoi)
+      await set(DB_KEY, pois.value)
+      await set(DB_VERSION_KEY, CURRENT_DATA_VERSION)
+      isInitialized.value = true
     } catch (e: any) {
-      console.error('Failed to fetch POIs:', e)
-      error.value = e?.message || 'Failed to fetch POIs'
+      error.value = e.message
     } finally {
       loading.value = false
     }
   }
 
-  /**
-   * Fetch POIs within a specific radius from a center point.
-   * This method first fetches all POIs if not already loaded, then filters them client-side.
-   *
-   * @param radius - Search radius in kilometers
-   * @param lat - Center point latitude in degrees
-   * @param lng - Center point longitude in degrees
-   * @returns Array of POIs within the specified radius
-   */
-  async function fetchNearby(radius: number, lat: number, lng: number): Promise<Poi[]> {
-    // Fetch all POIs if store is empty
-    if (!hasPOIs.value) {
-      await fetchAll()
-    }
-
-    // Filter by distance client-side
-    return filterByDistance(pois.value, lat, lng, radius)
-  }
-
-  return {
-    // State
-    pois,
-    loading,
-    error,
-    // Getters
-    hasPOIs,
-    poiCount,
-    getPOIById,
-    // Actions
-    setPOIs,
-    clearPOIs,
-    fetchAll,
-    fetchNearby,
-  }
-}, {
-  persist: {
-    pick: ['pois'],
-  },
+  return { pois, loading, error, isInitialized, init, fetchAll, hasPOIs }
 })
