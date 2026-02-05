@@ -1,6 +1,6 @@
 <template>
   <!-- On utilise des marqueurs invisibles qui contiennent juste une DivIcon avec le texte -->
-  <template v-for="zone in visibleZones" :key="`label-${zoom}-${zone.documentId || zone.id}`">
+  <template v-for="zone in visibleZones" :key="`label-${zoom}-${visibleZones.length}-${zone.documentId || zone.id}`">
     <LMarker
       v-if="isValidCoords(getCenter(zone))"
       :lat-lng="getCenter(zone)"
