@@ -34,6 +34,15 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Détection de la commande Docker Compose (V1 ou V2)
+if command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE="docker-compose"
+elif docker compose version &> /dev/null; then
+    DOCKER_COMPOSE="docker compose"
+else
+    DOCKER_COMPOSE=""
+fi
+
 # Options
 SKIP_DB_RESTORE=false
 CLEAN_INSTALL=false
@@ -74,12 +83,12 @@ check_prerequisites() {
     # Vérifier Docker Compose
     echo ""
     echo "Vérification de Docker Compose..."
-    if ! command -v docker-compose &> /dev/null; then
+    if [ -z "$DOCKER_COMPOSE" ]; then
         echo -e "${RED}✗ Docker Compose n'est pas installé${NC}"
         echo "  Installez Docker Compose: https://docs.docker.com/compose/install/"
         exit 1
     fi
-    echo -e "${GREEN}✓ Docker Compose installé${NC}"
+    echo -e "${GREEN}✓ Docker Compose détecté ($DOCKER_COMPOSE)${NC}"
 
     # Vérifier Node.js
     echo ""
@@ -201,20 +210,20 @@ start_docker_services() {
 
     # Nettoyage gracieux
     echo "Arrêt des conteneurs existants (si présents)..."
-    docker-compose down 2>/dev/null || true
+    $DOCKER_COMPOSE down 2>/dev/null || true
 
     # Si --clean, supprimer aussi les volumes
     if [ "$CLEAN_INSTALL" = true ]; then
         echo -e "${YELLOW}Mode clean: suppression des volumes...${NC}"
-        docker-compose down -v 2>/dev/null || true
+        $DOCKER_COMPOSE down -v 2>/dev/null || true
     fi
 
     # Démarrage
     echo ""
     echo "Démarrage des services Docker..."
-    if ! docker-compose up -d --build; then
+    if ! $DOCKER_COMPOSE up -d --build; then
         echo -e "${RED}✗ Échec du démarrage Docker${NC}"
-        echo "  Vérifiez les logs: docker-compose logs"
+        echo "  Vérifiez les logs: $DOCKER_COMPOSE logs"
         exit 1
     fi
 
@@ -280,7 +289,7 @@ restore_database() {
     # Redémarrage du backend post-restauration
     echo ""
     echo "Redémarrage du backend..."
-    docker-compose restart backend >/dev/null 2>&1
+    $DOCKER_COMPOSE restart backend >/dev/null 2>&1
 
     # Re-wait pour backend
     for i in {1..60}; do
@@ -344,8 +353,8 @@ show_success_message() {
     echo ""
     echo -e "${YELLOW}Prochaines étapes:${NC}"
     echo "  1. Créer votre premier compte admin sur http://localhost:1337/admin"
-    echo "  2. Voir les logs: docker-compose logs -f"
-    echo "  3. Arrêter:      docker-compose down"
+    echo "  2. Voir les logs: $DOCKER_COMPOSE logs -f"
+    echo "  3. Arrêter:      $DOCKER_COMPOSE down"
     echo ""
 }
 
