@@ -30,7 +30,7 @@ const props = defineProps<{
 
 // Logique d'affichage des labels selon le zoom
 const visibleZones = computed(() => {
-  if (props.zoom > 11) return []
+  if (props.zoom > 12) return []
   return props.zones
 })
 

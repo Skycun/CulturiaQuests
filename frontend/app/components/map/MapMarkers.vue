@@ -1,5 +1,5 @@
 <template>
-  <!-- Marqueur position utilisateur -->
+  <!-- Marqueur position utilisateur (Toujours visible) -->
   <LMarker :lat-lng="[userLat, userLng]">
     <LIcon
       icon-url="/assets/map/userpoint.svg"
@@ -8,36 +8,38 @@
     />
   </LMarker>
 
-  <!-- Marqueurs Musées -->
-  <LMarker
-    v-for="museum in museums"
-    :key="`museum-${museum.id}`"
-    :lat-lng="[museum.lat, museum.lng]"
-    @click="$emit('select-museum', museum)"
-  >
-    <LIcon
-      :icon-url="`/assets/map/museum/${museum.tags[0] || 'Art'}.png`"
-      :icon-size="[32, 24]"
-      :icon-anchor="[16, 12]"
-    />
-  </LMarker>
+  <!-- Marqueurs Musées et POIs (Visibles seulement si zoom >= 9) -->
+  <template v-if="isVisible">
+    <LMarker
+      v-for="museum in museums"
+      :key="`museum-${museum.id}`"
+      :lat-lng="[museum.lat, museum.lng]"
+      @click="$emit('select-museum', museum)"
+    >
+      <LIcon
+        :icon-url="`/assets/map/museum/${museum.tags[0] || 'Art'}.png`"
+        :icon-size="[32, 24]"
+        :icon-anchor="[16, 12]"
+      />
+    </LMarker>
 
-  <!-- Marqueurs POIs avec icône dynamique -->
-  <LMarker
-    v-for="poi in pois"
-    :key="`poi-${poi.id}`"
-    :lat-lng="[poi.lat, poi.lng]"
-    @click="$emit('select-poi', poi)"
-  >
-    <LIcon
-      :icon-url="getChestIcon(poi)"
-      :icon-size="[32, 24]"
-      :icon-anchor="[16, 12]"
-    />
-  </LMarker>
+    <LMarker
+      v-for="poi in pois"
+      :key="`poi-${poi.id}`"
+      :lat-lng="[poi.lat, poi.lng]"
+      @click="$emit('select-poi', poi)"
+    >
+      <LIcon
+        :icon-url="getChestIcon(poi)"
+        :icon-size="[32, 24]"
+        :icon-anchor="[16, 12]"
+      />
+    </LMarker>
+  </template>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 import { useVisitStore } from '~/stores/visit'
@@ -61,7 +63,7 @@ function getChestIcon(poi: Poi): string {
  * Affiche le marqueur de l'utilisateur, les marqueurs des musées avec icônes dynamiques,
  * et les marqueurs des POIs (coffres).
  */
-defineProps<{
+const props = defineProps<{
   /** Liste des musées à afficher (données normalisées) */
   museums: Museum[]
   /** Liste des POIs à afficher (données normalisées) */
@@ -70,7 +72,11 @@ defineProps<{
   userLat: number
   /** Longitude de la position utilisateur */
   userLng: number
+  /** Niveau de zoom actuel */
+  zoom: number
 }>()
+
+const isVisible = computed(() => props.zoom >= 10)
 
 defineEmits<{
   /** Émis quand un musée est sélectionné */

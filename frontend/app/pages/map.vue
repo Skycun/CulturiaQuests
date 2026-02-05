@@ -38,6 +38,7 @@
             :pois="validPOIs"
             :user-lat="userLat"
             :user-lng="userLng"
+            :zoom="currentZoom"
             @select-museum="selectItem"
             @select-poi="selectItem"
           />
@@ -130,13 +131,16 @@ const guildCharacters = computed(() => {
 
 // Computed - Valid markers (filtrer les coordonnées invalides)
 // On utilise directement le store qui contient TOUS les items chargés
-const validMuseums = computed<Museum[]>(() =>
-  museumStore.museums.filter((m) => m.lat !== undefined && m.lng !== undefined)
-)
+// Affiche uniquement si le zoom permet de voir les Comcoms (>= 9)
+const validMuseums = computed<Museum[]>(() => {
+  if (currentZoom.value < 9) return []
+  return museumStore.museums.filter((m) => m.lat !== undefined && m.lng !== undefined)
+})
 
-const validPOIs = computed<Poi[]>(() =>
-  poiStore.pois.filter((p) => p.lat !== undefined && p.lng !== undefined)
-)
+const validPOIs = computed<Poi[]>(() => {
+  if (currentZoom.value < 9) return []
+  return poiStore.pois.filter((p) => p.lat !== undefined && p.lng !== undefined)
+})
 
 // Computed - Distance to selected item
 const distanceToSelectedItem = computed<number>(() => {
@@ -200,9 +204,11 @@ async function handleStartExpedition() {
 
 // Fetch ALL locations (Global load)
 async function fetchAllLocations(): Promise<void> {
-  // Charge tout en parallèle si le store est vide ou pour rafraîchir
-  if (!museumStore.hasMuseums) museumStore.fetchAll()
-  if (!poiStore.hasPOIs) poiStore.fetchAll()
+  // init() gère automatiquement le cache IndexedDB et le fetch paginé si besoin
+  await Promise.all([
+    museumStore.init(),
+    poiStore.init()
+  ])
 }
 
 // Register geolocation callbacks
