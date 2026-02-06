@@ -1,60 +1,43 @@
-name: 🤖 AI Code Review
+name: AI Code Review
 
 on:
   push:
     branches:
-      - '**'  # Toutes les branches
-    branches-ignore:
-      - 'dependabot/**'  # Ignorer les branches automatiques
-      - 'renovate/**'
-    paths:
-      - '**.vue'
-      - '**.ts'
-      - '**.js'
-      - '**.css'
-      - '**.scss'
-      - '**.yaml'
-      - '**.yml'
-      - 'scripts/**.py'
-
+      - '**'
   pull_request:
     types: [opened, synchronize, reopened]
-    paths:
-      - '**.vue'
-      - '**.ts'
-      - '**.js'
-      - '**.css'
-      - '**.scss'
-      - '**.yaml'
-      - '**.yml'
-      - 'scripts/**.py'
 
 jobs:
   ai_review:
     runs-on: ubuntu-latest
+    # Exclure les branches automatiques (dependabot, renovate, etc.)
+    if: |
+      !startsWith(github.ref_name, 'dependabot/') &&
+      !startsWith(github.ref_name, 'renovate/') &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
+
     permissions:
       contents: read
-      pull-requests: write  # Permission pour commenter les PRs
+      pull-requests: write
 
     steps:
-      - name: 📥 Récupération du code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch complet pour comparaison avec base de PR
+          fetch-depth: 0
 
-      - name: 🐍 Installation de Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'  # Cache automatique des dépendances
+          cache: 'pip'
+          cache-dependency-path: 'scripts/requirements.txt'
 
-      - name: 📦 Installation des dépendances
-        run: |
-          pip install --upgrade pip
-          pip install openai requests pydantic PyGithub
+      - name: Install dependencies
+        run: pip install -r scripts/requirements.txt
 
-      - name: 🧠 Lancement de l'analyse IA
-        id: ai_review
+      - name: Run AI Code Review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

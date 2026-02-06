@@ -76,6 +76,13 @@ export default {
         'api::player-friendship.player-friendship.rejectRequest',
         'api::player-friendship.player-friendship.removeFriend',
         'api::player-friendship.player-friendship.toggleFriendRequests',
+        // Upload plugin — nécessaire pour POST /api/upload
+        'plugin::upload.file.create',
+        // User settings permissions
+        'api::user-settings.user-settings.getSettings',
+        'api::user-settings.user-settings.updateSettings',
+        'api::user-settings.user-settings.uploadAvatar',
+        'api::user-settings.user-settings.removeAvatar',
         // Quiz permissions
         'api::quiz-session.quiz-session.find',
         'api::quiz-session.quiz-session.findOne',
