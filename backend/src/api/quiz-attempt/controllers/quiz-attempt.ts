@@ -187,23 +187,39 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
         session: { documentId: session.documentId },
         guild: { documentId: { $in: friendGuildIds } },
       },
+      select: ['id', 'documentId', 'score', 'answers'],
       populate: {
         guild: {
           select: ['documentId', 'name', 'quiz_streak'],
-          populate: { user: { select: ['username'] } },
+          populate: {
+            user: {
+              select: ['username'],
+              populate: { avatar: { select: ['url', 'formats'] } },
+            },
+          },
         },
       },
       orderBy: { score: 'desc' },
     });
 
-    const leaderboard = attempts.map((attempt: any, index: number) => ({
-      rank: index + 1,
-      username: attempt.guild.user?.username || 'Unknown',
-      guildName: attempt.guild.name,
-      score: attempt.score,
-      streak: attempt.guild.quiz_streak || 0,
-      isMe: attempt.guild.documentId === guild.documentId,
-    }));
+    const leaderboard = attempts.map((attempt: any, index: number) => {
+      const avatarData = attempt.guild.user?.avatar;
+      const avatarUrl = avatarData?.formats?.thumbnail?.url || avatarData?.url || null;
+      const correctCount = Array.isArray(attempt.answers)
+        ? attempt.answers.filter((a: any) => a.isCorrect).length
+        : 0;
+
+      return {
+        rank: index + 1,
+        username: attempt.guild.user?.username || 'Unknown',
+        guildName: attempt.guild.name,
+        score: attempt.score,
+        correctCount,
+        streak: attempt.guild.quiz_streak || 0,
+        isMe: attempt.guild.documentId === guild.documentId,
+        avatarUrl,
+      };
+    });
 
     return ctx.send({ data: leaderboard });
   },

@@ -74,8 +74,10 @@ export interface LeaderboardEntry {
   username: string
   guildName: string
   score: number
+  correctCount: number
   streak: number
   isMe: boolean
+  avatarUrl: string | null
 }
 
 export interface QuizHistoryEntry {
