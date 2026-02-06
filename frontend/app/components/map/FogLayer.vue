@@ -5,6 +5,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch, ref } from 'vue'
 import { useFogStore } from '~/stores/fog'
+import { useZoneStore } from '~/stores/zone'
+import { useProgressionStore } from '~/stores/progression'
 import type { Map } from 'leaflet'
 import L from 'leaflet'
 
@@ -13,14 +15,17 @@ const props = defineProps<{
 }>()
 
 const fogStore = useFogStore()
+const zoneStore = useZoneStore()
+const progressionStore = useProgressionStore()
+
 const canvas = ref<HTMLCanvasElement | null>(null)
 let fogPane: HTMLElement | null = null
 
 // --- CONFIGURATION ---
 const CONFIG = {
-  RADIUS_METERS: 100, // Doublé (50 -> 100)
-  OPACITY: 0.95,      // Plus opaque (0.90 -> 0.95)
-  COLOR: '210, 215, 220', // Gris bleuté
+  RADIUS_METERS: 100,
+  OPACITY: 0.95,
+  COLOR: '210, 215, 220',
   BG_COLOR: 'rgba(190, 195, 200, 0.3)'
 }
 
@@ -29,11 +34,8 @@ let cloudPattern: CanvasPattern | null = null
 let brushCanvas: HTMLCanvasElement | null = null
 let lastZoomForBrush = -1
 
-// --- GÉNÉRATEURS (Pure Functions) ---
+// --- GÉNÉRATEURS ---
 
-/**
- * Génère la texture de nuages (Exécuté 1 seule fois)
- */
 const createCloudPattern = (ctx: CanvasRenderingContext2D): CanvasPattern | null => {
   const size = 512
   const cvs = document.createElement('canvas')
@@ -42,11 +44,9 @@ const createCloudPattern = (ctx: CanvasRenderingContext2D): CanvasPattern | null
   const pCtx = cvs.getContext('2d', { alpha: true })
   if (!pCtx) return null
 
-  // Fond
   pCtx.fillStyle = CONFIG.BG_COLOR
   pCtx.fillRect(0, 0, size, size)
 
-  // Bouffées
   const puffCount = 400
   for (let i = 0; i < puffCount; i++) {
     const x = Math.random() * size
@@ -63,7 +63,6 @@ const createCloudPattern = (ctx: CanvasRenderingContext2D): CanvasPattern | null
     pCtx.arc(x, y, r, 0, Math.PI * 2)
     pCtx.fill()
 
-    // Seamless logic (Tiling simple)
     const offset = (ox: number, oy: number) => {
       pCtx.fillStyle = g
       pCtx.beginPath()
@@ -80,46 +79,76 @@ const createCloudPattern = (ctx: CanvasRenderingContext2D): CanvasPattern | null
   return ctx.createPattern(cvs, 'repeat')
 }
 
-/**
- * Crée le "Tampon" de gommage pour un niveau de zoom donné (Optimisation Perf)
- * Évite de recalculer le gradient radial pour chaque point à chaque frame.
- */
 const updateBrush = (zoom: number, centerLat: number): HTMLCanvasElement => {
   const metersPerPixel = 40075016.686 * Math.abs(Math.cos(centerLat * Math.PI / 180)) / Math.pow(2, zoom + 8)
   const radiusPx = Math.ceil(CONFIG.RADIUS_METERS / metersPerPixel)
   const diameter = radiusPx * 2
   
-  // Création ou réutilisation d'un canvas offscreen
   const cvs = document.createElement('canvas')
   cvs.width = diameter
   cvs.height = diameter
   const ctx = cvs.getContext('2d')
   if (!ctx) return cvs
 
-  // Dessin du gradient unique ("Le Tampon")
   const g = ctx.createRadialGradient(radiusPx, radiusPx, radiusPx * 0.5, radiusPx, radiusPx, radiusPx)
-  g.addColorStop(0, 'rgba(0,0,0,1)') // Centre (gomme forte)
-  g.addColorStop(1, 'rgba(0,0,0,0)') // Bord (gomme nulle)
+  g.addColorStop(0, 'rgba(0,0,0,1)')
+  g.addColorStop(1, 'rgba(0,0,0,0)')
 
   ctx.fillStyle = g
   ctx.fillRect(0, 0, diameter, diameter)
-  
   return cvs
 }
 
-// --- MOTEUR DE RENDU ---
+// --- GEOMETRY HELPERS ---
+
+const projectRing = (ctx: CanvasRenderingContext2D, coords: any[], map: Map) => {
+  if (coords.length === 0) return
+  const start = map.latLngToContainerPoint([coords[0][1], coords[0][0]]) // [lng, lat] -> [lat, lng]
+  ctx.moveTo(start.x, start.y)
+  
+  for (let i = 1; i < coords.length; i++) {
+    const p = map.latLngToContainerPoint([coords[i][1], coords[i][0]])
+    ctx.lineTo(p.x, p.y)
+  }
+}
+
+const drawGeometry = (ctx: CanvasRenderingContext2D, geometry: any, map: Map) => {
+  if (!geometry) return
+
+  ctx.beginPath() // Un seul path pour toute la géométrie
+  if (geometry.type === 'Polygon') {
+    // Outer ring
+    projectRing(ctx, geometry.coordinates[0], map)
+    ctx.closePath()
+    // Holes (Leaflet/Canvas gère les trous avec la règle evenodd/nonzero si on trace tout dans le même path)
+    for (let i = 1; i < geometry.coordinates.length; i++) {
+      projectRing(ctx, geometry.coordinates[i], map)
+      ctx.closePath()
+    }
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const poly of geometry.coordinates) {
+      projectRing(ctx, poly[0], map)
+      ctx.closePath()
+      for (let i = 1; i < poly.length; i++) {
+        projectRing(ctx, poly[i], map)
+        ctx.closePath()
+      }
+    }
+  }
+  ctx.fill() // Remplir (Gommer)
+}
+
+// --- RENDU ---
 
 const drawFog = () => {
   if (!props.map || !canvas.value || !fogPane) return
   
   const map = props.map as Map
-  const ctx = canvas.value.getContext('2d', { desynchronized: true }) // Hint pour perf
+  const ctx = canvas.value.getContext('2d', { desynchronized: true })
   if (!ctx) return
 
-  // 1. Initialisation Lazy
   if (!cloudPattern) cloudPattern = createCloudPattern(ctx)
 
-  // 2. Géométrie
   const size = map.getSize()
   const topLeft = map.containerPointToLayerPoint([0, 0])
   L.DomUtil.setPosition(canvas.value, topLeft)
@@ -129,7 +158,7 @@ const drawFog = () => {
     canvas.value.height = size.y
   }
 
-  // 3. Dessin du Brouillard (Couche 1)
+  // 1. Fond complet (Brouillard partout)
   ctx.clearRect(0, 0, size.x, size.y)
   ctx.globalCompositeOperation = 'source-over'
   
@@ -141,33 +170,60 @@ const drawFog = () => {
     ctx.fillRect(0, 0, size.x, size.y)
   }
 
-  // 4. Gommage (Couche 2)
+  // 2. Mode Gomme
   ctx.globalCompositeOperation = 'destination-out'
   ctx.globalAlpha = 1.0
+  ctx.fillStyle = 'rgba(0,0,0,1)' // Couleur de gomme pleine
 
-  // Mise à jour du Tampon si le zoom a changé
+  // 3. Gommage des Zones Complétées
   const zoom = map.getZoom()
+  const visibleZones = zoneStore.getZonesForZoom(zoom)
+  
+  // Helper pour vérifier la progression
+  const isCompleted = (zone: any) => {
+    const id = zone.documentId || zone.id
+    
+    // DEBUG TEMPORAIRE
+    /*
+    if (zoom < 8) {
+       console.log('--- DEBUG FOG ---')
+       console.log('Zone ID:', id)
+       // @ts-ignore
+       console.log('Completed Regions (Set):', Array.from(progressionStore.completedRegionIds))
+       console.log('Is Completed?', progressionStore.isRegionCompleted(id))
+    }
+    */
+
+    if (zoom >= 10) return progressionStore.isComcomCompleted(id)
+    if (zoom >= 8) return progressionStore.isDepartmentCompleted(id)
+    return progressionStore.isRegionCompleted(id)
+  }
+
+  // On dessine les polygones des zones complétées pour les "trouer"
+  for (const zone of visibleZones) {
+    if (isCompleted(zone)) {
+      drawGeometry(ctx, zone.geometry, map)
+    }
+  }
+
+  // 4. Gommage des Points GPS (Classique)
   if (!brushCanvas || zoom !== lastZoomForBrush) {
     brushCanvas = updateBrush(zoom, map.getCenter().lat)
     lastZoomForBrush = zoom
   }
 
-  if (!brushCanvas) return
+  if (brushCanvas) {
+    const bounds = map.getBounds().pad(0.2)
+    const points = fogStore.discoveredPoints
+    const radiusOffset = brushCanvas.width / 2
 
-  // Optimisation Culling (Bornes + Marge)
-  const bounds = map.getBounds().pad(0.2)
-  const points = fogStore.discoveredPoints
-  const radiusOffset = brushCanvas.width / 2
+    for (let i = 0; i < points.length; i++) {
+      const pt = points[i]
+      if (!bounds.contains([pt.lat, pt.lng])) continue
 
-  // Boucle optimisée : Tamponnage
-  for (let i = 0; i < points.length; i++) {
-    const pt = points[i]
-    if (!bounds.contains([pt.lat, pt.lng])) continue
-
-    const p = map.latLngToContainerPoint([pt.lat, pt.lng])
-    
-    // On dessine l'image pré-calculée au lieu de générer un gradient
-    ctx.drawImage(brushCanvas, p.x - radiusOffset, p.y - radiusOffset)
+      const p = map.latLngToContainerPoint([pt.lat, pt.lng])
+      ctx.drawImage(brushCanvas, p.x - radiusOffset, p.y - radiusOffset)
+    }
   }
 }
 
@@ -190,17 +246,20 @@ onMounted(() => {
   fogPane?.appendChild(cvs)
   canvas.value = cvs
 
-  map.on('move moveend zoom zoomend resize', drawFog)
+  map.on('moveend zoomend resize', drawFog)
   drawFog()
 })
 
 onUnmounted(() => {
   if (props.map) {
     const map = props.map as Map
-    map.off('move moveend zoom zoomend resize', drawFog)
+    map.off('moveend zoomend resize', drawFog)
     if (canvas.value && fogPane) fogPane.removeChild(canvas.value)
   }
 })
 
+// Réactivité
 watch(() => fogStore.discoveredPoints.length, drawFog)
+watch(() => zoneStore.isInitialized, drawFog)
+watch(() => progressionStore.progressions.length, drawFog)
 </script>

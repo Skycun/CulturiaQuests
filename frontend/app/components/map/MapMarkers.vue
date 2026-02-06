@@ -1,5 +1,5 @@
 <template>
-  <!-- Marqueur position utilisateur (Toujours visible) -->
+  <!-- Marqueur position utilisateur (Géré par Vue car unique et très dynamique) -->
   <LMarker :lat-lng="[userLat, userLng]">
     <LIcon
       icon-url="/assets/map/userpoint.svg"
@@ -7,81 +7,139 @@
       :icon-anchor="[10, 10]"
     />
   </LMarker>
-
-  <!-- Marqueurs Musées et POIs (Visibles seulement si zoom >= 9) -->
-  <template v-if="isVisible">
-    <LMarker
-      v-for="museum in museums"
-      :key="`museum-${museum.id}`"
-      :lat-lng="[museum.lat, museum.lng]"
-      @click="$emit('select-museum', museum)"
-    >
-      <LIcon
-        :icon-url="`/assets/map/museum/${museum.tags[0] || 'Art'}.png`"
-        :icon-size="[32, 24]"
-        :icon-anchor="[16, 12]"
-      />
-    </LMarker>
-
-    <LMarker
-      v-for="poi in pois"
-      :key="`poi-${poi.id}`"
-      :lat-lng="[poi.lat, poi.lng]"
-      @click="$emit('select-poi', poi)"
-    >
-      <LIcon
-        :icon-url="getChestIcon(poi)"
-        :icon-size="[32, 24]"
-        :icon-anchor="[16, 12]"
-      />
-    </LMarker>
-  </template>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted, onUnmounted, watch, toRaw, computed } from 'vue'
+import L from 'leaflet'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
 import { useVisitStore } from '~/stores/visit'
+import { calculateDistance } from '~/utils/geolocation'
 
 const visitStore = useVisitStore()
 
-/**
- * Get the appropriate chest icon based on chest availability
- */
-function getChestIcon(poi: Poi): string {
-  const poiId = poi.id || poi.documentId
-  const isAvailable = visitStore.isChestAvailable(poiId)
+const props = defineProps<{
+  museums: Museum[]
+  pois: Poi[]
+  userLat: number
+  userLng: number
+  zoom: number
+  map: any // Instance Leaflet
+}>()
 
-  return isAvailable
+const emit = defineEmits<{
+  'select-museum': [museum: Museum]
+  'select-poi': [poi: Poi]
+}>()
+
+// LayerGroup natif pour les performances
+let markersLayer: L.LayerGroup | null = null
+
+// --- ICONS CACHE ---
+const iconCache = new Map<string, L.Icon>()
+
+function getIcon(url: string, size: [number, number], anchor: [number, number]): L.Icon {
+  if (!iconCache.has(url)) {
+    iconCache.set(url, L.icon({
+      iconUrl: url,
+      iconSize: size,
+      iconAnchor: anchor,
+      popupAnchor: [0, -size[1]]
+    }))
+  }
+  return iconCache.get(url)!
+}
+
+function getChestIconUrl(poi: Poi): string {
+  const poiId = poi.id || poi.documentId
+  return visitStore.isChestAvailable(poiId)
     ? '/assets/map/chest.png'
     : '/assets/map/chest-opened.png'
 }
 
-/**
- * Composant d'affichage des marqueurs sur la carte.
- * Affiche le marqueur de l'utilisateur, les marqueurs des musées avec icônes dynamiques,
- * et les marqueurs des POIs (coffres).
- */
-const props = defineProps<{
-  /** Liste des musées à afficher (données normalisées) */
-  museums: Museum[]
-  /** Liste des POIs à afficher (données normalisées) */
-  pois: Poi[]
-  /** Latitude de la position utilisateur */
-  userLat: number
-  /** Longitude de la position utilisateur */
-  userLng: number
-  /** Niveau de zoom actuel */
-  zoom: number
-}>()
+// --- RENDERING ---
 
-const isVisible = computed(() => props.zoom >= 10)
+const renderMarkers = () => {
+  // Utiliser l'objet brut pour éviter les erreurs de Proxy Vue
+  const rawMap = toRaw(props.map)
+  if (!rawMap) return
 
-defineEmits<{
-  /** Émis quand un musée est sélectionné */
-  'select-museum': [museum: Museum]
-  /** Émis quand un POI est sélectionné */
-  'select-poi': [poi: Poi]
-}>()
+  // 1. Nettoyage radical
+  if (markersLayer) {
+    try {
+      rawMap.removeLayer(markersLayer)
+    } catch (e) {
+      // Map déjà détruite ou layer déjà parti
+    }
+    markersLayer = null
+  }
+
+  // Seuil de zoom (Optimisation) - POIs visibles à partir de 11
+  if (props.zoom < 11) return
+
+  // 2. Création d'un nouveau groupe frais
+  markersLayer = L.layerGroup().addTo(rawMap)
+
+  // 3. Peuplage (Filtre Distance 10km)
+  const RADIUS_KM = 10
+
+  props.museums.forEach(m => {
+    if (!m.lat || !m.lng) return
+    
+    // Distance check
+    if (calculateDistance(props.userLat, props.userLng, m.lat, m.lng) > RADIUS_KM) return
+
+    const iconUrl = `/assets/map/museum/${m.tags?.[0]?.name || 'Art'}.png`
+    const marker = L.marker([m.lat, m.lng], {
+      icon: getIcon(iconUrl, [32, 24], [16, 12])
+    })
+    marker.on('click', () => emit('select-museum', m))
+    markersLayer!.addLayer(marker)
+  })
+
+  props.pois.forEach(p => {
+    if (!p.lat || !p.lng) return
+
+    // Distance check
+    if (calculateDistance(props.userLat, props.userLng, p.lat, p.lng) > RADIUS_KM) return
+
+    const iconUrl = getChestIconUrl(p)
+    const marker = L.marker([p.lat, p.lng], {
+      icon: getIcon(iconUrl, [32, 24], [16, 12])
+    })
+    marker.on('click', () => emit('select-poi', p))
+    markersLayer!.addLayer(marker)
+  })
+}
+
+// --- LIFECYCLE ---
+
+onMounted(() => {
+  if (props.map) {
+    const rawMap = toRaw(props.map)
+    markersLayer = L.layerGroup().addTo(rawMap)
+    renderMarkers()
+  }
+})
+
+onUnmounted(() => {
+  if (markersLayer && props.map) {
+    const rawMap = toRaw(props.map)
+    try {
+      rawMap.removeLayer(markersLayer)
+    } catch (e) {
+      // Ignore
+    }
+  }
+})
+
+// Réactivité Optimisée
+// On ne redessine que si les données changent ou si on franchit le seuil de zoom 11
+const isZoomVisible = computed(() => props.zoom >= 11)
+
+watch(() => [props.museums, props.pois, isZoomVisible.value, props.userLat, props.userLng], renderMarkers)
+
+// Watch spécifique pour l'état des coffres
+watch(() => visitStore.visits.length, renderMarkers)
 </script>

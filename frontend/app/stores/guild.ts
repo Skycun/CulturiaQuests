@@ -6,6 +6,7 @@ import { useQuestStore } from './quest'
 import { useVisitStore } from './visit'
 import { useRunStore } from './run'
 import { useFriendshipStore } from './friendship'
+import { useProgressionStore } from './progression'
 
 export const useGuildStore = defineStore('guild', () => {
   // State
@@ -54,6 +55,7 @@ export const useGuildStore = defineStore('guild', () => {
     useVisitStore().clearVisits()
     useRunStore().clearRuns()
     useFriendshipStore().clearFriendships()
+    useProgressionStore().clearProgressions()
   }
 
   /**
@@ -122,6 +124,13 @@ export const useGuildStore = defineStore('guild', () => {
             friendships: {
               populate: ['npc'],
             },
+            progressions: {
+              populate: {
+                region: { fields: ['documentId', 'name'] },
+                department: { fields: ['documentId', 'name'] },
+                comcom: { fields: ['documentId', 'name'] }
+              }
+            }
           },
         },
       })
@@ -141,6 +150,7 @@ export const useGuildStore = defineStore('guild', () => {
         const visits = guildData.visits?.data || guildData.visits || []
         const runs = guildData.runs?.data || guildData.runs || []
         const friendships = guildData.friendships?.data || guildData.friendships || []
+        const progressions = guildData.progressions?.data || guildData.progressions || []
 
         useCharacterStore().setCharacters(Array.isArray(characters) ? characters : [])
         useInventoryStore().setItems(Array.isArray(items) ? items : [])
@@ -148,6 +158,7 @@ export const useGuildStore = defineStore('guild', () => {
         useVisitStore().setVisits(Array.isArray(visits) ? visits : [])
         useRunStore().setRuns(Array.isArray(runs) ? runs : [])
         useFriendshipStore().setFriendships(Array.isArray(friendships) ? friendships : [])
+        useProgressionStore().setProgressions(Array.isArray(progressions) ? progressions : [])
       }
     } catch (e: any) {
       console.error('Failed to fetch all guild data:', e)

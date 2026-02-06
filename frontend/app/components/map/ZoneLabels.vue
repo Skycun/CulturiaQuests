@@ -1,38 +1,32 @@
-<template>
-  <!-- On utilise des marqueurs invisibles qui contiennent juste une DivIcon avec le texte -->
-  <template v-for="zone in visibleZones" :key="`label-${zoom}-${visibleZones.length}-${zone.documentId || zone.id}`">
-    <LMarker
-      v-if="isValidCoords(getCenter(zone))"
-      :lat-lng="getCenter(zone)"
-      :options="{ interactive: false }"
-    >
-      <LIcon
-        :icon-size="[100, 20]" 
-        :icon-anchor="[50, 10]"
-        class-name="zone-label-icon"
-      >
-        <div class="text-center font-pixel text-white text-shadow-outline text-xs whitespace-nowrap overflow-visible pointer-events-none">
-          {{ zone.name }}
-        </div>
-      </LIcon>
-    </LMarker>
-  </template>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GeoZone } from '~/stores/zone'
+import { useProgressionStore } from '~/stores/progression'
 
 const props = defineProps<{
   zones: GeoZone[]
   zoom: number
 }>()
 
+const progressionStore = useProgressionStore()
+
 // Logique d'affichage des labels selon le zoom
 const visibleZones = computed(() => {
   if (props.zoom > 12) return []
   return props.zones
 })
+
+/**
+ * Vérifie si on doit masquer le label (cas spécifique : Région complétée)
+ */
+function shouldHideLabel(zone: GeoZone): boolean {
+  // Uniquement pour les régions (Zoom < 6 correspond aux régions selon zone.ts)
+  if (props.zoom < 6) {
+    const id = zone.documentId || zone.id
+    return progressionStore.isRegionCompleted(id)
+  }
+  return false
+}
 
 /**
  * Vérifie si les coordonnées sont valides pour éviter les erreurs Leaflet
@@ -78,6 +72,27 @@ function getCenter(zone: GeoZone): [number, number] | null {
   }
 }
 </script>
+
+<template>
+  <!-- On utilise des marqueurs invisibles qui contiennent juste une DivIcon avec le texte -->
+  <template v-for="zone in visibleZones" :key="`label-${zoom}-${visibleZones.length}-${zone.documentId || zone.id}`">
+    <LMarker
+      v-if="isValidCoords(getCenter(zone)) && !shouldHideLabel(zone)"
+      :lat-lng="getCenter(zone)!"
+      :options="{ interactive: false, zIndexOffset: 1000 }"
+    >
+      <LIcon
+        :icon-size="[100, 20]" 
+        :icon-anchor="[50, 10]"
+        class-name="zone-label-icon"
+      >
+        <div class="text-center font-pixel text-white text-shadow-outline text-xs whitespace-nowrap overflow-visible pointer-events-none">
+          {{ zone.name }}
+        </div>
+      </LIcon>
+    </LMarker>
+  </template>
+</template>
 
 <style>
 /* Classe passée à LIcon pour supprimer les styles par défaut de Leaflet qui pourraient gêner */

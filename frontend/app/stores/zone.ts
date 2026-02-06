@@ -157,9 +157,9 @@ export const useZoneStore = defineStore('zone', () => {
    * Retourne les zones à afficher selon le niveau de zoom
    */
   function getZonesForZoom(zoom: number): GeoZone[] {
-    if (zoom >= 10) {
+    if (zoom >= 11) {
       return comcoms.value
-    } else if (zoom >= 8) {
+    } else if (zoom >= 6) {
       return departments.value
     } else {
       return regions.value

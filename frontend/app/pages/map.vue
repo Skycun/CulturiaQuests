@@ -32,8 +32,10 @@
           <ZoneLayer :zones="visibleZones" />
           <ZoneLabels :zones="visibleZones" :zoom="currentZoom" />
 
-          <!-- Marqueurs extraits -->
+          <!-- Marqueurs extraits (Optimisé JS pur) -->
           <MapMarkers
+            v-if="mapRef?.leafletObject"
+            :map="mapRef.leafletObject"
             :museums="validMuseums"
             :pois="validPOIs"
             :user-lat="userLat"
@@ -64,12 +66,14 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
 import { useGuildStore } from '~/stores/guild'
 import { useRunStore } from '~/stores/run'
 import { useFogStore } from '~/stores/fog'
 import { useZoneStore } from '~/stores/zone'
+import { useProgressionStore } from '~/stores/progression'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useMapInteraction } from '~/composables/useMapInteraction'
 import { calculateDistance } from '~/utils/geolocation'
@@ -93,6 +97,7 @@ const guildStore = useGuildStore()
 const runStore = useRunStore()
 const fogStore = useFogStore()
 const zoneStore = useZoneStore()
+const progressionStore = useProgressionStore()
 
 // Composables
 const geolocation = useGeolocation({
@@ -131,14 +136,14 @@ const guildCharacters = computed(() => {
 
 // Computed - Valid markers (filtrer les coordonnées invalides)
 // On utilise directement le store qui contient TOUS les items chargés
-// Affiche uniquement si le zoom permet de voir les Comcoms (>= 9)
+// Affiche uniquement si le zoom permet de voir les Comcoms (>= 11)
 const validMuseums = computed<Museum[]>(() => {
-  if (currentZoom.value < 9) return []
+  if (currentZoom.value < 11) return []
   return museumStore.museums.filter((m) => m.lat !== undefined && m.lng !== undefined)
 })
 
 const validPOIs = computed<Poi[]>(() => {
-  if (currentZoom.value < 9) return []
+  if (currentZoom.value < 11) return []
   return poiStore.pois.filter((p) => p.lat !== undefined && p.lng !== undefined)
 })
 
@@ -225,12 +230,28 @@ geolocation.registerCallbacks({
     // Enregistre le déplacement
     fogStore.addPosition(lat, lng)
   },
-  // Plus de rechargement par distance nécessaire car on a tout chargé
 })
 
 // Lifecycle
-onMounted(() => {
-  guildStore.fetchAll()
-  fetchAllLocations() // Chargement global au démarrage
+onMounted(async () => {
+  await guildStore.fetchAll()
+  await fetchAllLocations() // Chargement global au démarrage
+  
+  // Optimisation Fog: Nettoyage des points dans les régions complétées
+  // On attend que les zones soient chargées (zoneStore est hydraté par fetchAllLocations > init)
+  // Utiliser un watchEffect ou vérifier si zones chargées
+  // Pour l'instant, on suppose que le cache IndexedDB est rapide
+  if (zoneStore.regions.length > 0) {
+    const completedRegions = zoneStore.regions.filter(r => 
+      progressionStore.isRegionCompleted(r.documentId || r.id.toString())
+    )
+    if (completedRegions.length > 0) {
+      fogStore.removePointsInZones(completedRegions)
+    }
+  }
+})
+
+onUnmounted(() => {
+  geolocation.stopTracking()
 })
 </script>
