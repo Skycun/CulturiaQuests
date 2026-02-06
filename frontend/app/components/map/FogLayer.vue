@@ -194,7 +194,7 @@ const drawFog = () => {
     }
     */
 
-    if (zoom >= 10) return progressionStore.isComcomCompleted(id)
+    if (zoom >= 11) return progressionStore.isComcomCompleted(id)
     if (zoom >= 8) return progressionStore.isDepartmentCompleted(id)
     return progressionStore.isRegionCompleted(id)
   }

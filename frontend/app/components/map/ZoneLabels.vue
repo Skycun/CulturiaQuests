@@ -20,8 +20,8 @@ const visibleZones = computed(() => {
  * Vérifie si on doit masquer le label (cas spécifique : Région complétée)
  */
 function shouldHideLabel(zone: GeoZone): boolean {
-  // Uniquement pour les régions (Zoom < 6 correspond aux régions selon zone.ts)
-  if (props.zoom < 6) {
+  // Uniquement pour les régions (Zoom < 8 correspond aux régions selon zone.ts)
+  if (props.zoom < 8) {
     const id = zone.documentId || zone.id
     return progressionStore.isRegionCompleted(id)
   }
