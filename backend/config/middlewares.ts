@@ -49,7 +49,13 @@ export default [
   },
   'strapi::poweredBy',
   'strapi::query',
-  'strapi::body',
+  {
+    name: 'strapi::body',
+    config: {
+      jsonLimit: '6mb',
+      formLimit: '6mb',
+    },
+  },
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
