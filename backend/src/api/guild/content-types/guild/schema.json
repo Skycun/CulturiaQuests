@@ -85,6 +85,17 @@
       "relation": "oneToMany",
       "target": "api::player-friendship.player-friendship",
       "mappedBy": "receiver"
+    },
+    "quiz_attempts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::quiz-attempt.quiz-attempt",
+      "mappedBy": "guild"
+    },
+    "quiz_streak": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
     }
   }
 }

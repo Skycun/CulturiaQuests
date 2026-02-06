@@ -184,7 +184,7 @@ async function handleStartExpedition() {
 
 // Fetch nearby locations
 async function fetchNearbyLocations(): Promise<void> {
-  const radius = 10 // 10 km
+  const radius = 10000 // 10000 km (temporarily increased from 10km)
 
   const [museums, pois] = await Promise.all([
     museumStore.fetchNearby(radius, userLat.value, userLng.value),

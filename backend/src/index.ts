@@ -83,6 +83,18 @@ export default {
         'api::user-settings.user-settings.updateSettings',
         'api::user-settings.user-settings.uploadAvatar',
         'api::user-settings.user-settings.removeAvatar',
+        // Quiz permissions
+        'api::quiz-session.quiz-session.find',
+        'api::quiz-session.quiz-session.findOne',
+        'api::quiz-question.quiz-question.find',
+        'api::quiz-question.quiz-question.findOne',
+        'api::quiz-attempt.quiz-attempt.find',
+        'api::quiz-attempt.quiz-attempt.findOne',
+        'api::quiz-attempt.quiz-attempt.create',
+        'api::quiz-attempt.quiz-attempt.getTodayQuiz',
+        'api::quiz-attempt.quiz-attempt.submitQuiz',
+        'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
+        'api::quiz-attempt.quiz-attempt.getMyHistory',
       ];
 
       for (const action of actions) {

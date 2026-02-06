@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "quiz_questions",
+  "info": {
+    "singularName": "quiz-question",
+    "pluralName": "quiz-questions",
+    "displayName": "Quiz Question"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "question_text": {
+      "type": "text",
+      "required": true
+    },
+    "question_type": {
+      "type": "enumeration",
+      "enum": ["qcm", "timeline"],
+      "required": true
+    },
+    "order": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 10
+    },
+    "tag": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::tag.tag"
+    },
+    "correct_answer": {
+      "type": "string",
+      "required": true
+    },
+    "options": {
+      "type": "json"
+    },
+    "timeline_range": {
+      "type": "json"
+    },
+    "explanation": {
+      "type": "text"
+    },
+    "session": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::quiz-session.quiz-session",
+      "inversedBy": "questions"
+    }
+  }
+}
