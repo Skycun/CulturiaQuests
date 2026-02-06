@@ -89,13 +89,14 @@ export const useQuizStore = defineStore('quiz', {
         if (res.data.alreadyCompleted) {
           this.alreadyCompleted = true
           this.existingAttempt = res.data.attempt
-          await this.fetchLeaderboard()
         } else {
           this.sessionId = res.data.sessionId
           this.sessionDate = res.data.date
           this.questions = res.data.questions || []
           this.resetQuizState()
         }
+
+        await this.fetchLeaderboard()
       } catch (e: any) {
         if (e?.error?.status === 404) {
           this.error = "Aucun quiz disponible pour aujourd'hui. Revenez plus tard !"
