@@ -89,6 +89,7 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 
 | Methode | Endpoint | Description |
 |---------|----------|-------------|
+| `GET` | `/admin-dashboard/check` | Verification du role admin (200 = admin, 403 = non) |
 | `GET` | `/admin-dashboard/overview` | KPIs globaux du dashboard |
 | `GET` | `/admin-dashboard/players` | Liste paginee des joueurs |
 | `GET` | `/admin-dashboard/players/:id` | Detail d'un joueur |

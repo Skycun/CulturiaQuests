@@ -2,6 +2,15 @@ export default {
   routes: [
     {
       method: 'GET',
+      path: '/admin-dashboard/check',
+      handler: 'admin-dashboard.check',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
+    {
+      method: 'GET',
       path: '/admin-dashboard/overview',
       handler: 'admin-dashboard.getOverview',
       config: {
