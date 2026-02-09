@@ -1,5 +1,29 @@
 import type { Core } from '@strapi/strapi';
 
+/**
+ * Helper: grants a list of permission actions to a role (idempotent)
+ */
+async function grantPermissions(strapi: Core.Strapi, roleId: number, actions: string[], roleName: string) {
+  for (const action of actions) {
+    const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
+      where: {
+        action,
+        role: roleId,
+      },
+    });
+
+    if (!permission) {
+      await strapi.db.query('plugin::users-permissions.permission').create({
+        data: {
+          action,
+          role: roleId,
+        },
+      });
+      strapi.log.info(`Granted ${action} permission to ${roleName} role`);
+    }
+  }
+}
+
 export default {
   /**
    * An asynchronous register function that runs before
@@ -23,29 +47,10 @@ export default {
     });
 
     if (publicRole) {
-      const actions = [
+      await grantPermissions(strapi, publicRole.id, [
         'plugin::users-permissions.auth.register',
-        'api::character.character.getCharacterIcons'
-      ];
-
-      for (const action of actions) {
-        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
-          where: {
-            action,
-            role: publicRole.id,
-          },
-        });
-
-        if (!permission) {
-          await strapi.db.query('plugin::users-permissions.permission').create({
-            data: {
-              action,
-              role: publicRole.id,
-            },
-          });
-          strapi.log.info(`Granted ${action} permission to Public role`);
-        }
-      }
+        'api::character.character.getCharacterIcons',
+      ], 'Public');
     }
 
     // Grant custom permissions to Authenticated role
@@ -54,7 +59,7 @@ export default {
     });
 
     if (authenticatedRole) {
-      const actions = [
+      await grantPermissions(strapi, authenticatedRole.id, [
         'api::guild.guild.setup',
         'api::item.item.getItemIcons',
         'api::museum.museum.find',
@@ -95,26 +100,76 @@ export default {
         'api::quiz-attempt.quiz-attempt.submitQuiz',
         'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
         'api::quiz-attempt.quiz-attempt.getMyHistory',
-      ];
+      ], 'Authenticated');
+    }
 
-      for (const action of actions) {
-        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
-          where: {
-            action,
-            role: authenticatedRole.id,
-          },
-        });
+    // Create and configure the Admin role
+    let adminRole = await strapi.db.query('plugin::users-permissions.role').findOne({
+      where: { type: 'admin' },
+    });
 
-        if (!permission) {
-          await strapi.db.query('plugin::users-permissions.permission').create({
-            data: {
-              action,
-              role: authenticatedRole.id,
-            },
-          });
-          strapi.log.info(`Granted ${action} permission to Authenticated role`);
-        }
-      }
+    if (!adminRole) {
+      adminRole = await strapi.db.query('plugin::users-permissions.role').create({
+        data: {
+          name: 'Admin',
+          description: 'Administrator role with access to the admin dashboard',
+          type: 'admin',
+        },
+      });
+      strapi.log.info('Created Admin role for users-permissions');
+    }
+
+    if (adminRole) {
+      // Admin gets all authenticated permissions + admin dashboard endpoints
+      await grantPermissions(strapi, adminRole.id, [
+        // All authenticated permissions (admin can also play the game)
+        'api::guild.guild.setup',
+        'api::guild.guild.find',
+        'api::guild.guild.findOne',
+        'api::guild.guild.delete',
+        'api::guild.guild.toggleDebugMode',
+        'api::item.item.getItemIcons',
+        'api::museum.museum.find',
+        'api::museum.museum.findOne',
+        'api::poi.poi.find',
+        'api::poi.poi.findOne',
+        'api::tag.tag.find',
+        'api::tag.tag.findOne',
+        'api::statistic.statistic.getSummary',
+        'api::visit.visit.openChest',
+        'api::run.run.startExpedition',
+        'api::run.run.endExpedition',
+        'api::run.run.getActiveRun',
+        'api::player-friendship.player-friendship.find',
+        'api::player-friendship.player-friendship.searchUser',
+        'api::player-friendship.player-friendship.sendRequest',
+        'api::player-friendship.player-friendship.acceptRequest',
+        'api::player-friendship.player-friendship.rejectRequest',
+        'api::player-friendship.player-friendship.removeFriend',
+        'api::player-friendship.player-friendship.toggleFriendRequests',
+        'plugin::upload.file.create',
+        'api::user-settings.user-settings.getSettings',
+        'api::user-settings.user-settings.updateSettings',
+        'api::user-settings.user-settings.uploadAvatar',
+        'api::user-settings.user-settings.removeAvatar',
+        'api::quiz-session.quiz-session.find',
+        'api::quiz-session.quiz-session.findOne',
+        'api::quiz-question.quiz-question.find',
+        'api::quiz-question.quiz-question.findOne',
+        'api::quiz-attempt.quiz-attempt.find',
+        'api::quiz-attempt.quiz-attempt.findOne',
+        'api::quiz-attempt.quiz-attempt.create',
+        'api::quiz-attempt.quiz-attempt.getTodayQuiz',
+        'api::quiz-attempt.quiz-attempt.submitQuiz',
+        'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
+        'api::quiz-attempt.quiz-attempt.getMyHistory',
+        // Admin dashboard endpoints
+        'api::admin-dashboard.admin-dashboard.getOverview',
+        'api::admin-dashboard.admin-dashboard.getPlayers',
+        'api::admin-dashboard.admin-dashboard.getPlayerDetail',
+        'api::admin-dashboard.admin-dashboard.toggleBlockPlayer',
+        'api::admin-dashboard.admin-dashboard.changePlayerRole',
+      ], 'Admin');
     }
   },
 };
