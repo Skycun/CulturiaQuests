@@ -6,6 +6,11 @@ import { useQuestStore } from './quest'
 import { useVisitStore } from './visit'
 import { useRunStore } from './run'
 import { useFriendshipStore } from './friendship'
+import { useNpcStore } from './npc'
+import { useMuseumStore } from './museum'
+import { usePOIStore } from './poi'
+import { useQuizStore } from './quiz'
+import { useStatisticsStore } from './statistics'
 
 export const useGuildStore = defineStore('guild', () => {
   // State
@@ -54,6 +59,11 @@ export const useGuildStore = defineStore('guild', () => {
     useVisitStore().clearVisits()
     useRunStore().clearRuns()
     useFriendshipStore().clearFriendships()
+    useNpcStore().clearNpcs()
+    useMuseumStore().clearMuseums()
+    usePOIStore().clearPOIs()
+    useQuizStore().resetAll()
+    useStatisticsStore().clearStatistics()
   }
 
   /**

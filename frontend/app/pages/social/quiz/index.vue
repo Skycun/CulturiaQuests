@@ -93,10 +93,11 @@
       <FormPixelButton
         v-if="quizStore.alreadyCompleted"
         variant="filled"
-        color="darker-red"
+        color="indigo"
         class="w-full !mt-0"
+        @click="router.push('/social/quiz/results')"
       >
-        Vous avez déjà fait le quiz
+        Voir mes résultats
       </FormPixelButton>
       <FormPixelButton
         v-else
