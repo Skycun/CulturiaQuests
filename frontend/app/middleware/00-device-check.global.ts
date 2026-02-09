@@ -7,8 +7,11 @@ export default defineNuxtRouteMiddleware((to) => {
   // Handle both string 'true' and boolean true
   const allowDesktop = String(config.public.allowDesktop) === 'true'
 
+  // Dashboard routes are always allowed on desktop (admin panel)
+  const isDashboardRoute = to.path.startsWith('/dashboard')
+
   // Check if user is on desktop and desktop access is not allowed
-  if (!allowDesktop && device.isDesktop) {
+  if (!allowDesktop && device.isDesktop && !isDashboardRoute) {
     // Only allow access to /pc-error for desktop users
     if (to.path !== '/pc-error') {
       return navigateTo('/pc-error')
