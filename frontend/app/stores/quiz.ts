@@ -156,6 +156,40 @@ export const useQuizStore = defineStore('quiz', {
       }
     },
 
+    async fetchResults(documentId: string) {
+      const client = useStrapiClient()
+      this.loading = true
+      this.error = null
+
+      try {
+        const res = await client<any>(`/quiz-attempts/${documentId}`, {
+          method: 'GET',
+          params: {
+            populate: {
+              guild: { fields: ['quiz_streak'] }
+            }
+          }
+        })
+        
+        const data = res.data
+        this.submitResult = {
+          attempt: {
+            documentId: data.documentId,
+            score: data.score,
+            completed_at: data.completed_at,
+          },
+          score: data.score,
+          rewards: data.rewards,
+          detailedAnswers: data.answers || [],
+          newStreak: data.guild?.quiz_streak || 0,
+        }
+      } catch (e: any) {
+        this.error = e?.error?.message || e?.message || 'Erreur lors du chargement des résultats'
+      } finally {
+        this.loading = false
+      }
+    },
+
     // Navigation
     selectAnswer(answer: string) {
       const q = this.currentQuestion
