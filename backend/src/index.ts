@@ -131,6 +131,7 @@ export default {
 
       // Admin dashboard specific endpoints
       const adminOnlyActions = [
+        'api::admin-dashboard.admin-dashboard.check',
         'api::admin-dashboard.admin-dashboard.getOverview',
         'api::admin-dashboard.admin-dashboard.getPlayers',
         'api::admin-dashboard.admin-dashboard.getPlayerDetail',

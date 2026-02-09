@@ -5,6 +5,15 @@
 
 export default {
   /**
+   * GET /admin-dashboard/check
+   * Lightweight endpoint to verify admin access.
+   * If the user reaches this handler, they have the admin permission.
+   */
+  async check(ctx) {
+    return ctx.send({ isAdmin: true });
+  },
+
+  /**
    * GET /admin-dashboard/overview
    * Returns global KPIs for the dashboard home
    */

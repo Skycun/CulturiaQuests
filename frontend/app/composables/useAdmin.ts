@@ -1,6 +1,7 @@
 /**
  * Composable for checking admin role status
- * Uses the Strapi user object to determine if the current user has the admin role
+ * Calls the /admin-dashboard/check endpoint which is restricted to the admin role.
+ * If the call succeeds (200) the user is admin, if it fails (403) they are not.
  */
 export function useAdmin() {
   const user = useStrapiUser()
@@ -9,10 +10,6 @@ export function useAdmin() {
   const isAdmin = ref(false)
   const adminChecked = ref(false)
 
-  /**
-   * Check if the current user has the admin role
-   * Fetches the user's role from the /api/users/me endpoint with role populated
-   */
   async function checkAdminRole() {
     if (!user.value) {
       isAdmin.value = false
@@ -21,11 +18,10 @@ export function useAdmin() {
     }
 
     try {
-      const me = await client<any>('/users/me', {
+      await client<{ isAdmin: boolean }>('/admin-dashboard/check', {
         method: 'GET',
-        params: { populate: ['role'] },
       })
-      isAdmin.value = me?.role?.type === 'admin'
+      isAdmin.value = true
     } catch {
       isAdmin.value = false
     }
