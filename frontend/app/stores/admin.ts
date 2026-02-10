@@ -40,6 +40,7 @@ export const useAdminStore = defineStore('admin', () => {
   const expeditionsData = ref<any>(null)
   const quizData = ref<any>(null)
   const socialData = ref<any>(null)
+  const connectionData = ref<any>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -133,16 +134,24 @@ export const useAdminStore = defineStore('admin', () => {
     finally { loading.value = false }
   }
 
+  async function fetchConnections() {
+    const client = useStrapiClient()
+    loading.value = true; error.value = null
+    try { connectionData.value = await client<any>('/admin-dashboard/connections', { method: 'GET' }) }
+    catch (e: any) { error.value = e?.message || 'Failed to fetch connection data' }
+    finally { loading.value = false }
+  }
+
   function clearAdmin() {
     overview.value = null; players.value = []; playerDetail.value = null
     pagination.value = { page: 1, pageSize: 25, pageCount: 0, total: 0 }
     mapData.value = null; economyData.value = null; expeditionsData.value = null
-    quizData.value = null; socialData.value = null; error.value = null
+    quizData.value = null; socialData.value = null; connectionData.value = null; error.value = null
   }
 
   return {
-    overview, players, playerDetail, pagination, mapData, economyData, expeditionsData, quizData, socialData, loading, error,
+    overview, players, playerDetail, pagination, mapData, economyData, expeditionsData, quizData, socialData, connectionData, loading, error,
     fetchOverview, fetchPlayers, fetchPlayerDetail, toggleBlockPlayer, changePlayerRole,
-    fetchMapData, fetchEconomy, fetchExpeditions, fetchQuiz, fetchSocial, clearAdmin,
+    fetchMapData, fetchEconomy, fetchExpeditions, fetchQuiz, fetchSocial, fetchConnections, clearAdmin,
   }
 })

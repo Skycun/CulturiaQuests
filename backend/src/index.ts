@@ -142,6 +142,7 @@ export default {
         'api::admin-dashboard.admin-dashboard.getExpeditions',
         'api::admin-dashboard.admin-dashboard.getQuizAnalytics',
         'api::admin-dashboard.admin-dashboard.getSocialStats',
+        'api::admin-dashboard.admin-dashboard.getConnectionAnalytics',
       ];
 
       // Merge: all authenticated permissions + admin-only permissions

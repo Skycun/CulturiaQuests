@@ -54,6 +54,10 @@ Page d'accueil du dashboard avec les KPIs principaux.
   - XP totale en circulation
   - Repartition des items par rarete (basic, common, rare, epic, legendary) avec barres de progression
 
+- **Graphiques de connexion** (nuxt-charts)
+  - Connexions hebdomadaires : courbe des joueurs uniques et connexions totales sur 12 semaines (LineChart)
+  - Horaires de frequentation : diagramme en barres des connexions par heure de la journee (BarChart)
+
 - **KPIs secondaires**
   - Expeditions totales, visites totales, quetes totales, quiz joues
 
@@ -100,6 +104,7 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | `GET` | `/admin-dashboard/expeditions` | Expeditions & quetes (musees, PNJs) |
 | `GET` | `/admin-dashboard/quiz` | Analytique quiz (sessions, scores, leaderboard) |
 | `GET` | `/admin-dashboard/social` | Stats sociales (amities, progression PNJ) |
+| `GET` | `/admin-dashboard/connections` | Analytique des connexions (hebdo + heures) |
 
 ### Parametres de la liste des joueurs
 
@@ -157,9 +162,11 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | Fichier | Type | Description |
 |---------|------|-------------|
 | `backend/src/index.ts` | Modifie | Ajout creation role Admin + permissions dashboard |
-| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Nouveau | Controller avec 11 endpoints |
-| `backend/src/api/admin-dashboard/services/admin-dashboard.ts` | Nouveau | Service d'agregation des donnees (10 methodes) |
-| `backend/src/api/admin-dashboard/routes/admin-dashboard.ts` | Nouveau | Definition des 11 routes API |
+| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Nouveau | Controller avec 12 endpoints |
+| `backend/src/api/admin-dashboard/services/admin-dashboard.ts` | Nouveau | Service d'agregation des donnees (11 methodes) |
+| `backend/src/api/admin-dashboard/routes/admin-dashboard.ts` | Nouveau | Definition des 12 routes API |
+| `backend/src/api/connection-log/` | Nouveau | Content type pour tracker les connexions utilisateur |
+| `backend/src/extensions/users-permissions/strapi-server.ts` | Nouveau | Extension du callback login pour enregistrer les connexions |
 
 ### Frontend
 

@@ -116,6 +116,57 @@
         </div>
       </div>
 
+      <!-- Connection Charts -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Weekly Connections Chart -->
+        <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+          <h2 class="text-lg font-power text-white mb-4">Connexions hebdomadaires</h2>
+          <div v-if="!adminStore.connectionData" class="h-64 flex items-center justify-center">
+            <div class="animate-pulse text-gray-600 text-sm font-onest">Chargement...</div>
+          </div>
+          <div v-else-if="weeklyChartData.length === 0" class="h-64 flex items-center justify-center">
+            <p class="text-gray-600 text-sm font-onest">Aucune donnee de connexion disponible</p>
+          </div>
+          <div v-else>
+            <LineChart
+              :data="weeklyChartData"
+              :height="280"
+              :categories="weeklyCategories"
+              :x-formatter="weeklyXFormatter"
+              :y-grid-line="true"
+              :x-num-ticks="6"
+              :y-num-ticks="5"
+              curve-type="monotoneX"
+            />
+          </div>
+        </div>
+
+        <!-- Peak Hours Chart -->
+        <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+          <h2 class="text-lg font-power text-white mb-4">Horaires de frequentation</h2>
+          <div v-if="!adminStore.connectionData" class="h-64 flex items-center justify-center">
+            <div class="animate-pulse text-gray-600 text-sm font-onest">Chargement...</div>
+          </div>
+          <div v-else-if="peakHoursData.length === 0" class="h-64 flex items-center justify-center">
+            <p class="text-gray-600 text-sm font-onest">Aucune donnee de connexion disponible</p>
+          </div>
+          <div v-else>
+            <BarChart
+              :data="peakHoursData"
+              :height="280"
+              :categories="peakHoursCategories"
+              :y-axis="['count']"
+              :x-formatter="peakHoursXFormatter"
+              :y-grid-line="true"
+              :x-num-ticks="12"
+              :y-num-ticks="5"
+              :radius="4"
+              :bar-padding="0.2"
+            />
+          </div>
+        </div>
+      </div>
+
       <!-- Secondary KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div
@@ -144,6 +195,7 @@ const adminStore = useAdminStore()
 
 onMounted(() => {
   adminStore.fetchOverview()
+  adminStore.fetchConnections()
 })
 
 // KPI data
@@ -215,6 +267,47 @@ const secondaryKpis = computed(() => {
     { icon: 'bxs-brain', label: 'Quiz joues', value: t.quizAttempts },
   ]
 })
+
+// ─── Charts data ─────────────────────────────────────────
+const weeklyChartData = computed(() => {
+  const data = adminStore.connectionData?.weeklyConnections
+  if (!data || data.length === 0) return []
+  return data.map((w: any, i: number) => ({
+    index: i,
+    week: w.week,
+    uniquePlayers: w.uniquePlayers,
+    totalConnections: w.totalConnections,
+  }))
+})
+
+const weeklyCategories = {
+  uniquePlayers: { name: 'Joueurs uniques', color: '#3b82f6' },
+  totalConnections: { name: 'Connexions totales', color: '#8b5cf6' },
+}
+
+const weeklyXFormatter = (tick: number): string => {
+  const entry = weeklyChartData.value[tick]
+  return entry?.week ?? ''
+}
+
+const peakHoursData = computed(() => {
+  const data = adminStore.connectionData?.peakHours
+  if (!data || data.length === 0) return []
+  return data.map((h: any, i: number) => ({
+    index: i,
+    label: h.label,
+    count: h.count,
+  }))
+})
+
+const peakHoursCategories = {
+  count: { name: 'Connexions', color: '#f59e0b' },
+}
+
+const peakHoursXFormatter = (tick: number): string => {
+  const entry = peakHoursData.value[tick]
+  return entry?.label ?? ''
+}
 
 // Helpers
 function formatNumber(n: number): string {
