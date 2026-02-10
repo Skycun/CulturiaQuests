@@ -25,7 +25,7 @@ Le role Admin est cree automatiquement au demarrage de Strapi via le bootstrap (
 ### Protection des routes
 
 - **Backend** : Les endpoints `/api/admin-dashboard/*` sont proteges par le systeme de permissions Strapi. Seul le role Admin y a acces.
-- **Frontend** : Un middleware `admin.ts` verifie le role de l'utilisateur via `/api/users/me?populate=role` et redirige vers `/` si l'utilisateur n'est pas admin.
+- **Frontend** : Un middleware `admin.ts` verifie le role de l'utilisateur via un appel a `/api/admin-dashboard/check` (endpoint protege par permission) et redirige vers `/` si l'utilisateur n'est pas admin.
 - **Desktop** : Les routes `/dashboard/*` sont exemptees de la restriction mobile-only, permettant l'administration depuis un ordinateur.
 
 ---
@@ -95,6 +95,11 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | `GET` | `/admin-dashboard/players/:id` | Detail d'un joueur |
 | `PUT` | `/admin-dashboard/players/:id/toggle-block` | Bloquer/debloquer un joueur |
 | `PUT` | `/admin-dashboard/players/:id/role` | Changer le role d'un joueur |
+| `GET` | `/admin-dashboard/map` | Donnees carte (POIs et musees avec stats) |
+| `GET` | `/admin-dashboard/economy` | Economie du jeu (or, XP, items, niveaux) |
+| `GET` | `/admin-dashboard/expeditions` | Expeditions & quetes (musees, PNJs) |
+| `GET` | `/admin-dashboard/quiz` | Analytique quiz (sessions, scores, leaderboard) |
+| `GET` | `/admin-dashboard/social` | Stats sociales (amities, progression PNJ) |
 
 ### Parametres de la liste des joueurs
 
@@ -152,9 +157,9 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | Fichier | Type | Description |
 |---------|------|-------------|
 | `backend/src/index.ts` | Modifie | Ajout creation role Admin + permissions dashboard |
-| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Nouveau | Controller avec 5 endpoints |
-| `backend/src/api/admin-dashboard/services/admin-dashboard.ts` | Nouveau | Service d'agregation des donnees |
-| `backend/src/api/admin-dashboard/routes/admin-dashboard.ts` | Nouveau | Definition des routes API |
+| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Nouveau | Controller avec 11 endpoints |
+| `backend/src/api/admin-dashboard/services/admin-dashboard.ts` | Nouveau | Service d'agregation des donnees (10 methodes) |
+| `backend/src/api/admin-dashboard/routes/admin-dashboard.ts` | Nouveau | Definition des 11 routes API |
 
 ### Frontend
 
@@ -168,6 +173,11 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | `frontend/app/pages/dashboard/index.vue` | Nouveau | Page d'accueil du dashboard |
 | `frontend/app/pages/dashboard/players/index.vue` | Nouveau | Liste des joueurs |
 | `frontend/app/pages/dashboard/players/[id].vue` | Nouveau | Detail d'un joueur |
+| `frontend/app/pages/dashboard/map.vue` | Nouveau | Carte & geolocalisation |
+| `frontend/app/pages/dashboard/economy.vue` | Nouveau | Economie du jeu |
+| `frontend/app/pages/dashboard/expeditions.vue` | Nouveau | Expeditions & quetes |
+| `frontend/app/pages/dashboard/quiz.vue` | Nouveau | Analytique quiz |
+| `frontend/app/pages/dashboard/social.vue` | Nouveau | Stats sociales |
 | `frontend/app/components/dashboard/KpiCard.vue` | Nouveau | Composant carte KPI |
 | `frontend/app/components/dashboard/StatBlock.vue` | Nouveau | Composant bloc statistique |
 
@@ -209,35 +219,95 @@ await strapi.db.query('plugin::users-permissions.user').update({
 });
 ```
 
+### 4. Carte & Geolocalisation (`/dashboard/map`)
+
+Vue des POIs et musees avec leurs statistiques de frequentation.
+
+**Donnees affichees :**
+
+- **Points d'Interet** (tableau)
+  - Nom, coordonnees (lat/lng)
+  - Nombre total de visites et visiteurs uniques
+  - Or total distribue
+  - Nombre de quetes associees
+
+- **Musees** (tableau)
+  - Nom, coordonnees, rayon, tags
+  - Nombre total d'expeditions
+  - Or total distribue
+  - Etage maximum atteint
+  - Duree moyenne des expeditions
+
+### 5. Economie (`/dashboard/economy`)
+
+Analyse detaillee de l'economie du jeu.
+
+**Donnees affichees :**
+
+- **Sources d'or** : expeditions, coffres, quetes, quiz (avec barres de repartition)
+- **Sources d'XP** : expeditions, coffres, quetes, quiz (avec barres de repartition)
+- **Economie des items** : total, actifs, recycles, repartition par slot (arme, casque, charme)
+- **Distribution des niveaux** : tranches 1-5, 6-10, 11-20, 21-50, 51+
+- **Scrap total** en circulation
+
+### 6. Expeditions & Quetes (`/dashboard/expeditions`)
+
+Statistiques detaillees des expeditions et quetes.
+
+**Donnees affichees :**
+
+- **Statistiques par musee** (tableau)
+  - Nom, nombre d'expeditions, completees
+  - Or total distribue, etage max, DPS moyen, duree moyenne
+
+- **Quetes**
+  - Total, completees, partielles, en attente
+  - Taux de completion
+
+- **Classement des PNJs** (2 tableaux)
+  - Par quetes : nom, nombre de quetes, completees
+  - Par expeditions : nom, surnom, nombre d'expeditions
+
+### 7. Quiz (`/dashboard/quiz`)
+
+Analytique complete des quiz quotidiens.
+
+**Donnees affichees :**
+
+- **KPIs** : total tentatives, score moyen, nombre de sessions
+- **Sessions recentes** (tableau des 30 dernieres)
+  - Date, statut de generation, nombre de participants, score moyen, temps moyen
+
+- **Distribution des scores** : 0-500, 501-1000, 1001-1500, 1501-2000, 2001-2500
+
+- **Questions par tag** : nombre de questions par categorie (Histoire, Art, etc.)
+- **Types de questions** : QCM vs Timeline
+
+- **Leaderboard global** (top 20)
+  - Guilde, score, date de session, temps passe
+
+### 8. Social (`/dashboard/social`)
+
+Vue des interactions sociales entre joueurs et avec les PNJs.
+
+**Donnees affichees :**
+
+- **Amities entre joueurs**
+  - Total, en attente, acceptees, rejetees
+  - Taux d'acceptation
+
+- **Progression PNJ** (tableau)
+  - Nom, surnom, nombre d'amities
+  - Progression moyenne des quetes et expeditions (%)
+
+- **Joueurs les plus connectes** (top 10)
+  - Nom de guilde et nombre de connexions
+
 ---
 
 ## Evolutions futures prevues
 
 Le dashboard est concu pour etre etendu. Voici les pages et fonctionnalites envisagees :
-
-### Carte & Geolocalisation
-- Carte interactive des POIs et musees
-- Heatmap de frequentation
-- Gestion des zones de couverture
-
-### Economie du jeu
-- Graphiques d'evolution de l'or et XP distribues
-- Taux de scrap et equilibre des recompenses
-- Courbes de progression des joueurs
-
-### Expeditions & Quetes
-- Tableau de bord des expeditions par musee
-- Taux de completion des quetes
-- Classement des NPCs
-
-### Quiz quotidien
-- Suivi de generation des quiz
-- Analyse de difficulte par question/tag
-- Leaderboard global (tous joueurs)
-
-### Social
-- Graphe des amities entre joueurs
-- Progression des amities NPC
 
 ### Configuration
 - Reglage des constantes de gameplay

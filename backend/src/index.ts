@@ -137,6 +137,11 @@ export default {
         'api::admin-dashboard.admin-dashboard.getPlayerDetail',
         'api::admin-dashboard.admin-dashboard.toggleBlockPlayer',
         'api::admin-dashboard.admin-dashboard.changePlayerRole',
+        'api::admin-dashboard.admin-dashboard.getMapData',
+        'api::admin-dashboard.admin-dashboard.getEconomy',
+        'api::admin-dashboard.admin-dashboard.getExpeditions',
+        'api::admin-dashboard.admin-dashboard.getQuizAnalytics',
+        'api::admin-dashboard.admin-dashboard.getSocialStats',
       ];
 
       // Merge: all authenticated permissions + admin-only permissions
