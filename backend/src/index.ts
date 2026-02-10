@@ -1,5 +1,29 @@
 import type { Core } from '@strapi/strapi';
 
+/**
+ * Helper: grants a list of permission actions to a role (idempotent)
+ */
+async function grantPermissions(strapi: Core.Strapi, roleId: number, actions: string[], roleName: string) {
+  for (const action of actions) {
+    const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
+      where: {
+        action,
+        role: roleId,
+      },
+    });
+
+    if (!permission) {
+      await strapi.db.query('plugin::users-permissions.permission').create({
+        data: {
+          action,
+          role: roleId,
+        },
+      });
+      strapi.log.info(`Granted ${action} permission to ${roleName} role`);
+    }
+  }
+}
+
 export default {
   /**
    * An asynchronous register function that runs before
@@ -23,29 +47,10 @@ export default {
     });
 
     if (publicRole) {
-      const actions = [
+      await grantPermissions(strapi, publicRole.id, [
         'plugin::users-permissions.auth.register',
-        'api::character.character.getCharacterIcons'
-      ];
-
-      for (const action of actions) {
-        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
-          where: {
-            action,
-            role: publicRole.id,
-          },
-        });
-
-        if (!permission) {
-          await strapi.db.query('plugin::users-permissions.permission').create({
-            data: {
-              action,
-              role: publicRole.id,
-            },
-          });
-          strapi.log.info(`Granted ${action} permission to Public role`);
-        }
-      }
+        'api::character.character.getCharacterIcons',
+      ], 'Public');
     }
 
     // Grant custom permissions to Authenticated role
@@ -54,7 +59,7 @@ export default {
     });
 
     if (authenticatedRole) {
-      const actions = [
+      await grantPermissions(strapi, authenticatedRole.id, [
         'api::guild.guild.setup',
         'api::item.item.getItemIcons',
         'api::museum.museum.find',
@@ -95,26 +100,55 @@ export default {
         'api::quiz-attempt.quiz-attempt.submitQuiz',
         'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
         'api::quiz-attempt.quiz-attempt.getMyHistory',
+      ], 'Authenticated');
+    }
+
+    // Create and configure the Admin role
+    let adminRole = await strapi.db.query('plugin::users-permissions.role').findOne({
+      where: { type: 'admin' },
+    });
+
+    if (!adminRole) {
+      adminRole = await strapi.db.query('plugin::users-permissions.role').create({
+        data: {
+          name: 'Admin',
+          description: 'Administrator role with access to the admin dashboard',
+          type: 'admin',
+        },
+      });
+      strapi.log.info('Created Admin role for users-permissions');
+    }
+
+    if (adminRole && authenticatedRole) {
+      // Copy ALL permissions from authenticated role to admin role
+      // This includes both bootstrap-defined and admin-panel-configured permissions
+      const authPermissions = await strapi.db.query('plugin::users-permissions.permission').findMany({
+        where: { role: authenticatedRole.id },
+        select: ['action'],
+      });
+
+      const authActions = authPermissions.map((p) => p.action);
+
+      // Admin dashboard specific endpoints
+      const adminOnlyActions = [
+        'api::admin-dashboard.admin-dashboard.check',
+        'api::admin-dashboard.admin-dashboard.getOverview',
+        'api::admin-dashboard.admin-dashboard.getPlayers',
+        'api::admin-dashboard.admin-dashboard.getPlayerDetail',
+        'api::admin-dashboard.admin-dashboard.toggleBlockPlayer',
+        'api::admin-dashboard.admin-dashboard.changePlayerRole',
+        'api::admin-dashboard.admin-dashboard.getMapData',
+        'api::admin-dashboard.admin-dashboard.getEconomy',
+        'api::admin-dashboard.admin-dashboard.getExpeditions',
+        'api::admin-dashboard.admin-dashboard.getQuizAnalytics',
+        'api::admin-dashboard.admin-dashboard.getSocialStats',
+        'api::admin-dashboard.admin-dashboard.getConnectionAnalytics',
       ];
 
-      for (const action of actions) {
-        const permission = await strapi.db.query('plugin::users-permissions.permission').findOne({
-          where: {
-            action,
-            role: authenticatedRole.id,
-          },
-        });
+      // Merge: all authenticated permissions + admin-only permissions
+      const allAdminActions = [...new Set([...authActions, ...adminOnlyActions])];
 
-        if (!permission) {
-          await strapi.db.query('plugin::users-permissions.permission').create({
-            data: {
-              action,
-              role: authenticatedRole.id,
-            },
-          });
-          strapi.log.info(`Granted ${action} permission to Authenticated role`);
-        }
-      }
+      await grantPermissions(strapi, adminRole.id, allAdminActions, 'Admin');
     }
   },
 };
