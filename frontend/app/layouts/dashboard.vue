@@ -62,6 +62,11 @@ const username = computed(() => (user.value as any)?.username || 'Admin')
 const navItems = [
   { path: '/dashboard', icon: 'bxs-dashboard', label: 'Vue d\'ensemble' },
   { path: '/dashboard/players', icon: 'bxs-group', label: 'Joueurs' },
+  { path: '/dashboard/map', icon: 'bxs-map-alt', label: 'Carte' },
+  { path: '/dashboard/economy', icon: 'bx-coin-stack', label: 'Economie' },
+  { path: '/dashboard/expeditions', icon: 'bxs-castle', label: 'Expeditions' },
+  { path: '/dashboard/quiz', icon: 'bxs-brain', label: 'Quiz' },
+  { path: '/dashboard/social', icon: 'bxs-user-account', label: 'Social' },
 ]
 
 function isActive(path: string) {
