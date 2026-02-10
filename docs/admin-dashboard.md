@@ -24,9 +24,22 @@ Le role Admin est cree automatiquement au demarrage de Strapi via le bootstrap (
 
 ### Protection des routes
 
-- **Backend** : Les endpoints `/api/admin-dashboard/*` sont proteges par le systeme de permissions Strapi. Seul le role Admin y a acces.
-- **Frontend** : Un middleware `admin.ts` verifie le role de l'utilisateur via un appel a `/api/admin-dashboard/check` (endpoint protege par permission) et redirige vers `/` si l'utilisateur n'est pas admin.
+- **Backend - Triple couche de sécurité** :
+  1. Permissions Strapi sur tous les endpoints `/api/admin-dashboard/*`
+  2. Vérification explicite du rôle admin dans les actions sensibles (block/unblock, changement de rôle)
+  3. Audit logging de toutes les actions administratives sensibles
+- **Frontend** : Un middleware `admin.ts` verifie le role de l'utilisateur via un appel a `/api/admin-dashboard/check` (endpoint qui vérifie réellement le rôle dans la DB) et redirige vers `/` si l'utilisateur n'est pas admin.
 - **Desktop** : Les routes `/dashboard/*` sont exemptees de la restriction mobile-only, permettant l'administration depuis un ordinateur.
+
+### Audit Trail
+
+Toutes les actions sensibles (bloquer/débloquer un joueur, changer un rôle) sont enregistrées dans la table `admin_action_logs` avec :
+- L'admin qui a effectué l'action
+- Le type d'action (BLOCK_USER, UNBLOCK_USER, CHANGE_ROLE_TO_ADMIN, CHANGE_ROLE_TO_AUTHENTICATED)
+- L'utilisateur ciblé
+- Les détails de l'action (état précédent/nouveau)
+- L'adresse IP de l'admin
+- Le timestamp automatique
 
 ---
 
@@ -162,10 +175,11 @@ Tous les endpoints sont sous le prefixe `/api/admin-dashboard/` et necessitent l
 | Fichier | Type | Description |
 |---------|------|-------------|
 | `backend/src/index.ts` | Modifie | Ajout creation role Admin + permissions dashboard |
-| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Nouveau | Controller avec 12 endpoints |
+| `backend/src/api/admin-dashboard/controllers/admin-dashboard.ts` | Modifié | Controller avec 12 endpoints + vérifications sécurité renforcées + audit logging |
 | `backend/src/api/admin-dashboard/services/admin-dashboard.ts` | Nouveau | Service d'agregation des donnees (11 methodes) |
 | `backend/src/api/admin-dashboard/routes/admin-dashboard.ts` | Nouveau | Definition des 12 routes API |
 | `backend/src/api/connection-log/` | Nouveau | Content type pour tracker les connexions utilisateur |
+| `backend/src/api/admin-action-log/` | Nouveau | Content type pour l'audit trail des actions admin |
 | `backend/src/extensions/users-permissions/strapi-server.ts` | Nouveau | Extension du callback login pour enregistrer les connexions |
 
 ### Frontend
