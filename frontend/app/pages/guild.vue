@@ -10,6 +10,14 @@
             <!-- Overlay Gradient -->
             <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black z-0" />
 
+            <!-- Settings Button (Top Right) -->
+            <button
+                class="absolute top-6 right-6 z-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/20 transition-all duration-300 active:scale-95 border border-white/20"
+                @click="router.push('/account/settings')"
+            >
+                <Icon name="mdi:cog" class="w-6 h-6 text-white drop-shadow-lg" />
+            </button>
+
             <!-- Top Content -->
             <div class="relative z-10 flex flex-col items-center mt-16 text-center w-full px-4">
                 <h1 class="font-power text-5xl tracking-wide text-amber-400 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">

@@ -371,7 +371,7 @@ export default ({ strapi }) => ({
       select: ['id', 'date', 'generation_status', 'generation_error', 'generated_at'],
     });
 
-    const sessionsWithStats = await Promise.all(
+    const sessionHistory = await Promise.all(
       sessions.map(async (s) => {
         const attemptCount = await strapi.db.query('api::quiz-attempt.quiz-attempt').count({ where: { session: s.id } });
         const attempts = await strapi.db.query('api::quiz-attempt.quiz-attempt').findMany({
@@ -379,20 +379,27 @@ export default ({ strapi }) => ({
           select: ['score', 'time_spent_seconds'],
         });
         const avgScore = attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length) : 0;
-        const avgTime = attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.time_spent_seconds || 0), 0) / attempts.length) : 0;
-        return { ...s, attemptCount, avgScore, avgTime };
+        const avgTime = attempts.length > 0 ? Math.round(attempts.reduce((sum, a) => sum + (a.time_spent_seconds || 0), 0) / attempts.length) * 1000 : 0;
+        return {
+          id: s.id,
+          date: s.date,
+          status: s.generation_status,
+          participants: attemptCount,
+          avgScore,
+          avgTime,
+        };
       })
     );
 
     // Difficulty by tag
     const tags = await strapi.db.query('api::tag.tag').findMany({ select: ['id', 'name'] });
-    const difficultyByTag = await Promise.all(
+    const questionsByTag = await Promise.all(
       tags.map(async (tag) => {
         const questions = await strapi.db.query('api::quiz-question.quiz-question').findMany({
           where: { tag: tag.id },
           select: ['id', 'correct_answer'],
         });
-        return { tag: tag.name, questionCount: questions.length };
+        return { name: tag.name, count: questions.length };
       })
     );
 
@@ -426,14 +433,22 @@ export default ({ strapi }) => ({
       },
     });
 
+    const leaderboard = topAttempts.map((attempt) => ({
+      id: attempt.id,
+      guildName: attempt.guild?.name || 'Inconnu',
+      score: attempt.score,
+      date: attempt.session?.date || attempt.completed_at,
+      timeSpent: (attempt.time_spent_seconds || 0) * 1000,
+    }));
+
     return {
-      sessions: sessionsWithStats,
-      difficultyByTag,
+      sessionHistory,
+      questionsByTag,
       questionTypes: { qcm: qcmCount, timeline: timelineCount },
       scoreDistribution: scoreRanges,
       totalAttempts: allAttempts.length,
       avgScore: allAttempts.length > 0 ? Math.round(allAttempts.reduce((s, a) => s + (a.score || 0), 0) / allAttempts.length) : 0,
-      globalLeaderboard: topAttempts,
+      leaderboard,
     };
   },
 
