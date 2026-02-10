@@ -18,5 +18,6 @@ export default {
     route('GET', '/expeditions', 'getExpeditions'),
     route('GET', '/quiz', 'getQuizAnalytics'),
     route('GET', '/social', 'getSocialStats'),
+    route('GET', '/connections', 'getConnectionAnalytics'),
   ],
 };

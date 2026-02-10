@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "connection_logs",
+  "info": {
+    "singularName": "connection-log",
+    "pluralName": "connection-logs",
+    "displayName": "Connection Log"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "connected_at": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

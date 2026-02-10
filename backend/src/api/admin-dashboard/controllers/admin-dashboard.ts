@@ -116,4 +116,13 @@ export default {
       return ctx.internalServerError('Failed to fetch social stats');
     }
   },
+
+  async getConnectionAnalytics(ctx) {
+    try {
+      return ctx.send(await svc().getConnectionAnalytics());
+    } catch (error) {
+      strapi.log.error('Admin dashboard - getConnectionAnalytics failed:', error);
+      return ctx.internalServerError('Failed to fetch connection analytics');
+    }
+  },
 };

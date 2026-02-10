@@ -437,6 +437,80 @@ export default ({ strapi }) => ({
     };
   },
 
+  // ─── CONNECTIONS ─────────────────────────────────────────────
+
+  async getConnectionAnalytics() {
+    // Get connections for the last 12 weeks
+    const twelveWeeksAgo = new Date();
+    twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 12 * 7);
+
+    const connections = await strapi.db.query('api::connection-log.connection-log').findMany({
+      where: { connected_at: { $gte: twelveWeeksAgo } },
+      select: ['connected_at'],
+    });
+
+    // Weekly unique connections (group by ISO week)
+    const weeklyMap: Record<string, Set<string>> = {};
+    const hourCounts: Record<number, number> = {};
+    for (let h = 0; h < 24; h++) hourCounts[h] = 0;
+
+    // Also fetch user info for unique counting
+    const connectionsWithUser = await strapi.db.query('api::connection-log.connection-log').findMany({
+      where: { connected_at: { $gte: twelveWeeksAgo } },
+      select: ['connected_at'],
+      populate: { user: { select: ['id'] } },
+    });
+
+    for (const conn of connectionsWithUser) {
+      const date = new Date(conn.connected_at);
+
+      // Compute ISO week key (YYYY-Www)
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+      const weekKey = `${d.getFullYear()}-S${String(weekNum).padStart(2, '0')}`;
+
+      if (!weeklyMap[weekKey]) weeklyMap[weekKey] = new Set();
+      if (conn.user) weeklyMap[weekKey].add(String(conn.user.id));
+
+      // Peak hours
+      hourCounts[date.getHours()]++;
+    }
+
+    // Sort weeks chronologically and format
+    const weeklyConnections = Object.entries(weeklyMap)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([week, users]) => ({ week, uniquePlayers: users.size, totalConnections: 0 }));
+
+    // Count total connections per week too
+    for (const conn of connectionsWithUser) {
+      const date = new Date(conn.connected_at);
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+      const weekNum = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+      const weekKey = `${d.getFullYear()}-S${String(weekNum).padStart(2, '0')}`;
+      const entry = weeklyConnections.find((w) => w.week === weekKey);
+      if (entry) entry.totalConnections++;
+    }
+
+    // Peak hours (format as array of { hour, label, count })
+    const peakHours = Object.entries(hourCounts).map(([hour, count]) => ({
+      hour: Number(hour),
+      label: `${String(hour).padStart(2, '0')}h`,
+      count,
+    }));
+
+    return {
+      weeklyConnections,
+      peakHours,
+      totalConnections: connectionsWithUser.length,
+    };
+  },
+
   // ─── SOCIAL ────────────────────────────────────────────────
 
   async getSocialStats() {
