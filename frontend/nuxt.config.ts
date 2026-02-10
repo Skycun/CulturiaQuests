@@ -16,6 +16,7 @@ export default defineNuxtConfig({
     '@nuxtjs/device',
     'pinia-plugin-persistedstate/nuxt',
     '@nuxtjs/leaflet',
+    'nuxt-charts',
   ],
 
   // Configuration pinia-plugin-persistedstate
