@@ -74,8 +74,10 @@ export interface LeaderboardEntry {
   username: string
   guildName: string
   score: number
+  correctCount: number
   streak: number
   isMe: boolean
+  avatarUrl: string | null
 }
 
 export interface QuizHistoryEntry {
@@ -85,6 +87,36 @@ export interface QuizHistoryEntry {
   rewards: QuizRewards
   completed_at: string
   time_spent_seconds?: number
+}
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+export interface GetTodayQuizResponse {
+  data: {
+    alreadyCompleted: boolean
+    attempt?: QuizAttempt
+    sessionId?: string
+    date?: string
+    questions?: QuizQuestion[]
+  }
+}
+
+export interface SubmitQuizResponse {
+  data: QuizSubmitResult
+}
+
+export interface LeaderboardResponse {
+  data: LeaderboardEntry[]
+}
+
+export interface GetAttemptResponse {
+  data: QuizAttempt & {
+    guild?: {
+      quiz_streak: number
+    }
+  }
 }
 
 // ============================================================================

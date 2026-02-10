@@ -102,6 +102,23 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   }
 
+  function clearStatistics() {
+    totalExpeditions.value = 0
+    totalTime.value = 0
+    maxFloor.value = 0
+    totalDamage.value = 0
+    totalPoiVisits.value = 0
+    totalDistinctPois.value = 0
+    mostVisitedPoiName.value = null
+    totalItemsCollected.value = 0
+    totalItemsScrapped.value = 0
+    totalScrapAccumulated.value = 0
+    totalExp.value = 0
+    totalGold.value = 0
+    accountDays.value = 0
+    error.value = null
+  }
+
   return {
     // State
     isLoading,
@@ -126,7 +143,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
     formattedTotalExp,
 
     // Actions
-    fetchStatistics
+    fetchStatistics,
+    clearStatistics
   }
 })
 

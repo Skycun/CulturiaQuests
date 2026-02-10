@@ -79,6 +79,21 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
       return ctx.badRequest('Invalid submission. sessionId and answers array required.');
     }
 
+    // Valider la structure des réponses
+    for (const answer of answers) {
+      if (!answer.questionId || typeof answer.answer !== 'string') {
+        return ctx.badRequest('Invalid answer format. Each answer must have questionId and answer fields.');
+      }
+    }
+
+    // Valider timeSpentSeconds
+    if (timeSpentSeconds !== undefined && timeSpentSeconds !== null) {
+      const time = parseInt(timeSpentSeconds);
+      if (isNaN(time) || time < 0 || time > 7200) { // Max 2 heures
+        return ctx.badRequest('Invalid time spent value');
+      }
+    }
+
     const service = strapi.service('api::quiz-attempt.quiz-attempt');
 
     // R1 — Utilise le helper du service
@@ -104,6 +119,20 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
     const alreadyAttempted = await service.hasExistingAttempt(guild.id, sessionId);
     if (alreadyAttempted) {
       return ctx.badRequest('You have already completed this quiz');
+    }
+
+    // Valider que les questionIds correspondent exactement aux questions de la session
+    const expectedQuestionIds = session.questions.map((q: any) => q.documentId).sort();
+    const submittedQuestionIds = answers.map((a: any) => a.questionId).sort();
+
+    if (expectedQuestionIds.length !== submittedQuestionIds.length) {
+      return ctx.badRequest('Invalid number of answers');
+    }
+
+    for (let i = 0; i < expectedQuestionIds.length; i++) {
+      if (expectedQuestionIds[i] !== submittedQuestionIds[i]) {
+        return ctx.badRequest('Invalid question IDs in submission');
+      }
     }
 
     // Calculer score et générer récompenses
@@ -187,23 +216,39 @@ export default factories.createCoreController('api::quiz-attempt.quiz-attempt', 
         session: { documentId: session.documentId },
         guild: { documentId: { $in: friendGuildIds } },
       },
+      select: ['id', 'documentId', 'score', 'answers'],
       populate: {
         guild: {
           select: ['documentId', 'name', 'quiz_streak'],
-          populate: { user: { select: ['username'] } },
+          populate: {
+            user: {
+              select: ['username'],
+              populate: { avatar: { select: ['url', 'formats'] } },
+            },
+          },
         },
       },
       orderBy: { score: 'desc' },
     });
 
-    const leaderboard = attempts.map((attempt: any, index: number) => ({
-      rank: index + 1,
-      username: attempt.guild.user?.username || 'Unknown',
-      guildName: attempt.guild.name,
-      score: attempt.score,
-      streak: attempt.guild.quiz_streak || 0,
-      isMe: attempt.guild.documentId === guild.documentId,
-    }));
+    const leaderboard = attempts.map((attempt: any, index: number) => {
+      const avatarData = attempt.guild.user?.avatar;
+      const avatarUrl = avatarData?.formats?.thumbnail?.url || avatarData?.url || null;
+      const correctCount = Array.isArray(attempt.answers)
+        ? attempt.answers.filter((a: any) => a.isCorrect).length
+        : 0;
+
+      return {
+        rank: index + 1,
+        username: attempt.guild.user?.username || 'Unknown',
+        guildName: attempt.guild.name,
+        score: attempt.score,
+        correctCount,
+        streak: attempt.guild.quiz_streak || 0,
+        isMe: attempt.guild.documentId === guild.documentId,
+        avatarUrl,
+      };
+    });
 
     return ctx.send({ data: leaderboard });
   },
