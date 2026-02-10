@@ -20,6 +20,20 @@ const defaultSliderValue = computed(() => {
   if (!range) return '1950'
   return String(Math.round((range.min + range.max) / 2))
 })
+
+// Initialiser automatiquement la valeur du slider timeline au montage
+onMounted(() => {
+  if (props.question.question_type === 'timeline' && !props.selectedAnswer) {
+    emit('answer', defaultSliderValue.value)
+  }
+})
+
+// Surveiller les changements de question pour réinitialiser le slider
+watch(() => props.question.documentId, () => {
+  if (props.question.question_type === 'timeline' && !props.selectedAnswer) {
+    emit('answer', defaultSliderValue.value)
+  }
+})
 </script>
 
 <template>

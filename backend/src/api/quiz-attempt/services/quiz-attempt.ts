@@ -177,11 +177,20 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
     currentExp: string | number,
     rewards: { gold: number; exp: number }
   ): Promise<void> {
+    // Valider et nettoyer currentExp
+    let expValue: bigint;
+    try {
+      expValue = BigInt(currentExp || 0);
+    } catch (err) {
+      strapi.log.warn(`[QuizAttempt] Invalid exp value for guild ${guildDocumentId}, resetting to 0`);
+      expValue = BigInt(0);
+    }
+
     await strapi.documents('api::guild.guild').update({
       documentId: guildDocumentId,
       data: {
         gold: (currentGold || 0) + rewards.gold,
-        exp: String(BigInt(currentExp || 0) + BigInt(rewards.exp)),
+        exp: String(expValue + BigInt(rewards.exp)),
       },
     });
   },
@@ -216,12 +225,18 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
         isCorrect = userAnswer.answer === question.correct_answer;
         score = isCorrect ? QCM_POINTS : 0;
       } else if (question.question_type === 'timeline') {
-        const result = calculateTimelineScore(
-          parseInt(question.correct_answer),
-          parseInt(userAnswer.answer)
-        );
-        score = result.score;
-        isCorrect = result.isCorrect;
+        const correctYear = parseInt(question.correct_answer);
+        const userYear = parseInt(userAnswer.answer);
+
+        if (isNaN(correctYear) || isNaN(userYear)) {
+          strapi.log.warn(`[QuizAttempt] Invalid timeline answer for question ${question.documentId}`);
+          score = 0;
+          isCorrect = false;
+        } else {
+          const result = calculateTimelineScore(correctYear, userYear);
+          score = result.score;
+          isCorrect = result.isCorrect;
+        }
       }
 
       totalScore += score;

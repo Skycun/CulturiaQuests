@@ -4,14 +4,52 @@ import { useQuizStore } from '~/stores/quiz'
 
 const user = useStrapiUser()
 const quizStore = useQuizStore()
+const router = useRouter()
 
 const isAuthenticated = computed(() => !!user.value)
+
+// Computed pour savoir si un quiz est en cours
+const isQuizInProgress = computed(() => {
+  return quizStore.questions.length > 0 &&
+         !quizStore.quizFinished &&
+         !quizStore.alreadyCompleted &&
+         !quizStore.submitResult
+})
 
 onMounted(async () => {
   if (isAuthenticated.value) {
     await quizStore.fetchTodayQuiz()
   }
+
+  // Avertir avant de quitter la page (rafraîchissement ou fermeture)
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+// Avertir avant de naviguer vers une autre page
+onBeforeRouteLeave((to, from, next) => {
+  if (isQuizInProgress.value) {
+    const confirmed = confirm('Vous avez un quiz en cours. Vos réponses seront sauvegardées mais vous devrez revenir pour terminer. Voulez-vous vraiment quitter ?')
+    if (confirmed) {
+      next()
+    } else {
+      next(false)
+    }
+  } else {
+    next()
+  }
+})
+
+function handleBeforeUnload(e: BeforeUnloadEvent) {
+  if (isQuizInProgress.value) {
+    e.preventDefault()
+    // Chrome requires returnValue to be set
+    e.returnValue = ''
+  }
+}
 
 definePageMeta({
   layout: 'test',

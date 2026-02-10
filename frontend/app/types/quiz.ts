@@ -90,6 +90,36 @@ export interface QuizHistoryEntry {
 }
 
 // ============================================================================
+// API Response Types
+// ============================================================================
+
+export interface GetTodayQuizResponse {
+  data: {
+    alreadyCompleted: boolean
+    attempt?: QuizAttempt
+    sessionId?: string
+    date?: string
+    questions?: QuizQuestion[]
+  }
+}
+
+export interface SubmitQuizResponse {
+  data: QuizSubmitResult
+}
+
+export interface LeaderboardResponse {
+  data: LeaderboardEntry[]
+}
+
+export interface GetAttemptResponse {
+  data: QuizAttempt & {
+    guild?: {
+      quiz_streak: number
+    }
+  }
+}
+
+// ============================================================================
 // Tier Helpers (réutilisables)
 // ============================================================================
 
