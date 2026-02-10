@@ -1,0 +1,42 @@
+{
+  "kind": "collectionType",
+  "collectionName": "admin_action_logs",
+  "info": {
+    "singularName": "admin-action-log",
+    "pluralName": "admin-action-logs",
+    "displayName": "Admin Action Log",
+    "description": "Audit log for admin actions"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "admin": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "action": {
+      "type": "enumeration",
+      "enum": [
+        "BLOCK_USER",
+        "UNBLOCK_USER",
+        "CHANGE_ROLE_TO_ADMIN",
+        "CHANGE_ROLE_TO_AUTHENTICATED"
+      ],
+      "required": true
+    },
+    "target_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "details": {
+      "type": "json"
+    },
+    "ip_address": {
+      "type": "string"
+    }
+  }
+}

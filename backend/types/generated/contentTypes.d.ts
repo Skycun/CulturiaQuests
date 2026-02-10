@@ -430,6 +430,54 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiAdminActionLogAdminActionLog
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'admin_action_logs';
+  info: {
+    description: 'Audit log for admin actions';
+    displayName: 'Admin Action Log';
+    pluralName: 'admin-action-logs';
+    singularName: 'admin-action-log';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    action: Schema.Attribute.Enumeration<
+      [
+        'BLOCK_USER',
+        'UNBLOCK_USER',
+        'CHANGE_ROLE_TO_ADMIN',
+        'CHANGE_ROLE_TO_AUTHENTICATED',
+      ]
+    > &
+      Schema.Attribute.Required;
+    admin: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    details: Schema.Attribute.JSON;
+    ip_address: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::admin-action-log.admin-action-log'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    target_user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   collectionName: 'characters';
   info: {
@@ -459,6 +507,39 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiConnectionLogConnectionLog
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'connection_logs';
+  info: {
+    displayName: 'Connection Log';
+    pluralName: 'connection-logs';
+    singularName: 'connection-log';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    connected_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::connection-log.connection-log'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -1632,7 +1713,9 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::admin-action-log.admin-action-log': ApiAdminActionLogAdminActionLog;
       'api::character.character': ApiCharacterCharacter;
+      'api::connection-log.connection-log': ApiConnectionLogConnectionLog;
       'api::dialog.dialog': ApiDialogDialog;
       'api::friendship.friendship': ApiFriendshipFriendship;
       'api::guild.guild': ApiGuildGuild;
