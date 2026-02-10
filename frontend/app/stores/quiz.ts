@@ -5,6 +5,10 @@ import type {
   QuizAttempt,
   QuizSubmitResult,
   LeaderboardEntry,
+  GetTodayQuizResponse,
+  SubmitQuizResponse,
+  LeaderboardResponse,
+  GetAttemptResponse,
 } from '~/types/quiz'
 
 interface QuizState {
@@ -84,24 +88,29 @@ export const useQuizStore = defineStore('quiz', {
       this.existingAttempt = null
 
       try {
-        const res = await client<any>('/quiz-attempts/today', { method: 'GET' })
+        const res = await client<GetTodayQuizResponse>('/quiz-attempts/today', { method: 'GET' })
 
         if (res.data.alreadyCompleted) {
           this.alreadyCompleted = true
-          this.existingAttempt = res.data.attempt
+          this.existingAttempt = res.data.attempt || null
+          // Nettoyer le localStorage si le quiz est déjà complété
+          this.clearSavedAnswers()
         } else {
-          this.sessionId = res.data.sessionId
-          this.sessionDate = res.data.date
+          this.sessionId = res.data.sessionId || null
+          this.sessionDate = res.data.date || null
           this.questions = res.data.questions || []
           this.resetQuizState()
+          // Restaurer les réponses sauvegardées si elles existent
+          this.loadSavedAnswers()
         }
 
         await this.fetchLeaderboard()
-      } catch (e: any) {
-        if (e?.error?.status === 404) {
+      } catch (e: unknown) {
+        const error = e as { error?: { status?: number; message?: string }; message?: string }
+        if (error?.error?.status === 404) {
           this.error = "Aucun quiz disponible pour aujourd'hui. Revenez plus tard !"
         } else {
-          this.error = e?.error?.message || e?.message || 'Erreur'
+          this.error = error?.error?.message || error?.message || 'Erreur'
         }
       } finally {
         this.loading = false
@@ -113,9 +122,9 @@ export const useQuizStore = defineStore('quiz', {
       this.leaderboardLoading = true
 
       try {
-        const res = await client<any>('/quiz-attempts/leaderboard', { method: 'GET' })
+        const res = await client<LeaderboardResponse>('/quiz-attempts/leaderboard', { method: 'GET' })
         this.leaderboard = res.data || []
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('Leaderboard error:', e)
       } finally {
         this.leaderboardLoading = false
@@ -138,7 +147,7 @@ export const useQuizStore = defineStore('quiz', {
           answer: this.answers[q.documentId] || '',
         }))
 
-        const res = await client<any>('/quiz-attempts/submit', {
+        const res = await client<SubmitQuizResponse>('/quiz-attempts/submit', {
           method: 'POST',
           body: {
             sessionId: this.sessionId,
@@ -148,9 +157,12 @@ export const useQuizStore = defineStore('quiz', {
         })
 
         this.submitResult = res.data
+        // Nettoyer le localStorage après soumission réussie
+        this.clearSavedAnswers()
         await this.fetchLeaderboard()
-      } catch (e: any) {
-        this.error = e?.error?.message || e?.message || 'Erreur lors de la soumission'
+      } catch (e: unknown) {
+        const error = e as { error?: { message?: string }; message?: string }
+        this.error = error?.error?.message || error?.message || 'Erreur lors de la soumission'
       } finally {
         this.submitting = false
       }
@@ -162,7 +174,7 @@ export const useQuizStore = defineStore('quiz', {
       this.error = null
 
       try {
-        const res = await client<any>(`/quiz-attempts/${documentId}`, {
+        const res = await client<GetAttemptResponse>(`/quiz-attempts/${documentId}`, {
           method: 'GET',
           params: {
             populate: {
@@ -170,7 +182,7 @@ export const useQuizStore = defineStore('quiz', {
             }
           }
         })
-        
+
         const data = res.data
         this.submitResult = {
           attempt: {
@@ -179,12 +191,13 @@ export const useQuizStore = defineStore('quiz', {
             completed_at: data.completed_at,
           },
           score: data.score,
-          rewards: data.rewards,
-          detailedAnswers: data.answers || [],
+          rewards: data.rewards || { tier: 'bronze', gold: 0, exp: 0, items: [] },
+          detailedAnswers: (data as any).answers || [],
           newStreak: data.guild?.quiz_streak || 0,
         }
-      } catch (e: any) {
-        this.error = e?.error?.message || e?.message || 'Erreur lors du chargement des résultats'
+      } catch (e: unknown) {
+        const error = e as { error?: { message?: string }; message?: string }
+        this.error = error?.error?.message || error?.message || 'Erreur lors du chargement des résultats'
       } finally {
         this.loading = false
       }
@@ -195,20 +208,25 @@ export const useQuizStore = defineStore('quiz', {
       const q = this.currentQuestion
       if (this.quizFinished || !q) return
       this.answers[q.documentId] = answer
+      // Sauvegarder automatiquement dans localStorage
+      this.saveAnswers()
     },
 
     nextQuestion() {
       if (this.currentIndex < this.questions.length - 1) {
         this.currentIndex++
+        this.saveAnswers()
       } else {
         this.quizFinished = true
         this.finishedAt = Date.now()
+        this.saveAnswers()
       }
     },
 
     prevQuestion() {
       if (this.currentIndex > 0) {
         this.currentIndex--
+        this.saveAnswers()
       }
     },
 
@@ -227,7 +245,54 @@ export const useQuizStore = defineStore('quiz', {
     },
 
     resetAll() {
+      this.clearSavedAnswers()
       this.$reset()
+    },
+
+    // LocalStorage management
+    saveAnswers() {
+      if (!this.sessionId) return
+      try {
+        const data = {
+          sessionId: this.sessionId,
+          answers: this.answers,
+          currentIndex: this.currentIndex,
+          startTime: this.startTime,
+        }
+        localStorage.setItem('quiz_current_session', JSON.stringify(data))
+      } catch (e) {
+        console.warn('Failed to save quiz answers to localStorage:', e)
+      }
+    },
+
+    loadSavedAnswers() {
+      if (!this.sessionId) return
+      try {
+        const saved = localStorage.getItem('quiz_current_session')
+        if (!saved) return
+
+        const data = JSON.parse(saved)
+        // Vérifier que c'est la même session
+        if (data.sessionId === this.sessionId) {
+          this.answers = data.answers || {}
+          this.currentIndex = data.currentIndex || 0
+          this.startTime = data.startTime || Date.now()
+        } else {
+          // Session différente, nettoyer
+          this.clearSavedAnswers()
+        }
+      } catch (e) {
+        console.warn('Failed to load quiz answers from localStorage:', e)
+        this.clearSavedAnswers()
+      }
+    },
+
+    clearSavedAnswers() {
+      try {
+        localStorage.removeItem('quiz_current_session')
+      } catch (e) {
+        console.warn('Failed to clear quiz answers from localStorage:', e)
+      }
     },
   },
 })
