@@ -5,9 +5,44 @@
 
 const svc = () => strapi.service('api::admin-dashboard.admin-dashboard');
 
+/**
+ * Helper: Verify that the current user has the admin role
+ * Returns true if admin, false otherwise
+ */
+async function verifyAdminRole(ctx): Promise<boolean> {
+  if (!ctx.state.user) return false;
+
+  const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+    where: { id: ctx.state.user.id },
+    populate: { role: { select: ['type'] } },
+  });
+
+  return user?.role?.type === 'admin';
+}
+
+/**
+ * Helper: Log admin action to audit trail
+ */
+async function logAdminAction(ctx, action: string, targetUserId: number, details?: any) {
+  try {
+    await strapi.db.query('api::admin-action-log.admin-action-log').create({
+      data: {
+        admin: ctx.state.user.id,
+        action,
+        target_user: targetUserId,
+        details: details || null,
+        ip_address: ctx.request.ip,
+      },
+    });
+  } catch (err) {
+    strapi.log.warn('Failed to log admin action:', err.message);
+  }
+}
+
 export default {
   async check(ctx) {
-    return ctx.send({ isAdmin: true });
+    const isAdmin = await verifyAdminRole(ctx);
+    return ctx.send({ isAdmin });
   },
 
   async getOverview(ctx) {
@@ -23,8 +58,11 @@ export default {
     const { page = 1, pageSize = 25, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = ctx.query;
     try {
       return ctx.send(await svc().getPlayers({
-        page: Number(page), pageSize: Math.min(Number(pageSize), 100),
-        search: String(search), sortBy: String(sortBy), sortOrder: String(sortOrder),
+        page: Math.max(1, Number(page)),
+        pageSize: Math.max(1, Math.min(Number(pageSize), 100)),
+        search: String(search),
+        sortBy: String(sortBy),
+        sortOrder: String(sortOrder),
       }));
     } catch (error) {
       strapi.log.error('Admin dashboard - getPlayers failed:', error);
@@ -48,8 +86,29 @@ export default {
     const { id } = ctx.params;
     if (!id || isNaN(Number(id))) return ctx.badRequest('Invalid player ID');
     if (Number(id) === ctx.state.user.id) return ctx.badRequest('You cannot block yourself');
+
+    // Explicit admin role verification
+    const isAdmin = await verifyAdminRole(ctx);
+    if (!isAdmin) return ctx.forbidden('Admin role required');
+
     try {
+      // Get user before toggle to know the action
+      const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: Number(id) },
+        select: ['blocked'],
+      });
+
+      if (!user) return ctx.notFound('Player not found');
+
       const result = await svc().toggleBlockUser(Number(id));
+
+      // Log the action
+      const action = user.blocked ? 'UNBLOCK_USER' : 'BLOCK_USER';
+      await logAdminAction(ctx, action, Number(id), {
+        previous_status: user.blocked,
+        new_status: !user.blocked,
+      });
+
       return result ? ctx.send(result) : ctx.notFound('Player not found');
     } catch (error) {
       strapi.log.error('Admin dashboard - toggleBlockPlayer failed:', error);
@@ -63,8 +122,30 @@ export default {
     if (!id || isNaN(Number(id))) return ctx.badRequest('Invalid player ID');
     if (!role || !['authenticated', 'admin'].includes(role)) return ctx.badRequest('Invalid role');
     if (Number(id) === ctx.state.user.id && role !== 'admin') return ctx.badRequest('You cannot remove your own admin role');
+
+    // Explicit admin role verification
+    const isAdmin = await verifyAdminRole(ctx);
+    if (!isAdmin) return ctx.forbidden('Admin role required');
+
     try {
+      // Get user before change to know the previous role
+      const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: Number(id) },
+        populate: { role: { select: ['type'] } },
+      });
+
+      if (!user) return ctx.notFound('Player not found');
+
+      const previousRole = user.role?.type || 'authenticated';
       const result = await svc().changeUserRole(Number(id), role);
+
+      // Log the action
+      const action = role === 'admin' ? 'CHANGE_ROLE_TO_ADMIN' : 'CHANGE_ROLE_TO_AUTHENTICATED';
+      await logAdminAction(ctx, action, Number(id), {
+        previous_role: previousRole,
+        new_role: role,
+      });
+
       return result ? ctx.send(result) : ctx.notFound('Player or role not found');
     } catch (error) {
       strapi.log.error('Admin dashboard - changePlayerRole failed:', error);
