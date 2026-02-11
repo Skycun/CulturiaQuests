@@ -272,6 +272,7 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
       rarity: string;
       level: number;
       index_damage: number;
+      slot: string;
       icon?: { url: string };
       tags?: Array<{ name: string }>;
     }> = [];
@@ -294,20 +295,27 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
             populate: {
               icon: { select: ['url'] },
               tags: { select: ['name'] },
+              rarity: { select: ['name'] },
             },
           });
+
+          if (!fullItem) {
+            strapi.log.error(`[QuizRewards] Failed to retrieve full item data for ${item.documentId}`);
+            continue;
+          }
 
           items.push({
             documentId: item.documentId,
             name: item.name,
-            rarity: item.rarity?.name || 'common',
+            rarity: fullItem?.rarity?.name || item.rarity?.name || 'common',
             level: fullItem?.level || 1,
             index_damage: fullItem?.index_damage || 0,
+            slot: fullItem?.slot || 'weapon',
             icon: fullItem?.icon,
             tags: fullItem?.tags || [],
           });
         } catch (err) {
-          strapi.log.warn('[QuizRewards] Failed to generate item:', err);
+          strapi.log.error('[QuizRewards] Failed to generate item:', err);
         }
       }
     }

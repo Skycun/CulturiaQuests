@@ -47,6 +47,7 @@ export interface QuizRewardItem {
   rarity: string
   level: number
   index_damage: number
+  slot: 'weapon' | 'helmet' | 'charm'
   icon?: { url: string }
   tags?: Array<{ name: string }>
 }
@@ -147,6 +148,28 @@ export function getTierColor(tier: string): string {
 
 export function getTierLabel(tier: string): string {
   return TIER_LABELS[tier] || tier
+}
+
+export const SLOT_LABELS: Record<string, string> = {
+  weapon: 'Arme',
+  helmet: 'Casque',
+  charm: 'Charme',
+}
+
+export function getSlotLabel(slot: string): string {
+  return SLOT_LABELS[slot] || slot
+}
+
+export const RARITY_COLORS: Record<string, string> = {
+  legendary: 'border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50',
+  epic: 'border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50',
+  rare: 'border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50',
+  common: 'border-l-4 border-l-green-500 bg-gradient-to-r from-green-50',
+  basic: 'border-l-4 border-l-gray-400 bg-gradient-to-r from-gray-50',
+}
+
+export function getRarityColor(rarity: string): string {
+  return RARITY_COLORS[rarity.toLowerCase()] || 'border-l-4 border-l-gray-400'
 }
 
 export const MAX_QUIZ_SCORE = 2150

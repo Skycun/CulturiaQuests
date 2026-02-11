@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { QuizSubmitResult } from '~/types/quiz'
-import { getTierColor, getTierLabel, MAX_QUIZ_SCORE } from '~/types/quiz'
+import { getTierColor, getTierLabel, getSlotLabel, getRarityColor, MAX_QUIZ_SCORE } from '~/types/quiz'
 
 defineProps<{
   result: QuizSubmitResult
@@ -42,13 +42,41 @@ defineProps<{
       </div>
       <div v-if="result.rewards.items.length > 0" class="border-t pt-3">
         <p class="text-sm text-gray-600 mb-2">Items obtenus :</p>
-        <div class="space-y-1">
+        <div class="space-y-2">
           <div
             v-for="item in result.rewards.items"
             :key="item.documentId"
-            class="text-sm bg-white px-2 py-1 rounded border"
+            class="flex items-center gap-3 bg-white px-3 py-2 rounded border hover:shadow-sm transition-shadow"
+            :class="getRarityColor(item.rarity)"
           >
-            {{ item.name }} <span class="text-gray-400">({{ item.rarity }})</span>
+            <div v-if="item.icon?.url" class="w-10 h-10 flex-shrink-0">
+              <img :src="item.icon.url" :alt="item.name" class="w-full h-full object-contain">
+            </div>
+            <div v-else class="w-10 h-10 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+              <span class="text-gray-400 text-xs">?</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-sm truncate">{{ item.name }}</span>
+                <span class="text-xs text-gray-400 capitalize">({{ item.rarity }})</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                <span>Niv. {{ item.level }}</span>
+                <span>•</span>
+                <span>{{ getSlotLabel(item.slot) }}</span>
+                <span>•</span>
+                <span>Dmg: {{ item.index_damage }}</span>
+              </div>
+              <div v-if="item.tags && item.tags.length > 0" class="flex gap-1 mt-1 flex-wrap">
+                <span
+                  v-for="tag in item.tags"
+                  :key="tag.name"
+                  class="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded text-xs"
+                >
+                  {{ tag.name }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
