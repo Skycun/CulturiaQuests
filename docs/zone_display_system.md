@@ -10,8 +10,7 @@ Le système repose sur une stratégie **Offline-First** utilisant IndexedDB pour
 
 1.  **Store Pinia (`stores/zone.ts`)** : Cerveau du système, gère désormais 3 états distincts.
 2.  **IndexedDB (via `idb-keyval`)** : Stockage persistant.
-3.  **Leaflet Layer (`ZoneLayer.vue`)** : Rendu visuel (SVG).
-4.  **Labels (`ZoneLabels.vue`)** : Affichage des noms.
+3.  **Page carte (`pages/map.vue`)** : Rendu visuel des contours (Canvas renderer Leaflet) et des labels (DivIcon markers), géré directement dans le script de la page.
 
 ---
 
@@ -40,14 +39,13 @@ Les zones affichées dépendent du niveau de zoom. Le store sélectionne la coll
 
 | Niveau de Zoom | Collection Active | Description |
 | :--- | :--- | :--- |
-| **Zoom >= 9** | `comcoms` | Communautés de Communes (Détail) |
-| **Zoom 6 - 8** | `departments` | Départements (Vue régionale) |
-| **Zoom < 6** | `regions` | Régions (Vue nationale) |
+| **Zoom >= 11** | `comcoms` | Communautés de Communes (Détail) |
+| **Zoom 8 - 10** | `departments` | Départements (Vue régionale) |
+| **Zoom < 8** | `regions` | Régions (Vue nationale) |
 
 ### Rendu Visuel
-- **`ZoneLayer.vue`** : Utilise `<LGeoJson>` pour dessiner les contours de la collection active.
-    - Style : Blanc, contour gras, sans fond (transparent).
-- **`ZoneLabels.vue`** : Affiche les noms des zones.
+- **Contours** : Rendus via `L.geoJSON` avec un Canvas renderer Leaflet (évite les bugs SVG liés aux proxies Vue 3). Style blanc, contour gras, sans fond.
+- **Labels** : Markers `L.divIcon` positionnés au centroïde de chaque zone. Affichés pour les comcoms et départements. Pour les régions, affichés uniquement si la région n'est pas complétée.
 
 ---
 

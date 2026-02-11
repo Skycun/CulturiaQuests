@@ -65,9 +65,6 @@ export const useZoneStore = defineStore('zone', () => {
       }
       
       isInitialized.value = true
-      console.log(`✅ Zones initialisées — Régions: ${regions.value.length}, Départements: ${departments.value.length}, Comcoms: ${comcoms.value.length}`)
-      if (regions.value.length === 0) console.warn('⚠️ Aucune région chargée — les contours régions ne s\'afficheront pas')
-      if (departments.value.length === 0) console.warn('⚠️ Aucun département chargé — les contours départements ne s\'afficheront pas')
 
     } catch (e: any) {
       console.error('Erreur init zones:', e)
@@ -87,14 +84,12 @@ export const useZoneStore = defineStore('zone', () => {
     if (!forceUpdate) {
       const storedData = await get(dbKey)
       if (storedData && Array.isArray(storedData) && storedData.length > 0) {
-        console.log(`📦 ${collectionName} chargées depuis IndexedDB`)
         stateRef.value = storedData
         return
       }
     }
 
     // 2. Fallback API
-    console.log(`🌍 Téléchargement ${collectionName} depuis l'API...`)
     const data = await fetchFullCollection(collectionName)
     stateRef.value = data
     

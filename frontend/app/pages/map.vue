@@ -129,14 +129,14 @@ let currentLabelMarkers: Leaflet.Marker[] = []
 
 // --- LOGIQUE RENDU ZONES (Fusionnée) ---
 
-const getZoneStyle = () => ({
+const ZONE_STYLE = {
   color: '#ffffff',
   weight: 3,
   opacity: 0.8,
   fill: false,
   lineCap: 'round' as const,
   lineJoin: 'round' as const
-})
+} as const
 
 const getZoneCenter = (zone: GeoZone): [number, number] | null => {
   if (zone.centerLat && zone.centerLng) return [zone.centerLat, zone.centerLng]
@@ -247,11 +247,6 @@ const updateMapLayers = () => {
 
 // --- FIN LOGIQUE RENDU FUSIONNÉE ---
 
-// Debug Zoom
-watch(currentZoom, (val) => {
-  console.log('🔍 Zoom level changed:', val)
-})
-
 // Computed - Zones visibles selon le zoom ET la zone visible (BBOX)
 const visibleZones = computed(() => {
   const zones = zoneStore.getZonesForZoom(currentZoom.value)
@@ -276,7 +271,7 @@ const visibleZones = computed(() => {
 })
 
 // Watchers Globaux (Placé ici pour éviter TDZ sur visibleZones)
-watch([visibleZones, currentZoom, isMapReady], () => {
+watch([visibleZones, isMapReady], () => {
   updateMapLayers()
 }, { deep: false })
 
@@ -456,13 +451,6 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* Styles Carte */
-.zone-border path {
-  filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.5));
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .zone-label-icon {
   background: transparent;
   border: none;
