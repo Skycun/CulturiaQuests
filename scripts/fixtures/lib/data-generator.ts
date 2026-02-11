@@ -233,12 +233,15 @@ export function generateVisitData(guildDocId: string, poiDocId: string, timestam
   const chestsOpened = Math.random() < 0.5 ? randomInt(1, 3) : 0;
 
   return {
-    guild: guildDocId,
-    poi: poiDocId,
-    date: timestamp.toISOString(),
-    goldEarned: rewards.gold,
-    expEarned: rewards.xp,
-    chestsOpened,
+    data: {
+      guild: guildDocId,
+      poi: poiDocId,
+      last_opened_at: timestamp.toISOString(),
+      total_gold_earned: rewards.gold,
+      total_exp_earned: rewards.xp,
+      open_count: chestsOpened,
+    },
+    rewards, // Return rewards separately for tracking
   };
 }
 
@@ -254,17 +257,27 @@ export function generateRunData(
 ) {
   const rewards = calculateRewards('run', persona);
   const duration = randomInt(RUN_PARAMS.durationMinutes.min, RUN_PARAMS.durationMinutes.max);
-  const maxFloor = randomInt(RUN_PARAMS.maxFloor.min, RUN_PARAMS.maxFloor.max);
+  const thresholdReached = randomInt(RUN_PARAMS.maxFloor.min, RUN_PARAMS.maxFloor.max);
+  const dps = randomInt(10, 100); // Random DPS value
+
+  const endTime = new Date(timestamp);
+  endTime.setMinutes(endTime.getMinutes() + duration);
 
   return {
-    guild: guildDocId,
-    museum: museumDocId,
-    npc: npcDocId,
-    date: timestamp.toISOString(),
-    goldEarned: rewards.gold,
-    expEarned: rewards.xp,
-    duration,
-    maxFloor,
+    data: {
+      guild: guildDocId,
+      museum: museumDocId,
+      npc: npcDocId,
+      date_start: timestamp.toISOString(),
+      date_end: endTime.toISOString(),
+      gold_earned: rewards.gold,
+      xp_earned: rewards.xp,
+      dps,
+      threshold_reached: thresholdReached,
+      target_threshold: thresholdReached + randomInt(1, 3), // Slightly higher target
+      entry_unlocked: Math.random() < 0.7, // 70% unlock rate
+    },
+    rewards, // Return rewards separately for tracking
   };
 }
 
@@ -280,17 +293,28 @@ export function generateQuestData(
   persona: UserPersona
 ) {
   const rewards = calculateRewards('quest', persona);
-  const completed = Math.random() < 0.8; // 80% de complétion
+  const completionRate = Math.random();
+  const isPoiACompleted = completionRate > 0.2; // 80% complete POI A
+  const isPoiBCompleted = completionRate > 0.4; // 60% complete POI B
+
+  const duration = randomInt(30, 120); // 30-120 minutes
+  const endTime = new Date(timestamp);
+  endTime.setMinutes(endTime.getMinutes() + duration);
 
   return {
-    guild: guildDocId,
-    npc: npcDocId,
-    start_poi: poiADocId,
-    end_poi: poiBDocId,
-    date: timestamp.toISOString(),
-    goldEarned: rewards.gold,
-    expEarned: rewards.xp,
-    completed,
+    data: {
+      guild: guildDocId,
+      npc: npcDocId,
+      poi_a: poiADocId,
+      poi_b: poiBDocId,
+      date_start: timestamp.toISOString(),
+      date_end: endTime.toISOString(),
+      gold_earned: rewards.gold,
+      xp_earned: rewards.xp,
+      is_poi_a_completed: isPoiACompleted,
+      is_poi_b_completed: isPoiBCompleted,
+    },
+    rewards, // Return rewards separately for tracking
   };
 }
 

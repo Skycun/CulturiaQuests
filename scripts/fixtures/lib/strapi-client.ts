@@ -58,10 +58,19 @@ export interface ReferenceData {
 export class StrapiClient {
   private baseUrl: string;
   private adminToken: string;
+  private rarityIdToDocId: Map<number, string> = new Map();
+  private rarityNameToDocId: Map<string, string> = new Map();
+  private tagIdToDocId: Map<number, string> = new Map();
+  private npcIdToDocId: Map<number, string> = new Map();
 
   constructor(baseUrl: string, adminToken: string) {
     this.baseUrl = baseUrl;
     this.adminToken = adminToken;
+  }
+
+  // Expose rarity mapping for use in data generators
+  getRarityDocIdByName(name: string): string | undefined {
+    return this.rarityNameToDocId.get(name);
   }
 
   // ==========================================
@@ -113,6 +122,14 @@ export class StrapiClient {
         this.getAllIcons(),
       ]);
 
+    // Build ID → documentId maps for conversion
+    rarities.forEach(r => {
+      this.rarityIdToDocId.set(r.id, r.documentId);
+      this.rarityNameToDocId.set(r.name, r.documentId);
+    });
+    tags.forEach(t => this.tagIdToDocId.set(t.id, t.documentId));
+    npcs.forEach(n => this.npcIdToDocId.set(n.id, n.documentId));
+
     // Use the same icon pool for all item types
     return {
       tags,
@@ -133,9 +150,9 @@ export class StrapiClient {
     return response.data.map((t) => ({ documentId: t.documentId, id: t.id }));
   }
 
-  private async getRarities(): Promise<StrapiDocument[]> {
-    const response = await this.request<{ data: Array<{ documentId: string; id: number }> }>('get', 'rarities?pagination[limit]=100');
-    return response.data.map((r) => ({ documentId: r.documentId, id: r.id }));
+  private async getRarities(): Promise<Array<{ documentId: string; id: number; name: string }>> {
+    const response = await this.request<{ data: Array<{ documentId: string; id: number; name: string }> }>('get', 'rarities?pagination[limit]=100');
+    return response.data.map((r) => ({ documentId: r.documentId, id: r.id, name: r.name }));
   }
 
   private async getNPCs(): Promise<StrapiDocument[]> {
@@ -208,148 +225,112 @@ export class StrapiClient {
   /**
    * Crée une guilde avec le token user
    */
-  async createGuild(userId: number, name: string, userToken: string): Promise<StrapiGuild> {
-    const response = await this.request<{ data: StrapiGuild }>(
-      'post',
-      'guilds',
-      {
-        data: {
-          name,
-          user: userId,
-          gold: 0,
-          exp: '0',
-          scrap: 0,
-          publishedAt: new Date(),
-        },
-      },
-      userToken
-    );
-
-    return response.data;
-  }
-
   /**
-   * Crée un personnage avec le token user
+   * Utilise l'endpoint setup qui crée guild + character + starter items en une transaction
+   * Retourne la guild avec characters et items peuplés
    */
-  async createCharacter(
+  async setupGuildAndCharacter(
+    guildName: string,
     firstname: string,
     lastname: string,
-    guildDocId: string,
     iconId: number,
     userToken: string
-  ): Promise<StrapiCharacter> {
-    const response = await this.request<{ data: StrapiCharacter }>(
+  ): Promise<{ guild: StrapiGuild; character: StrapiCharacter }> {
+    const response = await this.request<{ data: any }>(
       'post',
-      'characters',
+      'guilds/setup',
       {
-        data: {
-          firstname,
-          lastname,
-          guild: guildDocId,
-          icon: iconId,
-          publishedAt: new Date(),
-        },
+        guildName,
+        firstname,
+        lastname,
+        iconId,
       },
       userToken
     );
 
-    return response.data;
+    const guild = response.data;
+    const character = guild?.characters?.[0];
+
+    if (!guild || !character) {
+      throw new Error('Setup endpoint did not return guild or character');
+    }
+
+    return { guild, character };
   }
 
-  /**
-   * Crée les items starter pour un character
-   */
-  async createStarterItems(
-    characterDocId: string,
-    guildDocId: string,
-    iconIds: { weapon: number; helmet: number; charm: number },
-    userToken: string
-  ): Promise<void> {
-    const starterItems = [
-      {
-        name: 'Épée de Départ',
-        slot: 'weapon',
-        level: 1,
-        rarity: 1, // basic
-        index_damage: 5,
-        icon: iconIds.weapon,
-        character: characterDocId,
-        guild: guildDocId,
-      },
-      {
-        name: 'Casque de Départ',
-        slot: 'helmet',
-        level: 1,
-        rarity: 1,
-        index_damage: 3,
-        icon: iconIds.helmet,
-        character: characterDocId,
-        guild: guildDocId,
-      },
-      {
-        name: 'Amulette de Départ',
-        slot: 'charm',
-        level: 1,
-        rarity: 1,
-        index_damage: 2,
-        icon: iconIds.charm,
-        character: characterDocId,
-        guild: guildDocId,
-      },
-    ];
-
-    await Promise.all(
-      starterItems.map((item) =>
-        this.request('post', 'items', { data: { ...item, publishedAt: new Date() } }, userToken)
-      )
-    );
-  }
+  // createCharacter and createStarterItems removed - now handled by setupGuildAndCharacter endpoint
 
   // ==========================================
-  // Activity Creation
+  // Activity Creation (uses admin token for historical data)
   // ==========================================
 
-  async createVisit(data: any, userToken: string): Promise<StrapiDocument> {
+  async createVisit(data: any, userToken?: string): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
       'visits',
       { data: { ...data, publishedAt: new Date() } },
-      userToken
+      undefined // Use admin token for activities
     );
     return response.data;
   }
 
-  async createRun(data: any, userToken: string): Promise<StrapiDocument> {
+  async createRun(data: any, userToken?: string): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
       'runs',
       { data: { ...data, publishedAt: new Date() } },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
 
-  async createQuest(data: any, userToken: string): Promise<StrapiDocument> {
+  async createQuest(data: any, userToken?: string): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
       'quests',
       { data: { ...data, publishedAt: new Date() } },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
 
-  async createQuizAttempt(data: any, userToken: string): Promise<StrapiDocument> {
+  async createQuizAttempt(data: any, userToken?: string): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
       'quiz-attempts',
       { data: { ...data, publishedAt: new Date() } },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
 
-  async createItem(data: ItemData, guildDocId: string, userToken: string): Promise<StrapiDocument> {
+  async createItem(data: ItemData, guildDocId: string, userToken?: string): Promise<StrapiDocument> {
+    // Map hardcoded old IDs to rarity names
+    const rarityIdToName: Record<number, string> = {
+      1: 'basic',
+      3: 'common',
+      5: 'rare',
+      7: 'epic',
+      9: 'legendary',
+    };
+
+    // Convert numeric IDs to documentIds
+    let rarityDocId = this.rarityIdToDocId.get(data.rarityId);
+
+    // Fallback: try to find by name if ID not found
+    if (!rarityDocId) {
+      const rarityName = rarityIdToName[data.rarityId];
+      if (rarityName) {
+        rarityDocId = this.rarityNameToDocId.get(rarityName);
+      }
+    }
+
+    if (!rarityDocId) {
+      throw new Error(`Rarity ID ${data.rarityId} not found in reference data`);
+    }
+
+    const tagDocIds = data.tags.map(tagId => this.tagIdToDocId.get(tagId)).filter(Boolean);
+
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
       'items',
@@ -358,58 +339,57 @@ export class StrapiClient {
           name: data.name,
           slot: data.slot,
           level: data.level,
-          rarity: data.rarityId,
+          rarity: rarityDocId,
           index_damage: data.damage,
           icon: data.iconId,
-          tags: data.tags,
+          tags: tagDocIds,
           guild: guildDocId,
           character: null,
           isScrapped: false,
           publishedAt: new Date(),
         },
       },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
 
-  async createFriendship(characterADocId: string, characterBDocId: string, status: string, userToken: string): Promise<StrapiDocument> {
+  async createFriendship(characterADocId: string, characterBDocId: string, status: string, userToken?: string): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
-      'friendships',
+      'player-friendships',
       {
         data: {
-          characterA: characterADocId,
-          characterB: characterBDocId,
+          requester: characterADocId,
+          receiver: characterBDocId,
           status,
           publishedAt: new Date(),
         },
       },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
 
   async createNPCFriendship(
-    characterDocId: string,
+    guildDocId: string,
     npcDocId: string,
     questsCompleted: number,
     expeditionsCompleted: number,
-    userToken: string
+    userToken?: string
   ): Promise<StrapiDocument> {
     const response = await this.request<{ data: StrapiDocument }>(
       'post',
-      'npc-friendships',
+      'friendships',
       {
         data: {
-          character: characterDocId,
+          guild: guildDocId,
           npc: npcDocId,
-          questsCompleted,
-          expeditionsCompleted,
-          publishedAt: new Date(),
+          quests_entry_unlocked: questsCompleted,
+          expedition_entry_unlocked: expeditionsCompleted,
         },
       },
-      userToken
+      undefined // Use admin token
     );
     return response.data;
   }
