@@ -189,7 +189,7 @@ const renderZones = () => {
     features: zones.map(z => ({
       type: "Feature",
       geometry: toRaw(z.geometry),
-      properties: { id: z.id, name: z.name, code: z.code }
+      properties: {}
     }))
   }
 
@@ -253,8 +253,6 @@ const visibleZones = computed(() => {
   if (currentZoom.value >= 11 && mapBounds.value) {
     // On ajoute une marge (pad) virtuelle de 10% pour que les zones ne "popent" pas
     const bounds = mapBounds.value
-    // console.log('📍 BBOX Filtering active. Bounds:', bounds.toBBoxString())
-    
     return zones.filter(z => {
       // Si pas de centre, on affiche dans le doute
       if (!z.centerLat || !z.centerLng) return true
@@ -268,7 +266,6 @@ const visibleZones = computed(() => {
   return zones
 })
 
-// Watchers Globaux (Placé ici pour éviter TDZ sur visibleZones)
 watch([visibleZones, isMapReady], () => {
   updateMapLayers()
 }, { deep: false })
@@ -329,7 +326,7 @@ function handleGeolocationAllow(): void {
 }
 
 function handleGeolocationDeny(): void {
-  console.log('User declined geolocation')
+  // Silencieux — les coords par défaut sont utilisées
 }
 
 // Mise à jour des limites visibles (BBOX)
@@ -353,8 +350,7 @@ function onMapReady() {
       map.invalidateSize() // Force le redessin si la taille était mal détectée
     }
     isMapReady.value = true
-    updateMapLayers() // Premier rendu manuel
-    console.log('✅ Map is ready and layers activated')
+    updateMapLayers()
   }, 100)
 }
 
@@ -398,7 +394,6 @@ async function fetchAllLocations(): Promise<void> {
 // Register geolocation callbacks
 geolocation.registerCallbacks({
   onFirstPosition: (lat, lng) => {
-    console.log('First position obtained:', lat, lng)
     if (mapRef.value?.leafletObject) {
       mapInteraction.flyToCoords(mapRef.value, lat, lng, 13, 1.5)
     }
@@ -434,8 +429,13 @@ onMounted(async () => {
 
 onUnmounted(() => {
   geolocation.stopTracking()
-  // Nettoyage des layers
   if (currentZoneLayer) try { currentZoneLayer.remove() } catch (_) { /* ignore */ }
+  if (zoneRenderer) {
+    try {
+      const c = (zoneRenderer as any)._container
+      if (c?.parentNode) c.parentNode.removeChild(c)
+    } catch (_) { /* ignore */ }
+  }
   currentLabelMarkers.forEach(m => { try { m.remove() } catch (_) { /* ignore */ } })
 })
 </script>
