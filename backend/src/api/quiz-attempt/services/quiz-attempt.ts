@@ -307,12 +307,12 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
           items.push({
             documentId: item.documentId,
             name: item.name,
-            rarity: fullItem?.rarity?.name || item.rarity?.name || 'common',
-            level: fullItem?.level || 1,
-            index_damage: fullItem?.index_damage || 0,
-            slot: fullItem?.slot || 'weapon',
-            icon: fullItem?.icon,
-            tags: fullItem?.tags || [],
+            rarity: fullItem.rarity?.name || 'common',
+            level: fullItem.level || 1,
+            index_damage: fullItem.index_damage || 0,
+            slot: fullItem.slot || 'weapon',
+            icon: fullItem.icon,
+            tags: fullItem.tags || [],
           });
         } catch (err) {
           strapi.log.error('[QuizRewards] Failed to generate item:', err);
