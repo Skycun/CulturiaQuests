@@ -9,6 +9,8 @@ export interface GeoZone {
   name: string
   code: string
   geometry: any // GeoJSON
+  centerLat?: number
+  centerLng?: number
 }
 
 export interface Region extends GeoZone {
@@ -63,7 +65,9 @@ export const useZoneStore = defineStore('zone', () => {
       }
       
       isInitialized.value = true
-      console.log('✅ Zones initialisées (Régions, Départements, Comcoms)')
+      console.log(`✅ Zones initialisées — Régions: ${regions.value.length}, Départements: ${departments.value.length}, Comcoms: ${comcoms.value.length}`)
+      if (regions.value.length === 0) console.warn('⚠️ Aucune région chargée — les contours régions ne s\'afficheront pas')
+      if (departments.value.length === 0) console.warn('⚠️ Aucun département chargé — les contours départements ne s\'afficheront pas')
 
     } catch (e: any) {
       console.error('Erreur init zones:', e)
@@ -143,14 +147,46 @@ export const useZoneStore = defineStore('zone', () => {
     // Le code précédent utilisait .attributes, assumons que le client Strapi ou le fetch brut retourne le JSON brut.
     // Avec $fetch sur /api/..., Strapi retourne { data: [{ id, documentId, name... }] } en v5 par défaut
     
-    return allItems.map((item: any) => ({
-      id: item.id,
-      documentId: item.documentId,
-      name: item.name, // v5: direct property
-      code: item.code,
-      geometry: item.geometry,
-      // Pas de relations chargées ici pour la carte "légère"
-    }))
+    return allItems.map((item: any) => {
+      // Calcul du centroïde pour filtrage BBOX
+      let centerLat: number | undefined
+      let centerLng: number | undefined
+
+      try {
+        if (item.geometry) {
+          let coords: any[] = []
+          if (item.geometry.type === 'Polygon') {
+            coords = item.geometry.coordinates[0]
+          } else if (item.geometry.type === 'MultiPolygon') {
+            coords = item.geometry.coordinates[0][0]
+          }
+
+          if (coords && coords.length > 0) {
+            let sumLat = 0
+            let sumLng = 0
+            const len = coords.length
+            for (let i = 0; i < len; i++) {
+              sumLng += coords[i][0]
+              sumLat += coords[i][1]
+            }
+            centerLat = sumLat / len
+            centerLng = sumLng / len
+          }
+        }
+      } catch (e) {
+        // Silent error
+      }
+
+      return {
+        id: item.id,
+        documentId: item.documentId,
+        name: item.name,
+        code: item.code,
+        geometry: item.geometry,
+        centerLat,
+        centerLng
+      }
+    })
   }
 
   /**

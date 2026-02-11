@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { onMounted, onUnmounted, watch, toRaw, computed } from 'vue'
+import L from 'leaflet'
 import type { GeoZone } from '~/stores/zone'
 import { useProgressionStore } from '~/stores/progression'
 
 const props = defineProps<{
   zones: GeoZone[]
   zoom: number
+  map: any // Instance Leaflet
 }>()
 
 const progressionStore = useProgressionStore()
+let labelsLayer: L.LayerGroup | null = null
 
-// Logique d'affichage des labels selon le zoom
+// Logique de filtrage (similaire à l'ancien template)
 const visibleZones = computed(() => {
-  if (props.zoom > 12) return []
+  if (props.zoom > 12) return [] // Trop zoomé, on masque
   return props.zones
 })
 
@@ -20,7 +23,6 @@ const visibleZones = computed(() => {
  * Vérifie si on doit masquer le label (cas spécifique : Région complétée)
  */
 function shouldHideLabel(zone: GeoZone): boolean {
-  // Uniquement pour les régions (Zoom < 8 correspond aux régions selon zone.ts)
   if (props.zoom < 8) {
     const id = zone.documentId || zone.id
     return progressionStore.isRegionCompleted(id)
@@ -29,79 +31,126 @@ function shouldHideLabel(zone: GeoZone): boolean {
 }
 
 /**
- * Vérifie si les coordonnées sont valides pour éviter les erreurs Leaflet
- */
-function isValidCoords(coords: [number, number] | null): boolean {
-  if (!coords) return false
-  return !isNaN(coords[0]) && !isNaN(coords[1]) && coords[0] !== 0 && coords[1] !== 0
-}
-
-/**
- * Calcule un centre approximatif pour placer le label.
+ * Calcule un centre approximatif ou utilise le pré-calculé
  */
 function getCenter(zone: GeoZone): [number, number] | null {
+  // 1. Essai rapide: propriétés pré-calculées
+  if (zone.centerLat && zone.centerLng) {
+    return [zone.centerLat, zone.centerLng]
+  }
+
+  // 2. Fallback: Calcul (rare si tout est bien chargé)
   try {
-    const geo = zone.geometry
+    const geo = toRaw(zone.geometry)
     if (!geo) return null
     
     let coords: any[] = []
-
     if (geo.type === 'Polygon') {
       coords = geo.coordinates[0]
     } else if (geo.type === 'MultiPolygon') {
-      // Simplification: on prend le premier anneau du premier polygone
       coords = geo.coordinates[0][0]
     }
 
     if (!coords || coords.length === 0) return null
 
-    // Moyenne des latitudes et longitudes
     let sumLat = 0
     let sumLng = 0
     const len = coords.length
-
     for (let i = 0; i < len; i++) {
       sumLng += coords[i][0]
       sumLat += coords[i][1]
     }
-
-    const result: [number, number] = [sumLat / len, sumLng / len]
-    return result
+    return [sumLat / len, sumLng / len]
   } catch (e) {
     return null
   }
 }
+
+const renderLabels = () => {
+  const rawMap = toRaw(props.map)
+  if (!rawMap) return
+
+  // 1. Nettoyage
+  if (labelsLayer) {
+    try {
+      rawMap.removeLayer(labelsLayer)
+      labelsLayer.clearLayers()
+    } catch (e) {
+      // Ignore
+    }
+    labelsLayer = null
+  }
+
+  // 2. Création Groupe
+  labelsLayer = L.layerGroup().addTo(rawMap)
+
+  // 3. Création des Labels
+  const zonesToRender = visibleZones.value
+  
+  // DEBUG
+  console.log(`🏷️ ZoneLabels rendering: ${zonesToRender.length} labels. Zoom: ${props.zoom}`)
+
+  zonesToRender.forEach(zone => {
+    if (shouldHideLabel(zone)) return
+
+    const center = getCenter(zone)
+    if (!center) return
+
+    // Création HTML Icon
+    const myIcon = L.divIcon({
+      className: 'zone-label-icon',
+      // Test Debug: Texte rouge gras sans font custom
+      html: `<div class="text-center font-bold text-red-600 text-lg whitespace-nowrap overflow-visible pointer-events-none" style="text-shadow: 1px 1px 2px white;">${zone.name}</div>`,
+      iconSize: [100, 20],
+      iconAnchor: [50, 10]
+    })
+
+    const marker = L.marker(center, {
+      icon: myIcon,
+      interactive: false,
+      zIndexOffset: 1000
+    })
+
+    labelsLayer!.addLayer(marker)
+  })
+}
+
+// Watchers
+watch(() => [props.zones, props.zoom, props.map], () => {
+   // Reset si changement de map
+   if (props.map && labelsLayer && labelsLayer._map !== toRaw(props.map)) {
+      labelsLayer = null
+   }
+   renderLabels()
+})
+
+onMounted(() => {
+  renderLabels()
+})
+
+onUnmounted(() => {
+  if (labelsLayer && props.map) {
+    const rawMap = toRaw(props.map)
+    try {
+      rawMap.removeLayer(labelsLayer)
+    } catch (e) {
+      // Safe cleanup
+    }
+  }
+})
 </script>
 
 <template>
-  <!-- On utilise des marqueurs invisibles qui contiennent juste une DivIcon avec le texte -->
-  <template v-for="zone in visibleZones" :key="`label-${zoom}-${visibleZones.length}-${zone.documentId || zone.id}`">
-    <LMarker
-      v-if="isValidCoords(getCenter(zone)) && !shouldHideLabel(zone)"
-      :lat-lng="getCenter(zone)!"
-      :options="{ interactive: false, zIndexOffset: 1000 }"
-    >
-      <LIcon
-        :icon-size="[100, 20]" 
-        :icon-anchor="[50, 10]"
-        class-name="zone-label-icon"
-      >
-        <div class="text-center font-pixel text-white text-shadow-outline text-xs whitespace-nowrap overflow-visible pointer-events-none">
-          {{ zone.name }}
-        </div>
-      </LIcon>
-    </LMarker>
-  </template>
+  <div style="display: none;"></div>
 </template>
 
 <style>
-/* Classe passée à LIcon pour supprimer les styles par défaut de Leaflet qui pourraient gêner */
+/* Styles globaux pour les icônes */
 .zone-label-icon {
   background: transparent;
   border: none;
 }
 
-/* Helper pour le contour noir du texte (lisibilité) */
 .text-shadow-outline {
   text-shadow: 
     -1px -1px 0 #000,  
