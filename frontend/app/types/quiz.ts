@@ -45,6 +45,10 @@ export interface QuizRewardItem {
   documentId: string
   name: string
   rarity: string
+  level: number
+  index_damage: number
+  icon?: { url: string }
+  tags?: Array<{ name: string }>
 }
 
 export interface QuizRewards {
