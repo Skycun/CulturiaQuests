@@ -75,15 +75,20 @@
             <!-- Items -->
             <div v-if="result.rewards.items.length > 0" class="mt-6 pt-4 border-t border-gray-200">
                <p class="text-[9px] font-bold text-gray-400 uppercase mb-3">Objets reçus</p>
-               <div class="flex flex-wrap justify-center gap-2">
-                <div 
-                  v-for="item in result.rewards.items" 
+               <div
+                 class="grid gap-3 mx-auto"
+                 :class="result.rewards.items.length === 1 ? 'grid-cols-1 max-w-[120px]' : 'grid-cols-2 max-w-[240px]'"
+               >
+                <Items
+                  v-for="item in result.rewards.items"
                   :key="item.documentId"
-                  class="bg-white px-4 py-2 rounded-xl text-xs font-bold text-[#1e1a4d] shadow-sm border border-gray-100 flex items-center gap-2"
-                >
-                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                  {{ item.name }}
-                </div>
+                  :level="item.level"
+                  :index_damage="item.index_damage"
+                  :rarity="item.rarity"
+                  :image="getItemImage(item)"
+                  :types="getItemTypes(item)"
+                  category="Item"
+                />
               </div>
             </div>
           </div>
@@ -146,11 +151,32 @@
 
 <script setup lang="ts">
 import { useQuizStore } from '~/stores/quiz'
+import type { QuizRewardItem } from '~/types/quiz'
 
 const router = useRouter()
 const quizStore = useQuizStore()
 
 const result = computed(() => quizStore.submitResult)
+
+// Helper pour obtenir l'URL de l'image de l'item
+function getItemImage(item: QuizRewardItem): string {
+  const config = useRuntimeConfig()
+
+  if (item.icon?.url) {
+    // Utiliser config.public.strapi.url au lieu de apiUrl
+    const imageUrl = `${config.public.strapi.url}${item.icon.url}`
+    return imageUrl
+  }
+
+  // Image par défaut si pas d'icône
+  return '/assets/coin.png'
+}
+
+// Helper pour obtenir les types (tags) de l'item
+function getItemTypes(item: QuizRewardItem): string[] {
+  if (!item.tags || item.tags.length === 0) return []
+  return item.tags.map(tag => tag.name.toLowerCase())
+}
 
 // Protection si accès direct sans résultat dans le store
 onMounted(async () => {
