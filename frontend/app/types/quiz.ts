@@ -150,14 +150,14 @@ export function getTierLabel(tier: string): string {
   return TIER_LABELS[tier] || tier
 }
 
-export const SLOT_LABELS: Record<string, string> = {
+export const SLOT_LABELS: Record<QuizRewardItem['slot'], string> = {
   weapon: 'Arme',
   helmet: 'Casque',
   charm: 'Charme',
 }
 
-export function getSlotLabel(slot: string): string {
-  return SLOT_LABELS[slot] || slot
+export function getSlotLabel(slot: QuizRewardItem['slot']): string {
+  return SLOT_LABELS[slot]
 }
 
 export const RARITY_COLORS: Record<string, string> = {

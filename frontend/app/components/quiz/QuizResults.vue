@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { QuizSubmitResult } from '~/types/quiz'
-import { getTierColor, getTierLabel, getSlotLabel, getRarityColor, MAX_QUIZ_SCORE } from '~/types/quiz'
+import {
+  getTierColor,
+  getTierLabel,
+  getSlotLabel,
+  getRarityColor,
+  MAX_QUIZ_SCORE
+} from '~/types/quiz'
 
 defineProps<{
   result: QuizSubmitResult

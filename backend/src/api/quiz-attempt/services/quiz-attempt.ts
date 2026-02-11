@@ -304,6 +304,10 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
             continue;
           }
 
+          if (!fullItem.slot) {
+            strapi.log.warn(`[QuizRewards] Item ${item.documentId} is missing slot information, defaulting to 'weapon'`);
+          }
+
           items.push({
             documentId: item.documentId,
             name: item.name,
