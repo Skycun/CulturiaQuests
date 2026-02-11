@@ -251,28 +251,13 @@ async function createUsers(
       // Create user
       const user = await client.createUser(userData);
 
-      // Create guild
-      const guild = await client.createGuild(user.id, userData.guildName, user.jwt);
-
-      // Create character
+      // Create guild, character, and starter items in one call
       const iconId = refData.characterIcons[Math.floor(Math.random() * refData.characterIcons.length)];
-      const character = await client.createCharacter(
+      const { guild, character } = await client.setupGuildAndCharacter(
+        userData.guildName,
         userData.characterFirstname,
         userData.characterLastname,
-        guild.documentId,
         iconId,
-        user.jwt
-      );
-
-      // Create starter items
-      await client.createStarterItems(
-        character.documentId,
-        guild.documentId,
-        {
-          weapon: refData.weaponIcons[Math.floor(Math.random() * refData.weaponIcons.length)],
-          helmet: refData.helmetIcons[Math.floor(Math.random() * refData.helmetIcons.length)],
-          charm: refData.charmIcons[Math.floor(Math.random() * refData.charmIcons.length)],
-        },
         user.jwt
       );
 
@@ -353,51 +338,44 @@ async function generateUserActivities(
       switch (activityType) {
         case 'visit': {
           const poi = refData.pois[Math.floor(Math.random() * refData.pois.length)];
-          const visitData = generateVisitData(user.guildDocId, poi.documentId, timestamp, user.persona);
+          const { data: visitData, rewards } = generateVisitData(user.guildDocId, poi.documentId, timestamp, user.persona);
           await client.createVisit(visitData, user.jwt);
-          totalGold += visitData.goldEarned;
-          totalXp += visitData.expEarned;
+          totalGold += rewards.gold;
+          totalXp += rewards.xp;
           break;
         }
 
         case 'run': {
           const museum = refData.museums[Math.floor(Math.random() * refData.museums.length)];
           const npc = refData.npcs[Math.floor(Math.random() * refData.npcs.length)];
-          const runData = generateRunData(user.guildDocId, museum.documentId, npc.documentId, timestamp, user.persona);
+          const { data: runData, rewards } = generateRunData(user.guildDocId, museum.documentId, npc.documentId, timestamp, user.persona);
           await client.createRun(runData, user.jwt);
-          totalGold += runData.goldEarned;
-          totalXp += runData.expEarned;
+          totalGold += rewards.gold;
+          totalXp += rewards.xp;
           break;
         }
 
         case 'quest': {
           const [poiA, poiB] = shuffle(refData.pois).slice(0, 2);
           const npc = refData.npcs[Math.floor(Math.random() * refData.npcs.length)];
-          const questData = generateQuestData(user.guildDocId, npc.documentId, poiA.documentId, poiB.documentId, timestamp, user.persona);
+          const { data: questData, rewards } = generateQuestData(user.guildDocId, npc.documentId, poiA.documentId, poiB.documentId, timestamp, user.persona);
           await client.createQuest(questData, user.jwt);
-          totalGold += questData.goldEarned;
-          totalXp += questData.expEarned;
+          totalGold += rewards.gold;
+          totalXp += rewards.xp;
           break;
         }
 
         case 'quiz': {
-          // Find session for this date
-          const dateStr = timestamp.toISOString().split('T')[0];
-          const session = refData.quizSessions.find((s) => s.date === dateStr);
-          if (session) {
-            const quizData = generateQuizAttemptData(user.guildDocId, session.documentId, timestamp, user.persona);
-            await client.createQuizAttempt(quizData, user.jwt);
-            totalGold += quizData.goldEarned;
-            totalXp += quizData.expEarned;
-          }
+          // Skip quiz attempts for now - they require the special /submit endpoint
+          // and complex validation that doesn't work with admin token for historical data
           break;
         }
       }
 
       await sleep(RATE_LIMITS.API_REQUEST_DELAY);
     } catch (error) {
-      // Log but continue
-      console.error(chalk.yellow(`⚠️  Failed to create ${activityType} for ${user.username}:`, error));
+      // Log errors but continue
+      console.error(chalk.yellow(`⚠️  Failed to create ${activityType} for ${user.username}:`, error.message || error));
     }
   }
 
@@ -412,7 +390,7 @@ async function generateUserActivities(
       await client.createItem(itemData, user.guildDocId, user.jwt);
       await sleep(RATE_LIMITS.API_REQUEST_DELAY);
     } catch (error) {
-      console.error(chalk.yellow(`⚠️  Failed to create item for ${user.username}`));
+      console.error(chalk.yellow(`⚠️  Failed to create item for ${user.username}: ${error.message}`));
     }
   }
 
@@ -425,10 +403,10 @@ async function generateUserActivities(
     const expeditionsCompleted = randomInt(0, 5);
 
     try {
-      await client.createNPCFriendship(user.characterDocId, npc.documentId, questsCompleted, expeditionsCompleted, user.jwt);
+      await client.createNPCFriendship(user.guildDocId, npc.documentId, questsCompleted, expeditionsCompleted, user.jwt);
       await sleep(RATE_LIMITS.API_REQUEST_DELAY);
     } catch (error) {
-      console.error(chalk.yellow(`⚠️  Failed to create NPC friendship for ${user.username}`));
+      console.error(chalk.yellow(`⚠️  Failed to create NPC friendship for ${user.username}: ${error.message}`));
     }
   }
 
@@ -452,7 +430,7 @@ async function updateGuildResources(client: StrapiClient, users: GeneratedUser[]
         user.jwt
       );
     } catch (error) {
-      console.error(chalk.yellow(`⚠️  Failed to update guild for ${user.username}`));
+      console.error(chalk.yellow(`⚠️  Failed to update guild for ${user.username}:`, error.message || error));
     }
   }
 }

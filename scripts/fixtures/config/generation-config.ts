@@ -128,13 +128,13 @@ export const ACTIVITY_WEIGHTS = {
 // ==========================================
 
 export const BASE_REWARDS = {
-  visit: { gold: { min: 10, max: 50 }, xp: { min: 5, max: 25 } },
-  run: { gold: { min: 50, max: 200 }, xp: { min: 25, max: 100 } },
-  quest: { gold: { min: 100, max: 300 }, xp: { min: 50, max: 150 } },
+  visit: { gold: { min: 10, max: 50 }, xp: { min: 50, max: 150 } },      // XP x6
+  run: { gold: { min: 50, max: 200 }, xp: { min: 200, max: 500 } },      // XP x5
+  quest: { gold: { min: 100, max: 300 }, xp: { min: 300, max: 800 } },   // XP x5
   quiz: {
-    // Formule : gold = score / 25, xp = score / 50
+    // Formule : gold = score / 25, xp = score / 10 (au lieu de 50)
     goldDivisor: 25,
-    xpDivisor: 50,
+    xpDivisor: 10,  // XP x5
   },
 } as const;
 
@@ -172,8 +172,8 @@ export const ITEM_SLOTS = ['weapon', 'helmet', 'charm'] as const;
 
 export const RATE_LIMITS = {
   USER_CREATION_DELAY: 100,  // ms entre chaque création d'user (10 users/sec max)
-  ACTIVITY_BATCH_SIZE: 5,     // Nombre d'users traités en parallèle
-  API_REQUEST_DELAY: 50,      // ms entre requêtes API dans un batch
+  ACTIVITY_BATCH_SIZE: 2,     // Nombre d'users traités en parallèle (réduit pour éviter 403)
+  API_REQUEST_DELAY: 150,      // ms entre requêtes API dans un batch (augmenté pour éviter rate limit)
 } as const;
 
 // ==========================================

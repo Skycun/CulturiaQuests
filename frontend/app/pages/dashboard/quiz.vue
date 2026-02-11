@@ -117,10 +117,10 @@
               >
                 <td class="py-3 px-4">
                   <span
-                    class="inline-block px-2.5 py-1 rounded text-xs font-medium"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold font-onest transition-all hover:scale-105"
                     :class="tagColor(tag.name)"
                   >
-                    {{ tag.name }}
+                    {{ tagLabel(tag.name) }}
                   </span>
                 </td>
                 <td class="py-3 px-4 text-right text-gray-300 font-medium">{{ tag.count }}</td>
@@ -310,16 +310,28 @@ function statusLabel(status: string): string {
   return map[status] || status
 }
 
+function tagLabel(tag: string): string {
+  const labels: Record<string, string> = {
+    'History': 'Histoire',
+    'Art': 'Art',
+    'Science': 'Science',
+    'Nature': 'Nature',
+    'Society': 'Société',
+    'Make': 'Savoir-Faire',
+  }
+  return labels[tag] || tag
+}
+
 function tagColor(tag: string): string {
   const map: Record<string, string> = {
-    'Histoire': 'bg-amber-400/10 text-amber-400',
-    'Art': 'bg-purple-400/10 text-purple-400',
-    'Sciences': 'bg-blue-400/10 text-blue-400',
-    'Nature': 'bg-emerald-400/10 text-emerald-400',
-    'Societe': 'bg-red-400/10 text-red-400',
-    'Savoir Faire': 'bg-cyan-400/10 text-cyan-400',
+    'History': 'bg-orange-500/10 text-orange-500 border border-orange-500/20',
+    'Art': 'bg-sky-500/10 text-sky-500 border border-sky-500/20',
+    'Science': 'bg-purple-600/10 text-purple-600 border border-purple-600/20',
+    'Nature': 'bg-green-600/10 text-green-600 border border-green-600/20',
+    'Society': 'bg-red-600/10 text-red-600 border border-red-600/20',
+    'Make': 'bg-amber-700/10 text-amber-700 border border-amber-700/20',
   }
-  return map[tag] || 'bg-gray-700 text-gray-400'
+  return map[tag] || 'bg-gray-700/10 text-gray-400 border border-gray-700/20'
 }
 
 function rankColor(rank: number): string {
