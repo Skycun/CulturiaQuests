@@ -182,18 +182,6 @@ const drawFog = () => {
   // Helper pour vérifier la progression
   const isCompleted = (zone: any) => {
     const id = zone.documentId || zone.id
-    
-    // DEBUG TEMPORAIRE
-    /*
-    if (zoom < 8) {
-       console.log('--- DEBUG FOG ---')
-       console.log('Zone ID:', id)
-       // @ts-ignore
-       console.log('Completed Regions (Set):', Array.from(progressionStore.completedRegionIds))
-       console.log('Is Completed?', progressionStore.isRegionCompleted(id))
-    }
-    */
-
     if (zoom >= 11) return progressionStore.isComcomCompleted(id)
     if (zoom >= 8) return progressionStore.isDepartmentCompleted(id)
     return progressionStore.isRegionCompleted(id)

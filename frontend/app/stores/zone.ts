@@ -136,12 +136,6 @@ export const useZoneStore = defineStore('zone', () => {
       }
     }
     
-    // Nettoyage / Aplatissement Strapi v5
-    // Strapi v5 retourne souvent les attributs directement à la racine de l'objet data (plus de .attributes)
-    // Mais vérifions : si c'est v5, c'est direct. Si c'est v4, c'est dans .attributes.
-    // Le code précédent utilisait .attributes, assumons que le client Strapi ou le fetch brut retourne le JSON brut.
-    // Avec $fetch sur /api/..., Strapi retourne { data: [{ id, documentId, name... }] } en v5 par défaut
-    
     return allItems.map((item: any) => {
       // Calcul du centroïde pour filtrage BBOX
       let centerLat: number | undefined

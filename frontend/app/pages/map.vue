@@ -116,8 +116,6 @@ const mapBounds = ref<any>(null) // Limites visibles de la carte
 const isMapReady = ref(false) // Flag de sécurité pour l'initialisation
 const selectedItem = ref<LocationItem | null>(null)
 const isDrawerOpen = ref(false)
-const expeditionLoading = ref(false)
-const expeditionError = ref<string | null>(null)
 
 // Leaflet Library (Loaded dynamically)
 let L: typeof Leaflet
@@ -198,7 +196,7 @@ const renderZones = () => {
   try {
     zoneRenderer = L.canvas()
     currentZoneLayer = L.geoJSON(geoJsonData as any, {
-      style: getZoneStyle,
+      style: () => ZONE_STYLE,
       interactive: false,
       renderer: zoneRenderer
     }).addTo(map)
@@ -375,24 +373,16 @@ async function handleStartExpedition() {
     return
   }
 
-  expeditionLoading.value = true
-  expeditionError.value = null
-
   try {
     const result = await runStore.startExpedition(museumId, userLat.value, userLng.value)
 
     if (result.questRolled) {
-      // NPC tiré → page interaction NPC avec dialogues
       navigateTo('/npc-interaction')
     } else {
-      // Pas de NPC → directement à l'expédition
       navigateTo('/expedition')
     }
   } catch (e: any) {
     console.error('Failed to start expedition:', e)
-    expeditionError.value = e?.error?.message || e?.message || 'Erreur lors du lancement'
-  } finally {
-    expeditionLoading.value = false
   }
 }
 
