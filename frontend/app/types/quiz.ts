@@ -157,7 +157,7 @@ export const SLOT_LABELS: Record<QuizRewardItem['slot'], string> = {
 }
 
 export function getSlotLabel(slot: QuizRewardItem['slot']): string {
-  return SLOT_LABELS[slot]
+  return SLOT_LABELS[slot] || slot
 }
 
 export const RARITY_COLORS: Record<string, string> = {
@@ -169,7 +169,7 @@ export const RARITY_COLORS: Record<string, string> = {
 }
 
 export function getRarityColor(rarity: string): string {
-  return RARITY_COLORS[rarity.toLowerCase()] || 'border-l-4 border-l-gray-400'
+  return RARITY_COLORS[rarity.toLowerCase()] || 'border-l-4 border-l-gray-400 bg-gradient-to-r from-gray-50'
 }
 
 export const MAX_QUIZ_SCORE = 2150
