@@ -27,7 +27,6 @@
     </div>
 
     <div class="grid grid-cols-2 gap-3">
-        
         <div class="bg-orange-50/50 rounded-2xl p-3 flex flex-col justify-center items-center text-center border border-orange-100">
             <div class="w-8 h-8 mb-1 relative">
                 <img :src="post.bestLootImage" class="w-full h-full object-contain pixelated drop-shadow-sm" />
@@ -51,13 +50,25 @@
             <span class="text-sm">{{ post.reactionIcon }}</span>
             <span class="font-bold text-green-700 text-xs">{{ post.reactionText }}</span>
         </div>
-
     </div>
 
     <div class="mt-4 flex items-center gap-4 border-t border-gray-100 pt-3">
-        <button class="flex items-center gap-1.5 text-gray-400 hover:text-red-500 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-            <span class="text-xs font-bold">{{ post.likes }}</span>
+        <button 
+            @click="toggleLike"
+            class="flex items-center gap-1.5 transition-colors group"
+            :class="isLiked ? 'text-red-500' : 'text-gray-400 hover:text-red-400'"
+        >
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="h-6 w-6 transition-transform group-active:scale-75" 
+                :class="{ 'animate-heartbeat': animateHeart }"
+                :fill="isLiked ? 'currentColor' : 'none'" 
+                viewBox="0 0 24 24" 
+                :stroke="isLiked ? 'currentColor' : 'currentColor'"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <span class="text-sm font-bold" :class="isLiked ? 'text-red-500' : 'text-gray-500'">{{ localLikes }}</span>
         </button>
     </div>
 
@@ -65,12 +76,46 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, onMounted } from 'vue';
+
+const props = defineProps({
   post: {
     type: Object,
     required: true
   }
 });
+
+// --- ÉTAT LOCAL DU LIKE ---
+const isLiked = ref(false);
+const localLikes = ref(0);
+const animateHeart = ref(false);
+
+// Initialiser avec les données du parent
+onMounted(() => {
+    // Si tu as un champ 'hasLiked' dans le futur, tu pourras l'utiliser ici
+    isLiked.value = props.post.hasLiked || false; 
+    localLikes.value = props.post.likes || 0;
+});
+
+const toggleLike = () => {
+    isLiked.value = !isLiked.value;
+    
+    if (isLiked.value) {
+        localLikes.value++;
+        triggerAnimation();
+        // Plus tard : await api.likePost(props.post.id)
+    } else {
+        localLikes.value--;
+        // Plus tard : await api.unlikePost(props.post.id)
+    }
+};
+
+const triggerAnimation = () => {
+    animateHeart.value = true;
+    setTimeout(() => {
+        animateHeart.value = false;
+    }, 300); // Durée de l'animation
+};
 
 const rarityColor = (rarity) => {
     switch(rarity) {
@@ -87,4 +132,14 @@ const rarityColor = (rarity) => {
 .pixelated { image-rendering: pixelated; }
 .font-pixel { font-family: 'Jersey 10', sans-serif; }
 .font-power { font-family: 'Montserrat', sans-serif; }
+
+/* Petite animation bonus pour le like */
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+.animate-heartbeat {
+  animation: heartbeat 0.3s ease-in-out;
+}
 </style>
