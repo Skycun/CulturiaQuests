@@ -266,7 +266,15 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
     const exp = randomInRange(tierData.expMin, tierData.expMax);
 
     const itemCount = Math.random() < 0.5 ? 1 : 2;
-    const items: Array<{ documentId: string; name: string; rarity: string }> = [];
+    const items: Array<{
+      documentId: string;
+      name: string;
+      rarity: string;
+      level: number;
+      index_damage: number;
+      icon?: { url: string };
+      tags?: Array<{ name: string }>;
+    }> = [];
 
     const guild = await strapi.db.query('api::guild.guild').findOne({
       where: { documentId: guildDocumentId },
@@ -279,10 +287,24 @@ export default factories.createCoreService('api::quiz-attempt.quiz-attempt', ({ 
       for (let i = 0; i < itemCount; i++) {
         try {
           const item = await strapi.service('api::item.item').generateRandomItem(guildDocumentId, maxFloor);
+
+          // Récupérer l'item complet avec les relations pour avoir toutes les données
+          const fullItem = await strapi.db.query('api::item.item').findOne({
+            where: { documentId: item.documentId },
+            populate: {
+              icon: { select: ['url'] },
+              tags: { select: ['name'] },
+            },
+          });
+
           items.push({
             documentId: item.documentId,
             name: item.name,
             rarity: item.rarity?.name || 'common',
+            level: fullItem?.level || 1,
+            index_damage: fullItem?.index_damage || 0,
+            icon: fullItem?.icon,
+            tags: fullItem?.tags || [],
           });
         } catch (err) {
           strapi.log.warn('[QuizRewards] Failed to generate item:', err);
