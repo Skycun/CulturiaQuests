@@ -1,0 +1,79 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [release]
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # Pull latest code
+            git fetch origin release
+            git checkout release
+            git pull origin release
+
+            # Generate .env.production from secrets
+            cat > .env.production << 'ENVEOF'
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            HOST=0.0.0.0
+            PORT=1337
+            NODE_ENV=production
+            APP_KEYS=${{ secrets.APP_KEYS }}
+            API_TOKEN_SALT=${{ secrets.API_TOKEN_SALT }}
+            ADMIN_JWT_SECRET=${{ secrets.ADMIN_JWT_SECRET }}
+            TRANSFER_TOKEN_SALT=${{ secrets.TRANSFER_TOKEN_SALT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            ENVEOF
+
+            # Remove leading spaces from heredoc
+            sed -i 's/^            //' .env.production
+
+            # Build and restart services
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+
+            # Wait for Strapi to be ready
+            echo "Waiting for Strapi to start..."
+            RETRIES=60
+            until curl -sf http://127.0.0.1:1337/_health > /dev/null 2>&1; do
+              RETRIES=$((RETRIES - 1))
+              if [ "$RETRIES" -le 0 ]; then
+                echo "WARNING: Strapi health check timed out"
+                exit 1
+              fi
+              sleep 3
+            done
+            echo "Strapi is ready!"
+
+      - name: Notify Discord (success)
+        if: success() && secrets.DISCORD_WEBHOOK_URL != ''
+        uses: appleboy/discord-action@v1
+        with:
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: "CulturiaQuests deployed successfully from `release` branch."
+
+      - name: Notify Discord (failure)
+        if: failure() && secrets.DISCORD_WEBHOOK_URL != ''
+        uses: appleboy/discord-action@v1
+        with:
+          webhook_id: ${{ secrets.DISCORD_WEBHOOK_ID }}
+          webhook_token: ${{ secrets.DISCORD_WEBHOOK_TOKEN }}
+          message: "CulturiaQuests deployment FAILED from `release` branch."
