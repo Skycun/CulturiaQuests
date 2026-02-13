@@ -1,17 +1,18 @@
 import { useZoneStore, type Comcom } from '~/stores/zone'
-import { useFogStore } from '~/stores/fog'
+import { useFogStore, GRID_LAT_STEP, GRID_LNG_STEP } from '~/stores/fog'
 import { useProgressionStore } from '~/stores/progression'
 import { useGuildStore } from '~/stores/guild'
 import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
 import { useVisitStore } from '~/stores/visit'
+import { useRunStore } from '~/stores/run'
 import { isPointInGeoJSON } from '~/utils/geometry'
 
 const COMPLETION_THRESHOLD = 0.5 // 50%
 
-// Grille ~200m × 200m (en degrés)
-const GRID_LAT_STEP = 0.0018
-const GRID_LNG_STEP = 0.0027
+function getComcomDocId(comcom: Comcom): string {
+  return comcom.documentId || comcom.id.toString()
+}
 
 export function useZoneCompletion() {
   const zoneStore = useZoneStore()
@@ -21,6 +22,7 @@ export function useZoneCompletion() {
   const museumStore = useMuseumStore()
   const poiStore = usePOIStore()
   const visitStore = useVisitStore()
+  const runStore = useRunStore()
 
   // Lock pour éviter les appels API concurrents
   const pendingCompletions = new Set<string>()
@@ -33,12 +35,12 @@ export function useZoneCompletion() {
     const comcoms = zoneStore.comcoms
     if (!comcoms || comcoms.length === 0) return null
 
-    // Pré-filtre par distance au centroïde (~5km de rayon)
+    // Pré-filtre par distance au centroïde (~11km de rayon)
     const candidates = comcoms.filter(c => {
-      if (!c.centerLat || !c.centerLng) return false
+      if (c.centerLat == null || c.centerLng == null) return false
       const dLat = Math.abs(c.centerLat - lat)
       const dLng = Math.abs(c.centerLng - lng)
-      return dLat < 0.1 && dLng < 0.15 // ~11km lat, ~11km lng
+      return dLat < 0.1 && dLng < 0.15
     })
 
     for (const comcom of candidates) {
@@ -54,9 +56,9 @@ export function useZoneCompletion() {
    * Fait une seule fois par comcom, puis stocké dans le fog store.
    */
   function computeTotalGridCells(comcom: Comcom): number {
-    const docId = comcom.documentId || comcom.id.toString()
+    const docId = getComcomDocId(comcom)
     if (fogStore.hasTotalGridCells(docId)) {
-      return fogStore.totalGridCells[docId]
+      return fogStore.totalGridCells[docId] ?? 0
     }
 
     const geometry = comcom.geometry
@@ -97,7 +99,6 @@ export function useZoneCompletion() {
       }
     }
 
-    // Minimum 1 cellule pour éviter division par zéro
     count = Math.max(count, 1)
     fogStore.setTotalGridCells(docId, count)
     return count
@@ -132,7 +133,7 @@ export function useZoneCompletion() {
 
       // Nettoyer les points GPS et les données de grille de la comcom
       const comcom = zoneStore.comcoms.find(
-        c => (c.documentId || c.id.toString()) === comcomDocId
+        c => getComcomDocId(c) === comcomDocId
       )
       if (comcom) {
         fogStore.removePointsInZones([comcom])
@@ -156,19 +157,15 @@ export function useZoneCompletion() {
     const comcom = findComcomForPoint(lat, lng)
     if (!comcom) return
 
-    const docId = comcom.documentId || comcom.id.toString()
+    const docId = getComcomDocId(comcom)
 
-    // Déjà complétée ?
     if (progressionStore.isComcomCompleted(docId)) return
 
-    // Ajouter la cellule de grille
     const isNew = fogStore.addGridCell(docId, lat, lng)
-    if (!isNew) return // Cellule déjà visitée, rien à faire
+    if (!isNew) return
 
-    // Calculer le total de cellules (lazy, une seule fois)
     computeTotalGridCells(comcom)
 
-    // Vérifier le seuil
     const ratio = fogStore.getCoverageRatio(docId)
     if (ratio >= COMPLETION_THRESHOLD) {
       completeComcom(docId)
@@ -176,8 +173,8 @@ export function useZoneCompletion() {
   }
 
   /**
-   * CHEMIN B — Vérifie la couverture des visites POI/musées pour un point GPS.
-   * Appelé après chaque openChest.
+   * CHEMIN B — Vérifie la couverture des visites POI + musées.
+   * Appelé après chaque openChest ou fin d'expédition.
    */
   function checkVisitCoverage(poiLat: number, poiLng: number) {
     if (!zoneStore.isInitialized) return
@@ -185,16 +182,17 @@ export function useZoneCompletion() {
     const comcom = findComcomForPoint(poiLat, poiLng)
     if (!comcom) return
 
-    const docId = comcom.documentId || comcom.id.toString()
+    const docId = getComcomDocId(comcom)
 
-    // Déjà complétée ?
     if (progressionStore.isComcomCompleted(docId)) return
 
-    // Trouver tous les POI et musées dans cette comcom
+    // POI dans cette comcom
     const poisInComcom = poiStore.pois.filter(p =>
       p.lat !== undefined && p.lng !== undefined &&
       isPointInGeoJSON([p.lat, p.lng], comcom.geometry)
     )
+
+    // Musées dans cette comcom
     const museumsInComcom = museumStore.museums.filter(m =>
       m.lat !== undefined && m.lng !== undefined &&
       isPointInGeoJSON([m.lat, m.lng], comcom.geometry)
@@ -203,18 +201,20 @@ export function useZoneCompletion() {
     const totalLocations = poisInComcom.length + museumsInComcom.length
     if (totalLocations === 0) return
 
-    // Compter les POI visités (au moins 1 visite)
+    // Compter les POI visités (au moins 1 visite via le système de visit)
     let visitedCount = 0
     for (const poi of poisInComcom) {
-      const poiId = poi.documentId || poi.id
-      if (visitStore.getVisitForPOI.value(poiId)) {
+      if (visitStore.getVisitForPOI(poi.id)) {
         visitedCount++
       }
     }
 
-    // Pour les musées, on check via le run store (une visite = un run complété)
-    // Simplifié : on ne compte que les POI pour le chemin B
-    // Les musées sont déjà des POI dans le système de visites
+    // Compter les musées visités (au moins 1 run via le système de run)
+    for (const museum of museumsInComcom) {
+      if (runStore.hasVisitedMuseum(museum.id)) {
+        visitedCount++
+      }
+    }
 
     const ratio = visitedCount / totalLocations
     if (ratio >= COMPLETION_THRESHOLD) {
