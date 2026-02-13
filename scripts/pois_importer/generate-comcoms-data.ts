@@ -49,12 +49,11 @@ async function main() {
   const { data } = JSON.parse(raw) as { data: Record<string, string>[] };
   console.log(`   ${data.length} communes chargées`);
 
-  // --- Regrouper par EPCI ---
+  // --- Regrouper par EPCI avec gestion inter-départementale ---
   const epciMap = new Map<string, {
     nom: string;
-    dep_code: string;
-    dep_nom: string;
-    reg_nom: string;
+    departments: Set<string>; // Tous les départements couverts
+    dep_codes: Map<string, { dep_nom: string; reg_nom: string }>;
     lats: number[];
     lngs: number[];
   }>();
@@ -65,49 +64,77 @@ async function main() {
   for (const c of data) {
     if (!c.epci_code) { skippedNoEpci++; continue; }
 
-    const lat = parseFloat(c.latitude_centre);
-    const lng = parseFloat(c.longitude_centre);
-    if (isNaN(lat) || isNaN(lng)) { skippedNoCoords++; continue; }
-
+    // Créer l'EPCI si nécessaire (même sans coordonnées)
     if (!epciMap.has(c.epci_code)) {
       epciMap.set(c.epci_code, {
         nom: c.epci_nom,
-        dep_code: c.dep_code,
-        dep_nom: c.dep_nom,
-        reg_nom: c.reg_nom,
+        departments: new Set(),
+        dep_codes: new Map(),
         lats: [],
         lngs: [],
       });
     }
 
     const entry = epciMap.get(c.epci_code)!;
-    entry.lats.push(lat);
-    entry.lngs.push(lng);
+
+    // Toujours enregistrer le département (même sans coordonnées)
+    entry.departments.add(c.dep_code);
+    if (!entry.dep_codes.has(c.dep_code)) {
+      entry.dep_codes.set(c.dep_code, { dep_nom: c.dep_nom, reg_nom: c.reg_nom });
+    }
+
+    // Ajouter les coordonnées si disponibles
+    const lat = parseFloat(c.latitude_centre);
+    const lng = parseFloat(c.longitude_centre);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      entry.lats.push(lat);
+      entry.lngs.push(lng);
+    } else {
+      skippedNoCoords++;
+    }
   }
 
   console.log(`   ${epciMap.size} EPCIs extraits`);
   if (skippedNoEpci) console.log(`   ⚠️  ${skippedNoEpci} communes sans EPCI ignorées`);
   if (skippedNoCoords) console.log(`   ⚠️  ${skippedNoCoords} communes sans coordonnées ignorées`);
 
-  // --- Regrouper par département ---
+  // --- Regrouper par département (avec gestion inter-départementale) ---
   const deptMap = new Map<string, DepartmentEntry>();
 
   for (const [code, epci] of epciMap) {
-    if (!deptMap.has(epci.dep_code)) {
-      deptMap.set(epci.dep_code, { code: epci.dep_code, nom: epci.dep_nom, region: epci.reg_nom, epci: [] });
+    // Ignorer les EPCIs sans aucune coordonnée
+    if (epci.lats.length === 0) {
+      continue;
     }
 
-    deptMap.get(epci.dep_code)!.epci.push({
+    // Créer la bbox commune à tous les départements
+    const bbox = {
+      minLat: parseFloat(Math.min(...epci.lats).toFixed(5)),
+      maxLat: parseFloat(Math.max(...epci.lats).toFixed(5)),
+      minLng: parseFloat(Math.min(...epci.lngs).toFixed(5)),
+      maxLng: parseFloat(Math.max(...epci.lngs).toFixed(5)),
+    };
+
+    const epciEntry: EpciEntry = {
       code,
       nom: epci.nom,
       communes: epci.lats.length,
-      bbox: {
-        minLat: parseFloat(Math.min(...epci.lats).toFixed(5)),
-        maxLat: parseFloat(Math.max(...epci.lats).toFixed(5)),
-        minLng: parseFloat(Math.min(...epci.lngs).toFixed(5)),
-        maxLng: parseFloat(Math.max(...epci.lngs).toFixed(5)),
-      },
-    });
+      bbox,
+    };
+
+    // Si l'EPCI couvre plusieurs départements, le dupliquer dans chacun
+    for (const [depCode, depInfo] of epci.dep_codes) {
+      if (!deptMap.has(depCode)) {
+        deptMap.set(depCode, {
+          code: depCode,
+          nom: depInfo.dep_nom,
+          region: depInfo.reg_nom,
+          epci: []
+        });
+      }
+
+      deptMap.get(depCode)!.epci.push({ ...epciEntry });
+    }
   }
 
   // --- Trier : départements par code, EPCIs par nom ---
