@@ -7,6 +7,7 @@ import { useVisitStore } from './visit'
 import { useRunStore } from './run'
 import { useFriendshipStore } from './friendship'
 import { useProgressionStore } from './progression'
+import { useFogStore } from './fog'
 
 export const useGuildStore = defineStore('guild', () => {
   // State
@@ -30,7 +31,7 @@ export const useGuildStore = defineStore('guild', () => {
    * Le niveau minimum est 1 (avec 0 XP)
    */
   const level = computed(() => {
-    const currentExp = exp.value
+    const currentExp = Number(exp.value)
     return Math.floor(Math.sqrt(currentExp / 75)) + 1
   })
 
@@ -56,6 +57,7 @@ export const useGuildStore = defineStore('guild', () => {
     useRunStore().clearRuns()
     useFriendshipStore().clearFriendships()
     useProgressionStore().clearProgressions()
+    useFogStore().clearFog()
   }
 
   /**

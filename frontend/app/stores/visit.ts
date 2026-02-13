@@ -97,7 +97,7 @@ export const useVisitStore = defineStore('visit', () => {
   function updateVisit(visitId: number, updates: Partial<Visit>) {
     const index = visits.value.findIndex(v => v.id === visitId)
     if (index !== -1) {
-      visits.value[index] = { ...visits.value[index], ...updates }
+      visits.value[index] = { ...visits.value[index], ...updates } as Visit
     }
   }
 

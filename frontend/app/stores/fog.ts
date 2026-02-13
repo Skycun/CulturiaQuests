@@ -42,6 +42,9 @@ export const useFogStore = defineStore('fog', () => {
 
   function clearFog() {
     discoveredPoints.value = []
+    visitedGridCells.value = {}
+    totalGridCells.value = {}
+    gridSetsCache.clear()
   }
 
   /**

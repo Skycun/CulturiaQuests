@@ -24,4 +24,5 @@ export interface Visit {
   last_opened_at?: string
   total_gold_earned?: number
   total_exp_earned?: number
+  poi?: { data?: Poi; id?: number }
 }
