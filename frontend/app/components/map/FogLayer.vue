@@ -33,6 +33,7 @@ const CONFIG = {
 let cloudPattern: CanvasPattern | null = null
 let brushCanvas: HTMLCanvasElement | null = null
 let lastZoomForBrush = -1
+let fogRafId: number | null = null
 
 // --- GÉNÉRATEURS ---
 
@@ -175,11 +176,11 @@ const drawFog = () => {
   ctx.globalAlpha = 1.0
   ctx.fillStyle = 'rgba(0,0,0,1)' // Couleur de gomme pleine
 
-  // 3. Gommage des Zones Complétées
+  // 3. Gommage des Zones Complétées (viewport culling)
   const zoom = map.getZoom()
-  const visibleZones = zoneStore.getZonesForZoom(zoom)
-  
-  // Helper pour vérifier la progression
+  const allZones = zoneStore.getZonesForZoom(zoom)
+  const viewBounds = map.getBounds().pad(0.3)
+
   const isCompleted = (zone: any) => {
     const id = zone.documentId || zone.id
     if (zoom >= 11) return progressionStore.isComcomCompleted(id)
@@ -187,8 +188,9 @@ const drawFog = () => {
     return progressionStore.isRegionCompleted(id)
   }
 
-  // On dessine les polygones des zones complétées pour les "trouer"
-  for (const zone of visibleZones) {
+  for (const zone of allZones) {
+    // Skip les zones hors viewport (évite des milliers de latLngToContainerPoint inutiles)
+    if (zone.centerLat && zone.centerLng && !viewBounds.contains([zone.centerLat, zone.centerLng])) continue
     if (isCompleted(zone)) {
       drawGeometry(ctx, zone.geometry, map)
     }
@@ -239,6 +241,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (fogRafId !== null) cancelAnimationFrame(fogRafId)
   if (props.map) {
     const map = props.map as Map
     map.off('moveend zoomend resize', drawFog)
@@ -246,8 +249,17 @@ onUnmounted(() => {
   }
 })
 
-// Réactivité
-watch(() => fogStore.discoveredPoints.length, drawFog)
-watch(() => zoneStore.isInitialized, drawFog)
-watch(() => progressionStore.progressions.length, drawFog)
+// Réactivité — un seul watcher + rAF pour coalescer les appels
+const scheduleFogRedraw = () => {
+  if (fogRafId !== null) return
+  fogRafId = requestAnimationFrame(() => {
+    fogRafId = null
+    drawFog()
+  })
+}
+
+watch(
+  () => [fogStore.discoveredPoints.length, zoneStore.isInitialized, progressionStore.progressions.length],
+  scheduleFogRedraw
+)
 </script>

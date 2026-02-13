@@ -77,6 +77,7 @@ import { useZoneStore, type GeoZone } from '~/stores/zone'
 import { useProgressionStore } from '~/stores/progression'
 import { useGeolocation } from '~/composables/useGeolocation'
 import { useMapInteraction } from '~/composables/useMapInteraction'
+import { useZoneCompletion } from '~/composables/useZoneCompletion'
 import { calculateDistance } from '~/utils/geolocation'
 import MapMarkers from '~/components/map/MapMarkers.vue'
 import FogLayer from '~/components/map/FogLayer.vue'
@@ -106,6 +107,7 @@ const geolocation = useGeolocation({
 })
 
 const mapInteraction = useMapInteraction()
+const zoneCompletion = useZoneCompletion()
 
 // Refs
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -123,7 +125,12 @@ let L: typeof Leaflet
 // Renderer Canvas persistant (évite le bug SVG removeLayer/_renderer)
 let zoneRenderer: Leaflet.Canvas | null = null
 let currentZoneLayer: Leaflet.GeoJSON | null = null
-let currentLabelMarkers: Leaflet.Marker[] = []
+let labelMarkersMap = new Map<string | number, Leaflet.Marker>()
+
+// Debounce & rAF helpers
+let moveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let rafId: number | null = null
+let lastZoneType: 'regions' | 'departments' | 'comcoms' | null = null
 
 // --- LOGIQUE RENDU ZONES (Fusionnée) ---
 
@@ -163,22 +170,41 @@ const shouldHideZoneLabel = (zone: GeoZone): boolean => {
   return false
 }
 
-const renderZones = () => {
-  const map = mapRef.value?.leafletObject
-  if (!map || !isMapReady.value || !L) return
+const getCurrentZoneType = (): 'regions' | 'departments' | 'comcoms' => {
+  if (currentZoom.value >= 11) return 'comcoms'
+  if (currentZoom.value >= 8) return 'departments'
+  return 'regions'
+}
 
-  // Suppression complète : layer + renderer Canvas (évite les tracés fantômes)
+const destroyZoneRenderer = () => {
   if (currentZoneLayer) {
     try { currentZoneLayer.remove() } catch (_) { /* ignore */ }
     currentZoneLayer = null
   }
   if (zoneRenderer) {
-    // Retrait DOM direct (évite le _redraw post-mortem de Leaflet qui crash sur _ctx)
     try {
       const c = (zoneRenderer as any)._container
       if (c?.parentNode) c.parentNode.removeChild(c)
     } catch (_) { /* ignore */ }
     zoneRenderer = null
+  }
+}
+
+const renderZones = () => {
+  const map = mapRef.value?.leafletObject
+  if (!map || !isMapReady.value || !L) return
+
+  const zoneType = getCurrentZoneType()
+  const typeChanged = zoneType !== lastZoneType
+  lastZoneType = zoneType
+
+  // Changement de type (comcoms→départements) : recréer le renderer
+  // Même type (pan dans les comcoms) : réutiliser le renderer, juste remplacer le layer
+  if (typeChanged) {
+    destroyZoneRenderer()
+  } else if (currentZoneLayer) {
+    try { currentZoneLayer.remove() } catch (_) { /* ignore */ }
+    currentZoneLayer = null
   }
 
   const zones = visibleZones.value.filter(z => z.geometry)
@@ -194,7 +220,7 @@ const renderZones = () => {
   }
 
   try {
-    zoneRenderer = L.canvas()
+    if (!zoneRenderer) zoneRenderer = L.canvas()
     currentZoneLayer = L.geoJSON(geoJsonData as any, {
       style: () => ZONE_STYLE,
       interactive: false,
@@ -209,16 +235,19 @@ const renderLabels = () => {
   const map = mapRef.value?.leafletObject
   if (!map || !isMapReady.value || !L) return
 
-  // Suppression propre des markers précédents (divIcon = pas de SVG, .remove() fonctionne)
-  currentLabelMarkers.forEach(m => { try { m.remove() } catch (_) { /* ignore */ } })
-  currentLabelMarkers = []
-
   const zones = visibleZones.value
+  const nextIds = new Set<string | number>()
 
   zones.forEach(zone => {
     if (shouldHideZoneLabel(zone)) return
     const center = getZoneCenter(zone)
     if (!center) return
+
+    const key = zone.documentId || zone.id
+    nextIds.add(key)
+
+    // Le marker existe déjà → pas de DOM churn
+    if (labelMarkersMap.has(key)) return
 
     const html = `<div class="text-center font-pixel text-white text-shadow-outline text-xs whitespace-nowrap overflow-visible pointer-events-none">${zone.name}</div>`
 
@@ -234,13 +263,26 @@ const renderLabels = () => {
       interactive: false,
       zIndexOffset: 1000
     }).addTo(map)
-    currentLabelMarkers.push(marker)
+    labelMarkersMap.set(key, marker)
   })
+
+  // Retirer les markers qui ne sont plus visibles
+  for (const [key, marker] of labelMarkersMap) {
+    if (!nextIds.has(key)) {
+      try { marker.remove() } catch (_) { /* ignore */ }
+      labelMarkersMap.delete(key)
+    }
+  }
 }
 
 const updateMapLayers = () => {
-  renderZones()
-  renderLabels()
+  // Coalesce multiples appels en un seul rendu par frame
+  if (rafId !== null) return
+  rafId = requestAnimationFrame(() => {
+    rafId = null
+    renderZones()
+    renderLabels()
+  })
 }
 
 // --- FIN LOGIQUE RENDU FUSIONNÉE ---
@@ -329,26 +371,28 @@ function handleGeolocationDeny(): void {
   // Silencieux — les coords par défaut sont utilisées
 }
 
-// Mise à jour des limites visibles (BBOX)
+// Mise à jour des limites visibles (BBOX) — debounced pour éviter les cascades réactives
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function onMapMove(e?: any) {
-  // e.target est la map si l'event vient de leaflet
-  const map = mapRef.value?.leafletObject || e?.target
-  if (map && map.getBounds) {
-    // On élargit un peu la zone (pad 0.2 = +20%) pour précharger ce qui arrive
-    mapBounds.value = map.getBounds().pad(0.2) 
-  }
+  if (moveDebounceTimer) clearTimeout(moveDebounceTimer)
+  moveDebounceTimer = setTimeout(() => {
+    const map = mapRef.value?.leafletObject || e?.target
+    if (map && map.getBounds) {
+      mapBounds.value = map.getBounds().pad(0.2)
+    }
+  }, 150)
 }
 
 // Initialisation des bounds au chargement
 function onMapReady() {
-  onMapMove()
-  // On laisse un petit tick pour être sûr que l'objet Leaflet est bien attaché
+  // Init immédiat des bounds (pas de debounce au premier chargement)
+  const map = mapRef.value?.leafletObject
+  if (map?.getBounds) {
+    mapBounds.value = map.getBounds().pad(0.2)
+  }
   setTimeout(() => {
-    const map = mapRef.value?.leafletObject
-    if (map) {
-      map.invalidateSize() // Force le redessin si la taille était mal détectée
-    }
+    const m = mapRef.value?.leafletObject
+    if (m) m.invalidateSize()
     isMapReady.value = true
     updateMapLayers()
   }, 100)
@@ -397,12 +441,12 @@ geolocation.registerCallbacks({
     if (mapRef.value?.leafletObject) {
       mapInteraction.flyToCoords(mapRef.value, lat, lng, 13, 1.5)
     }
-    // Enregistre la position initiale
     fogStore.addPosition(lat, lng)
+    zoneCompletion.checkFogCoverage(lat, lng)
   },
   onPositionUpdate: (lat, lng) => {
-    // Enregistre le déplacement
     fogStore.addPosition(lat, lng)
+    zoneCompletion.checkFogCoverage(lat, lng)
   },
 })
 
@@ -429,14 +473,13 @@ onMounted(async () => {
 
 onUnmounted(() => {
   geolocation.stopTracking()
-  if (currentZoneLayer) try { currentZoneLayer.remove() } catch (_) { /* ignore */ }
-  if (zoneRenderer) {
-    try {
-      const c = (zoneRenderer as any)._container
-      if (c?.parentNode) c.parentNode.removeChild(c)
-    } catch (_) { /* ignore */ }
+  if (moveDebounceTimer) clearTimeout(moveDebounceTimer)
+  if (rafId !== null) cancelAnimationFrame(rafId)
+  destroyZoneRenderer()
+  for (const marker of labelMarkersMap.values()) {
+    try { marker.remove() } catch (_) { /* ignore */ }
   }
-  currentLabelMarkers.forEach(m => { try { m.remove() } catch (_) { /* ignore */ } })
+  labelMarkersMap.clear()
 })
 </script>
 

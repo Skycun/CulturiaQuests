@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { shallowRef, triggerRef, ref } from 'vue'
 import { get, set } from 'idb-keyval'
 
 // Interfaces génériques
@@ -30,10 +30,10 @@ const DB_VERSION_KEY = 'zones-version'
 const CURRENT_DATA_VERSION = '2.0' // Bumped version for new architecture
 
 export const useZoneStore = defineStore('zone', () => {
-  // 3 États distincts
-  const regions = ref<Region[]>([])
-  const departments = ref<Department[]>([])
-  const comcoms = ref<Comcom[]>([])
+  // 3 États distincts — shallowRef car les géométries (~18MB) ne sont jamais mutées
+  const regions = shallowRef<Region[]>([])
+  const departments = shallowRef<Department[]>([])
+  const comcoms = shallowRef<Comcom[]>([])
 
   const loading = ref(false)
   const error = ref<string | null>(null)

@@ -61,25 +61,23 @@ function getChestIconUrl(poi: Poi): string {
 // --- RENDERING ---
 
 const renderMarkers = () => {
-  // Utiliser l'objet brut pour éviter les erreurs de Proxy Vue
   const rawMap = toRaw(props.map)
   if (!rawMap) return
 
-  // 1. Nettoyage radical
-  if (markersLayer) {
+  // LayerGroup persistant : on vide et on re-remplit
+  if (!markersLayer) {
+    markersLayer = L.layerGroup().addTo(rawMap)
+  } else {
     try {
-      rawMap.removeLayer(markersLayer)
-    } catch (e) {
-      // Map déjà détruite ou layer déjà parti
+      markersLayer.clearLayers()
+    } catch (_) {
+      // Les marqueurs DOM peuvent être stale après un remount — on recrée le layer
+      try { rawMap.removeLayer(markersLayer) } catch (_) { /* ignore */ }
+      markersLayer = L.layerGroup().addTo(rawMap)
     }
-    markersLayer = null
   }
 
-  // Seuil de zoom (Optimisation) - POIs visibles à partir de 11
   if (props.zoom < 11) return
-
-  // 2. Création d'un nouveau groupe frais
-  markersLayer = L.layerGroup().addTo(rawMap)
 
   // 3. Peuplage (Filtre Distance 10km)
   const RADIUS_KM = 10
@@ -116,11 +114,7 @@ const renderMarkers = () => {
 // --- LIFECYCLE ---
 
 onMounted(() => {
-  if (props.map) {
-    const rawMap = toRaw(props.map)
-    markersLayer = L.layerGroup().addTo(rawMap)
-    renderMarkers()
-  }
+  if (props.map) renderMarkers()
 })
 
 onUnmounted(() => {
