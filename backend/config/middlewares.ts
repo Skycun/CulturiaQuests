@@ -45,7 +45,8 @@ export default [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         'capacitor://localhost', // Capacitor iOS
-        'http://localhost', // Capacitor Android
+        'http://localhost', // Capacitor Android (http)
+        'https://localhost', // Capacitor Android (https)
         'ionic://localhost', // Ionic (si utilisé)
         'https://cqapi.ada.briceledanois.fr', // Production frontend (si besoin)
       ],
