@@ -25,12 +25,12 @@ const STRAPI_BASE_URL = process.env.STRAPI_BASE_URL || 'http://localhost:1337';
 const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 const SEARCH_TYPES = [
-  'tourist_attraction', 'museum', 'historical_place', 'park', 'church',
+  'tourist_attraction', 'museum', 'park', 'church',
 ];
 
 const CULTURAL_TYPES = [
   'art_gallery', 'auditorium', 'performing_arts_theater',
-  'historical_place', 'monument', 'museum', 'sculpture',
+  'monument', 'museum', 'sculpture',
   'church', 'mosque', 'synagogue', 'hindu_temple', 'place_of_worship',
   'tourist_attraction', 'park', 'cemetery',
 ];
@@ -235,13 +235,22 @@ async function scanEpci(epci: EpciEntry, deptNom: string, regionNom: string): Pr
         const res = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
           params: { location: `${pt.lat},${pt.lng}`, radius: radiusM, type, key: GOOGLE_MAPS_API_KEY },
         });
-        for (const p of res.data.results as Record<string, unknown>[]) {
-          const id = p.place_id as string;
-          if (!seen.has(id)) {
-            seen.set(id, { ...p, _sourceEpci: epci.nom, _sourceDept: deptNom, _sourceRegion: regionNom });
+
+        if (res.data.status !== 'OK' && res.data.status !== 'ZERO_RESULTS') {
+          console.error(`  ⚠️ Google API Error [${res.data.status}]: ${res.data.error_message || 'No message'}`);
+        }
+
+        if (res.data.results) {
+          for (const p of res.data.results as Record<string, unknown>[]) {
+            const id = p.place_id as string;
+            if (!seen.has(id)) {
+              seen.set(id, { ...p, _sourceEpci: epci.nom, _sourceDept: deptNom, _sourceRegion: regionNom });
+            }
           }
         }
-      } catch { /* silencer erreurs réseau par type */ }
+      } catch (e: any) {
+        console.error(`  ⚠️ Network/Request Error: ${e.message}`);
+      }
     }
     await new Promise(r => setTimeout(r, 250));
   }
@@ -377,6 +386,9 @@ async function main() {
     process.exit(1);
   }
 
+  console.log(`🔑 Google Maps API Key: ${GOOGLE_MAPS_API_KEY.substring(0, 4)}...${GOOGLE_MAPS_API_KEY.substring(GOOGLE_MAPS_API_KEY.length - 4)}`);
+  console.log(`🔑 Gemini API Key:      ${GEMINI_API_KEY.substring(0, 4)}...${GEMINI_API_KEY.substring(GEMINI_API_KEY.length - 4)}`);
+
   const dataPath = path.join(__dirname, 'comcoms-data.json');
   if (!fs.existsSync(dataPath)) {
     console.error('❌ comcoms-data.json introuvable.');
@@ -399,22 +411,25 @@ async function main() {
     console.log(`   [${d.code}] ${d.nom} — ${d.epci.length} EPCI`);
   });
 
-  // Collecter tous les EPCIs
-  const selectedEpcis: { epci: EpciEntry; dept: DepartmentEntry }[] = [];
+  // Collecter tous les EPCIs (Dédupliqués par code pour éviter les scans multiples du Grand Paris)
+  const epciMap = new Map<string, { epci: EpciEntry; dept: DepartmentEntry }>();
   for (const dept of idfDepartments) {
     for (const epci of dept.epci) {
-      selectedEpcis.push({ epci, dept });
+      if (!epciMap.has(epci.code)) {
+        epciMap.set(epci.code, { epci, dept });
+      }
     }
   }
+  const selectedEpcis = [...epciMap.values()];
 
   const totalPoints = selectedEpcis.reduce(
     (sum, { epci }) => sum + generateSearchPoints(epci.bbox).points.length, 0
   );
 
-  console.log('\n📋 Résumé :');
+  console.log('\n📋 Résumé (Après déduplication) :');
   console.log(`   Départements :  ${idfDepartments.length}`);
-  console.log(`   EPCIs :          ${selectedEpcis.length}`);
-  console.log(`   Points search :  ${totalPoints}`);
+  console.log(`   EPCIs uniques : ${selectedEpcis.length}`);
+  console.log(`   Points search : ${totalPoints}`);
   console.log(`   Requêtes API est.: ${totalPoints * SEARCH_TYPES.length} (Google Maps)\n`);
 
   const { go } = await inquirer.prompt([{

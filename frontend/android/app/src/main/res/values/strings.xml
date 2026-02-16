@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CulturiaQuests</string>
+    <string name="title_activity_main">CulturiaQuests</string>
+    <string name="package_name">fr.briceledanois.culturiaquests</string>
+    <string name="custom_url_scheme">fr.briceledanois.culturiaquests</string>
+</resources>

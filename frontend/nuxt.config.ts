@@ -13,7 +13,6 @@ export default defineNuxtConfig({
     '@nuxtjs/tailwindcss',
     '@hypernym/nuxt-anime',
     '@nuxtjs/strapi',
-    '@nuxtjs/device',
     'pinia-plugin-persistedstate/nuxt',
     '@nuxtjs/leaflet',
     'nuxt-charts',
@@ -61,7 +60,6 @@ export default defineNuxtConfig({
       strapi: {
         url: 'http://localhost:1337', // Public URL for Client
       },
-      allowDesktop: process.env.NUXT_PUBLIC_ALLOW_DESKTOP || 'false',
     },
   },
   strapi: {

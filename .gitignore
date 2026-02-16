@@ -102,6 +102,26 @@ backend/.tmp/
 docker-compose.override.yml
 
 # ============================================
+# CAPACITOR / ANDROID
+# ============================================
+
+# Android build outputs
+frontend/android/.gradle/
+frontend/android/.idea/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/local.properties
+frontend/android/.cxx/
+frontend/android/captures/
+
+# Capacitor generated files
+frontend/android/app/src/main/assets/capacitor.config.json
+frontend/android/app/src/main/assets/public/
+
+# iOS (si ajouté plus tard)
+frontend/ios/
+
+# ============================================
 # IDE ET ÉDITEURS
 # ============================================
 
