@@ -38,15 +38,23 @@
       "target": "api::run.run",
       "mappedBy": "museum"
     },
-    "location": {
-      "type": "customField",
-      "customField": "plugin::geodata.geojson",
-      "options": {
-        "info": true
-      }
-    },
     "radius": {
       "type": "integer"
+    },
+    "region": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::region.region"
+    },
+    "department": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::department.department"
+    },
+    "comcom": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::comcom.comcom"
     }
   }
 }

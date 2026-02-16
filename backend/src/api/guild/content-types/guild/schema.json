@@ -96,6 +96,12 @@
       "type": "integer",
       "default": 0,
       "min": 0
+    },
+    "progressions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::progression.progression",
+      "mappedBy": "guild"
     }
   }
 }

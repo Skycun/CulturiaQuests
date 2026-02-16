@@ -430,54 +430,6 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiAdminActionLogAdminActionLog
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'admin_action_logs';
-  info: {
-    description: 'Audit log for admin actions';
-    displayName: 'Admin Action Log';
-    pluralName: 'admin-action-logs';
-    singularName: 'admin-action-log';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    action: Schema.Attribute.Enumeration<
-      [
-        'BLOCK_USER',
-        'UNBLOCK_USER',
-        'CHANGE_ROLE_TO_ADMIN',
-        'CHANGE_ROLE_TO_AUTHENTICATED',
-      ]
-    > &
-      Schema.Attribute.Required;
-    admin: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    details: Schema.Attribute.JSON;
-    ip_address: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::admin-action-log.admin-action-log'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    target_user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   collectionName: 'characters';
   info: {
@@ -510,36 +462,75 @@ export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiConnectionLogConnectionLog
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'connection_logs';
+export interface ApiComcomComcom extends Struct.CollectionTypeSchema {
+  collectionName: 'comcoms';
   info: {
-    displayName: 'Connection Log';
-    pluralName: 'connection-logs';
-    singularName: 'connection-log';
+    description: 'Communaut\u00E9s de communes (EPCI)';
+    displayName: 'Comcom';
+    pluralName: 'comcoms';
+    singularName: 'comcom';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    connected_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    department: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::department.department'
+    >;
+    geometry: Schema.Attribute.JSON & Schema.Attribute.Required;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::connection-log.connection-log'
+      'api::comcom.comcom'
     > &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
+  };
+}
+
+export interface ApiDepartmentDepartment extends Struct.CollectionTypeSchema {
+  collectionName: 'departments';
+  info: {
+    description: 'D\u00E9partements administratifs';
+    displayName: 'Department';
+    pluralName: 'departments';
+    singularName: 'department';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    comcoms: Schema.Attribute.Relation<'oneToMany', 'api::comcom.comcom'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    geometry: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::department.department'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    region: Schema.Attribute.Relation<'manyToOne', 'api::region.region'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -649,28 +640,12 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::guild.guild'> &
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
-    player_friendships_received: Schema.Attribute.Relation<
+    progressions: Schema.Attribute.Relation<
       'oneToMany',
-      'api::player-friendship.player-friendship'
-    >;
-    player_friendships_sent: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::player-friendship.player-friendship'
+      'api::progression.progression'
     >;
     publishedAt: Schema.Attribute.DateTime;
     quests: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
-    quiz_attempts: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-attempt.quiz-attempt'
-    >;
-    quiz_streak: Schema.Attribute.Integer &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
     scrap: Schema.Attribute.Integer &
       Schema.Attribute.Required &
@@ -739,9 +714,14 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    comcom: Schema.Attribute.Relation<'manyToOne', 'api::comcom.comcom'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    department: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::department.department'
+    >;
     geohash: Schema.Attribute.String;
     lat: Schema.Attribute.Float;
     lng: Schema.Attribute.Float;
@@ -751,16 +731,10 @@ export interface ApiMuseumMuseum extends Struct.CollectionTypeSchema {
       'api::museum.museum'
     > &
       Schema.Attribute.Private;
-    location: Schema.Attribute.JSON &
-      Schema.Attribute.CustomField<
-        'plugin::geodata.geojson',
-        {
-          info: true;
-        }
-      >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     radius: Schema.Attribute.Integer;
+    region: Schema.Attribute.Relation<'manyToOne', 'api::region.region'>;
     runs: Schema.Attribute.Relation<'oneToMany', 'api::run.run'>;
     tags: Schema.Attribute.Relation<'manyToMany', 'api::tag.tag'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -812,39 +786,6 @@ export interface ApiNpcNpc extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiPlayerFriendshipPlayerFriendship
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'player_friendships';
-  info: {
-    displayName: 'Player Friendship';
-    pluralName: 'player-friendships';
-    singularName: 'player-friendship';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::player-friendship.player-friendship'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    receiver: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
-    requester: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
-    status: Schema.Attribute.Enumeration<['pending', 'accepted', 'rejected']> &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'pending'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
   collectionName: 'pois';
   info: {
@@ -856,30 +797,65 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    comcom: Schema.Attribute.Relation<'manyToOne', 'api::comcom.comcom'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    department: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::department.department'
+    >;
     geohash: Schema.Attribute.String;
     lat: Schema.Attribute.Float;
     lng: Schema.Attribute.Float;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::poi.poi'> &
       Schema.Attribute.Private;
-    location: Schema.Attribute.JSON &
-      Schema.Attribute.CustomField<
-        'plugin::geodata.geojson',
-        {
-          info: true;
-        }
-      >;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     quests_a: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
     quests_b: Schema.Attribute.Relation<'oneToMany', 'api::quest.quest'>;
+    region: Schema.Attribute.Relation<'manyToOne', 'api::region.region'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     visits: Schema.Attribute.Relation<'oneToMany', 'api::visit.visit'>;
+  };
+}
+
+export interface ApiProgressionProgression extends Struct.CollectionTypeSchema {
+  collectionName: 'progressions';
+  info: {
+    description: 'Suivi de la progression des guildes par zone';
+    displayName: 'Progression';
+    pluralName: 'progressions';
+    singularName: 'progression';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    comcom: Schema.Attribute.Relation<'manyToOne', 'api::comcom.comcom'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    department: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::department.department'
+    >;
+    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
+    is_completed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::progression.progression'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    region: Schema.Attribute.Relation<'manyToOne', 'api::region.region'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -925,145 +901,6 @@ export interface ApiQuestQuest extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiQuizAttemptQuizAttempt extends Struct.CollectionTypeSchema {
-  collectionName: 'quiz_attempts';
-  info: {
-    displayName: 'Quiz Attempt';
-    pluralName: 'quiz-attempts';
-    singularName: 'quiz-attempt';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    answers: Schema.Attribute.JSON & Schema.Attribute.Required;
-    completed_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    guild: Schema.Attribute.Relation<'manyToOne', 'api::guild.guild'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-attempt.quiz-attempt'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    rewards: Schema.Attribute.JSON;
-    score: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          max: 2500;
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    session: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::quiz-session.quiz-session'
-    >;
-    time_spent_seconds: Schema.Attribute.Integer;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiQuizQuestionQuizQuestion
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'quiz_questions';
-  info: {
-    displayName: 'Quiz Question';
-    pluralName: 'quiz-questions';
-    singularName: 'quiz-question';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    correct_answer: Schema.Attribute.String & Schema.Attribute.Required;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    explanation: Schema.Attribute.Text;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-question.quiz-question'
-    > &
-      Schema.Attribute.Private;
-    options: Schema.Attribute.JSON;
-    order: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          max: 10;
-          min: 1;
-        },
-        number
-      >;
-    publishedAt: Schema.Attribute.DateTime;
-    question_text: Schema.Attribute.Text & Schema.Attribute.Required;
-    question_type: Schema.Attribute.Enumeration<['qcm', 'timeline']> &
-      Schema.Attribute.Required;
-    session: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::quiz-session.quiz-session'
-    >;
-    tag: Schema.Attribute.Relation<'manyToOne', 'api::tag.tag'>;
-    timeline_range: Schema.Attribute.JSON;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiQuizSessionQuizSession extends Struct.CollectionTypeSchema {
-  collectionName: 'quiz_sessions';
-  info: {
-    displayName: 'Quiz Session';
-    pluralName: 'quiz-sessions';
-    singularName: 'quiz-session';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    attempts: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-attempt.quiz-attempt'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    date: Schema.Attribute.Date &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    generated_at: Schema.Attribute.DateTime;
-    generation_error: Schema.Attribute.Text;
-    generation_status: Schema.Attribute.Enumeration<
-      ['pending', 'generating', 'completed', 'failed']
-    > &
-      Schema.Attribute.DefaultTo<'pending'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-session.quiz-session'
-    > &
-      Schema.Attribute.Private;
-    publishedAt: Schema.Attribute.DateTime;
-    questions: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::quiz-question.quiz-question'
-    >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
 export interface ApiRarityRarity extends Struct.CollectionTypeSchema {
   collectionName: 'rarities';
   info: {
@@ -1083,6 +920,43 @@ export interface ApiRarityRarity extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::rarity.rarity'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiRegionRegion extends Struct.CollectionTypeSchema {
+  collectionName: 'regions';
+  info: {
+    description: 'R\u00E9gions administratives';
+    displayName: 'Region';
+    pluralName: 'regions';
+    singularName: 'region';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    departments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::department.department'
+    >;
+    geometry: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::region.region'
     > &
       Schema.Attribute.Private;
     name: Schema.Attribute.String & Schema.Attribute.Required;
@@ -1657,7 +1531,6 @@ export interface PluginUsersPermissionsUser
   };
   attributes: {
     age: Schema.Attribute.Integer;
-    avatar: Schema.Attribute.Media<'images'>;
     blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     confirmationToken: Schema.Attribute.String & Schema.Attribute.Private;
     confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
@@ -1669,8 +1542,6 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
-    friend_requests_enabled: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<true>;
     guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -1713,22 +1584,20 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
-      'api::admin-action-log.admin-action-log': ApiAdminActionLogAdminActionLog;
       'api::character.character': ApiCharacterCharacter;
-      'api::connection-log.connection-log': ApiConnectionLogConnectionLog;
+      'api::comcom.comcom': ApiComcomComcom;
+      'api::department.department': ApiDepartmentDepartment;
       'api::dialog.dialog': ApiDialogDialog;
       'api::friendship.friendship': ApiFriendshipFriendship;
       'api::guild.guild': ApiGuildGuild;
       'api::item.item': ApiItemItem;
       'api::museum.museum': ApiMuseumMuseum;
       'api::npc.npc': ApiNpcNpc;
-      'api::player-friendship.player-friendship': ApiPlayerFriendshipPlayerFriendship;
       'api::poi.poi': ApiPoiPoi;
+      'api::progression.progression': ApiProgressionProgression;
       'api::quest.quest': ApiQuestQuest;
-      'api::quiz-attempt.quiz-attempt': ApiQuizAttemptQuizAttempt;
-      'api::quiz-question.quiz-question': ApiQuizQuestionQuizQuestion;
-      'api::quiz-session.quiz-session': ApiQuizSessionQuizSession;
       'api::rarity.rarity': ApiRarityRarity;
+      'api::region.region': ApiRegionRegion;
       'api::run.run': ApiRunRun;
       'api::tag.tag': ApiTagTag;
       'api::visit.visit': ApiVisitVisit;

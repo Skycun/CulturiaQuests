@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "comcoms",
+  "info": {
+    "singularName": "comcom",
+    "pluralName": "comcoms",
+    "displayName": "Comcom",
+    "description": "Communautés de communes (EPCI)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "geometry": {
+      "type": "json",
+      "required": true
+    },
+    "department": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::department.department",
+      "inversedBy": "comcoms"
+    }
+  }
+}

@@ -4,6 +4,7 @@
   "scripts": {
     "import:city": "tsx interactive-import.ts",
     "import:comcom": "tsx comcom-import.ts",
+    "import:manche": "tsx manche-import.ts",
     "import:json": "tsx import-from-json.ts",
     "import:legacy": "tsx pois-importer.ts",
     "generate:comcoms": "tsx generate-comcoms-data.ts"

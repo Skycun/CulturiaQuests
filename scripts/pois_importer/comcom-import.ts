@@ -131,6 +131,7 @@ function generateSearchPoints(bbox: BBox): { points: SearchPoint[]; radiusM: num
 class StrapiClient {
   private client: AxiosInstance;
   private tagCache = new Map<string, number>();
+  private zoneCache = new Map<string, number>(); // Cache "collection:name" -> id
 
   constructor(baseURL: string, token: string) {
     this.client = axios.create({
@@ -167,27 +168,68 @@ class StrapiClient {
     }
   }
 
+  async findZoneId(collection: string, name: string): Promise<number | null> {
+    if (!name) return null;
+    const cacheKey = `${collection}:${name}`;
+    if (this.zoneCache.has(cacheKey)) return this.zoneCache.get(cacheKey)!;
+
+    const existing = await this.findOne(collection, { 'filters[name][$eq]': name });
+    if (existing) {
+      this.zoneCache.set(cacheKey, existing.id);
+      return existing.id;
+    }
+    return null;
+  }
+
   async importPOI(poi: POIOutput): Promise<boolean> {
     const collection = poi.type === 'museum' ? 'museums' : 'pois';
 
-    const existing = await this.findOne(collection, { 'filters[name][$eq]': poi.name });
-    if (existing) {
-      console.log(`⚠️  ${poi.name} existe déjà (ID: ${existing.id}). Skip.`);
+    // 1. Check existence (Name + Location)
+    let duplicate = null;
+    try {
+      const res = await this.client.get(`/api/${collection}`, { 
+        params: { 
+          'filters[name][$eq]': poi.name,
+          'fields[0]': 'lat',
+          'fields[1]': 'lng'
+        } 
+      });
+      const candidates = res.data.data;
+      duplicate = candidates.find((c: any) => {
+        const dLat = Math.abs((c.lat || 0) - poi.latitude);
+        const dLng = Math.abs((c.lng || 0) - poi.longitude);
+        return dLat < 0.0001 && dLng < 0.0001;
+      });
+    } catch { /* proceed */ }
+
+    if (duplicate) {
+      // console.log(`⚠️  ${poi.name} existe déjà au même endroit. Skip.`);
       return false;
     }
 
+    // 2. Tags
     const tagIds: number[] = [];
     for (const cat of poi.categories) {
       const id = await this.getOrCreateTag(cat);
       if (id) tagIds.push(id);
     }
 
+    // 3. Zones
+    const regionId = await this.findZoneId('regions', poi.region);
+    const deptId = await this.findZoneId('departments', poi.department);
+    const comcomId = await this.findZoneId('comcoms', poi.epci);
+
+    // 4. Payload
     const payload: Record<string, unknown> = {
       name: poi.name,
       lat: poi.latitude,
       lng: poi.longitude,
-      location: { lat: poi.latitude, lng: poi.longitude },
     };
+
+    if (regionId) payload.region = regionId;
+    if (deptId) payload.department = deptId;
+    if (comcomId) payload.comcom = comcomId;
+
     if (poi.type === 'museum') {
       payload.radius = poi.radiusMeters;
       if (tagIds.length) payload.tags = { connect: tagIds };

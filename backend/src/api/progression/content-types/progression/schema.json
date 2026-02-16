@@ -1,0 +1,41 @@
+{
+  "kind": "collectionType",
+  "collectionName": "progressions",
+  "info": {
+    "singularName": "progression",
+    "pluralName": "progressions",
+    "displayName": "Progression",
+    "description": "Suivi de la progression des guildes par zone"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "is_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "guild": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guild.guild",
+      "inversedBy": "progressions"
+    },
+    "region": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::region.region"
+    },
+    "department": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::department.department"
+    },
+    "comcom": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::comcom.comcom"
+    }
+  }
+}

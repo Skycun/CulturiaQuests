@@ -43,6 +43,14 @@ export const useRunStore = defineStore('run', () => {
     }, 0)
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hasVisitedMuseum = computed(() => (museumId: number) => {
+    return runs.value.some((r: any) => {
+      const rMuseumId = r.museum?.data?.id || r.museum?.id
+      return rMuseumId === museumId
+    })
+  })
+
   // Actions
   function setRuns(data: Run[]) {
     runs.value = data
@@ -188,6 +196,7 @@ export const useRunStore = defineStore('run', () => {
     completedRuns,
     totalGoldEarned,
     totalExpEarned,
+    hasVisitedMuseum,
     // Actions
     setRuns,
     clearRuns,
