@@ -34,6 +34,15 @@
         >
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </PixelButton>
+
+        <div class="text-center mt-4">
+          <p class="text-sm font-pixel">
+            Pas encore de compte ?
+            <NuxtLink to="/account/register" class="text-indigo-600 hover:underline">
+              S'inscrire
+            </NuxtLink>
+          </p>
+        </div>
       </form>
     </div>
   </div>
