@@ -49,11 +49,12 @@ export const useMuseumStore = defineStore('museum', () => {
     const config = useRuntimeConfig()
     loading.value = true
     const allMuseums: any[] = []
+    const MAX_PAGES = 200
     let page = 1
     let hasMore = true
 
     try {
-      while (hasMore) {
+      while (hasMore && page <= MAX_PAGES) {
         const response: any = await $fetch(`${config.public.strapi.url}/api/museums`, {
           query: {
             'pagination[page]': page,

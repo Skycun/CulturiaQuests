@@ -28,6 +28,9 @@ export const useFogStore = defineStore('fog', () => {
     return gridSetsCache.get(comcomDocId)!
   }
 
+  const MAX_DISCOVERED_POINTS = 5000
+  const EVICT_BATCH_SIZE = 500
+
   // Actions
   function addPosition(lat: number, lng: number) {
     const lastPoint = discoveredPoints.value[discoveredPoints.value.length - 1]
@@ -35,6 +38,10 @@ export const useFogStore = defineStore('fog', () => {
     if (lastPoint) {
       const dist = calculateDistance(lastPoint.lat, lastPoint.lng, lat, lng)
       if (dist < 0.02) return // 20 mètres minimum
+    }
+
+    if (discoveredPoints.value.length >= MAX_DISCOVERED_POINTS) {
+      discoveredPoints.value.splice(0, EVICT_BATCH_SIZE)
     }
 
     discoveredPoints.value.push({ lat, lng })

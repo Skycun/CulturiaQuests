@@ -13,8 +13,8 @@ module.exports = {
 };
 
 async function checkAndCompleteParent(event) {
-  const { result, params } = event;
-  
+  const { result } = event;
+
   // On ne s'intéresse qu'aux progressions validées
   if (!result.is_completed) return;
 
@@ -22,13 +22,14 @@ async function checkAndCompleteParent(event) {
   // Si le populate n'a pas été fait, on le refetch
   let progression = result;
   if (!progression.guild || !progression.comcom || !progression.department) {
-    progression = await strapi.entityService.findOne('api::progression.progression', result.id, {
+    progression = await strapi.documents('api::progression.progression').findOne({
+      documentId: result.documentId,
       populate: ['guild', 'comcom', 'comcom.department', 'department', 'department.region']
     });
   }
 
-  const guildId = progression.guild?.id;
-  if (!guildId) return;
+  const guildDocId = progression.guild?.documentId;
+  if (!guildDocId) return;
 
   // CAS 1 : C'est une COMCOM -> Vérifier le Département
   if (progression.comcom) {
@@ -36,11 +37,11 @@ async function checkAndCompleteParent(event) {
     if (!department) return; // Comcom orpheline
 
     await tryCompleteParent(
-      'api::comcom.comcom',     // Child Type
-      'api::department.department', // Parent Type
-      'department',             // Relation field name in Child
-      department.id,            // Parent ID
-      guildId                   // Guild ID
+      'api::comcom.comcom',           // Child Type
+      'api::department.department',   // Parent Type
+      'department',                   // Relation field name in Child
+      department.documentId,          // Parent documentId
+      guildDocId                      // Guild documentId
     );
   }
 
@@ -53,8 +54,8 @@ async function checkAndCompleteParent(event) {
       'api::department.department',
       'api::region.region',
       'region',
-      region.id,
-      guildId
+      region.documentId,
+      guildDocId
     );
   }
 }
@@ -63,62 +64,57 @@ async function checkAndCompleteParent(event) {
  * Vérifie si tous les enfants d'un parent sont complétés par la guilde.
  * Si oui, crée la progression pour le parent.
  */
-async function tryCompleteParent(childType, parentType, relationField, parentId, guildId) {
+async function tryCompleteParent(childType, parentType, relationField, parentDocId, guildDocId) {
   // 1. Compter le nombre TOTAL d'enfants pour ce parent
-  const totalChildren = await strapi.entityService.count(childType, {
+  const totalChildren = await strapi.documents(childType).count({
     filters: {
-      [relationField]: parentId
+      [relationField]: { documentId: parentDocId }
     }
   });
 
   if (totalChildren === 0) return;
 
   // 2. Compter le nombre d'enfants COMPLÉTÉS par la guilde
-  // On cherche les progressions qui :
-  // - Sont liées à la guilde
-  // - Sont completed
-  // - Dont l'objet lié (ex: comcom) a pour parent (ex: dept) le parentId
-  
-  // Il faut trouver le nom du champ dans Progression qui correspond au childType (ex: 'comcom' ou 'department')
   const progressionField = childType.split('.')[1]; // 'comcom' ou 'department'
 
-  const completedChildren = await strapi.entityService.count('api::progression.progression', {
+  const completedChildren = await strapi.documents('api::progression.progression').count({
     filters: {
-      guild: guildId,
+      guild: { documentId: guildDocId },
       is_completed: true,
       [progressionField]: {
-        [relationField]: parentId
+        [relationField]: { documentId: parentDocId }
       }
     }
   });
 
-  console.log(`[Progression] Checking parent ${parentType} (${parentId}): ${completedChildren}/${totalChildren} children completed.`);
+  strapi.log.info(`[Progression] Checking parent ${parentType} (${parentDocId}): ${completedChildren}/${totalChildren} children completed.`);
 
   // 3. Si tout est complété, on valide le parent
   if (completedChildren >= totalChildren) {
     const parentProgressionField = parentType.split('.')[1]; // 'department' ou 'region'
 
     // Vérifier si la progression parent existe déjà
-    const existingParentProgression = await strapi.entityService.findMany('api::progression.progression', {
+    const existingParentProgressions = await strapi.documents('api::progression.progression').findMany({
       filters: {
-        guild: guildId,
-        [parentProgressionField]: parentId
+        guild: { documentId: guildDocId },
+        [parentProgressionField]: { documentId: parentDocId }
       },
       limit: 1
     });
 
-    if (existingParentProgression.length === 0) {
-      console.log(`[Progression] ✨ Auto-completing parent ${parentType} (${parentId}) for guild ${guildId}`);
-      await strapi.entityService.create('api::progression.progression', {
+    if (existingParentProgressions.length === 0) {
+      strapi.log.info(`[Progression] Auto-completing parent ${parentType} (${parentDocId}) for guild ${guildDocId}`);
+      await strapi.documents('api::progression.progression').create({
         data: {
           is_completed: true,
-          guild: guildId,
-          [parentProgressionField]: parentId
+          guild: guildDocId,
+          [parentProgressionField]: parentDocId
         }
       });
-    } else if (!existingParentProgression[0].is_completed) {
-      console.log(`[Progression] ✨ Auto-completing existing parent ${parentType} (${parentId})`);
-      await strapi.entityService.update('api::progression.progression', existingParentProgression[0].id, {
+    } else if (!existingParentProgressions[0].is_completed) {
+      strapi.log.info(`[Progression] Auto-completing existing parent ${parentType} (${parentDocId})`);
+      await strapi.documents('api::progression.progression').update({
+        documentId: existingParentProgressions[0].documentId,
         data: { is_completed: true }
       });
     }

@@ -48,11 +48,12 @@ export const usePOIStore = defineStore('poi', () => {
     const config = useRuntimeConfig()
     loading.value = true
     const allPois: any[] = []
+    const MAX_PAGES = 200
     let page = 1
     let hasMore = true
 
     try {
-      while (hasMore) {
+      while (hasMore && page <= MAX_PAGES) {
         const response: any = await $fetch(`${config.public.strapi.url}/api/pois`, {
           query: {
             'pagination[page]': page,

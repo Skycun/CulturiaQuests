@@ -6,7 +6,7 @@ import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
 import { useVisitStore } from '~/stores/visit'
 import { useRunStore } from '~/stores/run'
-import { isPointInGeoJSON } from '~/utils/geometry'
+import { isPointInGeoJSON, computeGeoJSONArea } from '~/utils/geometry'
 
 const COMPLETION_THRESHOLD = 0.5 // 50%
 
@@ -64,42 +64,12 @@ export function useZoneCompletion() {
     const geometry = comcom.geometry
     if (!geometry) return 0
 
-    // Calculer la bounding box
-    let minLat = Infinity, maxLat = -Infinity
-    let minLng = Infinity, maxLng = -Infinity
+    // Calcul via la formule du Shoelace : aire du polygone / aire d'une cellule
+    // O(n vertices) au lieu de O(n cells × n vertices)
+    const areaDeg2 = computeGeoJSONArea(geometry)
+    const cellArea = GRID_LAT_STEP * GRID_LNG_STEP
+    const count = Math.max(Math.round(areaDeg2 / cellArea), 1)
 
-    const extractBounds = (coords: any[]) => {
-      for (const coord of coords) {
-        const lng = coord[0]
-        const lat = coord[1]
-        if (lat < minLat) minLat = lat
-        if (lat > maxLat) maxLat = lat
-        if (lng < minLng) minLng = lng
-        if (lng > maxLng) maxLng = lng
-      }
-    }
-
-    if (geometry.type === 'Polygon') {
-      extractBounds(geometry.coordinates[0])
-    } else if (geometry.type === 'MultiPolygon') {
-      for (const poly of geometry.coordinates) {
-        extractBounds(poly[0])
-      }
-    }
-
-    if (minLat === Infinity) return 0
-
-    // Générer les points de grille et compter ceux dans le polygone
-    let count = 0
-    for (let lat = minLat; lat <= maxLat; lat += GRID_LAT_STEP) {
-      for (let lng = minLng; lng <= maxLng; lng += GRID_LNG_STEP) {
-        if (isPointInGeoJSON([lat, lng], geometry)) {
-          count++
-        }
-      }
-    }
-
-    count = Math.max(count, 1)
     fogStore.setTotalGridCells(docId, count)
     return count
   }

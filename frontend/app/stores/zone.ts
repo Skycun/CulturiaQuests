@@ -103,11 +103,12 @@ export const useZoneStore = defineStore('zone', () => {
   async function fetchFullCollection(endpoint: string): Promise<any[]> {
     const config = useRuntimeConfig()
     const pageSize = 100
+    const MAX_PAGES = 200
     let page = 1
     let hasMore = true
     const allItems: any[] = []
 
-    while (hasMore) {
+    while (hasMore && page <= MAX_PAGES) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response: any = await $fetch(`${config.public.strapi.url}/api/${endpoint}`, {
         query: {
