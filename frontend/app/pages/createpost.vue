@@ -94,9 +94,6 @@
                              :class="showLoot ? 'border-orange-200 bg-orange-50/30' : 'border-gray-100 bg-white grayscale'"
                         >
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center border-2 border-orange-100 shadow-inner">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                                </div>
                                 <div>
                                     <span class="text-[9px] text-orange-400 font-bold uppercase block tracking-wider mb-0.5">Meilleur Loot</span>
                                     <span class="font-bold text-slate-800 text-sm block leading-tight">{{ selectedRun.stats.bestLoot }}</span>

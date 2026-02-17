@@ -32,7 +32,6 @@
                          :class="editedShowLoot ? 'bg-orange-50/50' : 'bg-white opacity-60'"
                     >
                         <div class="flex items-center gap-3">
-                            <span class="text-lg">🎁</span>
                             <span class="font-bold text-slate-700 text-sm">Afficher le loot</span>
                         </div>
                         <div class="w-10 h-5 rounded-full transition-colors relative" :class="editedShowLoot ? 'bg-orange-400' : 'bg-gray-200'">
