@@ -33,6 +33,10 @@
       "type": "boolean",
       "default": false
     },
+    "quiz_streak": {
+      "type": "integer",
+      "default": 0
+    },
     "user": {
       "type": "relation",
       "relation": "oneToOne",
@@ -74,6 +78,18 @@
       "target": "api::quest.quest",
       "mappedBy": "guild"
     },
+    "unlocked_badges": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::badge.badge",
+      "inversedBy": "guilds_unlocked"
+    },
+    "equipped_badges": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::badge.badge",
+      "inversedBy": "guilds_equipped"
+    },
     "player_friendships_sent": {
       "type": "relation",
       "relation": "oneToMany",
@@ -91,11 +107,6 @@
       "relation": "oneToMany",
       "target": "api::quiz-attempt.quiz-attempt",
       "mappedBy": "guild"
-    },
-    "quiz_streak": {
-      "type": "integer",
-      "default": 0,
-      "min": 0
     }
   }
 }

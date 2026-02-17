@@ -74,15 +74,29 @@
     "age": {
       "type": "integer"
     },
-    "friend_requests_enabled": {
-      "type": "boolean",
-      "default": true
+    "friends": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "friends"
+    },
+    "posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::post.post",
+      "mappedBy": "author"
     },
     "avatar": {
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "friend_requests_enabled": {
+      "type": "boolean",
+      "default": true
     }
   }
 }

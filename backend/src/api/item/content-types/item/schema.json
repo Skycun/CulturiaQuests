@@ -82,6 +82,12 @@
         "videos",
         "audios"
       ]
+    },
+    "best_loot_posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::post.post",
+      "mappedBy": "best_loot"
     }
   }
 }

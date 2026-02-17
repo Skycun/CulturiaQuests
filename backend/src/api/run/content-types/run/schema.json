@@ -66,6 +66,12 @@
       "relation": "manyToMany",
       "target": "api::item.item",
       "mappedBy": "runs"
+    },
+    "posts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::post.post",
+      "mappedBy": "run_history"
     }
   }
 }
