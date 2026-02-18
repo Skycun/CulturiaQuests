@@ -76,7 +76,7 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         sort: 'createdAt:desc',
         limit: 50, // On peut augmenter la limite car c'est filtré
         populate
-    });
+    }) as any[];
 
     // 3. Enrichissement (Likes & Protection Auteur)
     const sanitized = await this.sanitizeOutput(allPosts, ctx) as any[];
