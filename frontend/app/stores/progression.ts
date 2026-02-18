@@ -64,6 +64,9 @@ export const useProgressionStore = defineStore('progression', () => {
 
   return {
     progressions,
+    completedRegionIds,
+    completedDepartmentIds,
+    completedComcomIds,
     setProgressions,
     clearProgressions,
     isRegionCompleted,

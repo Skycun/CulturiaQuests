@@ -478,6 +478,43 @@ export interface ApiAdminActionLogAdminActionLog
   };
 }
 
+export interface ApiBadgeBadge extends Struct.CollectionTypeSchema {
+  collectionName: 'badges';
+  info: {
+    description: 'Badges collection for players';
+    displayName: 'Badge';
+    pluralName: 'badges';
+    singularName: 'badge';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    category: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    guilds_equipped: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::guild.guild'
+    >;
+    guilds_unlocked: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::guild.guild'
+    >;
+    image: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::badge.badge'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCharacterCharacter extends Struct.CollectionTypeSchema {
   collectionName: 'characters';
   info: {
@@ -743,6 +780,10 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     debug_mode: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    equipped_badges: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::badge.badge'
+    >;
     exp: Schema.Attribute.BigInteger & Schema.Attribute.DefaultTo<'0'>;
     friendships: Schema.Attribute.Relation<
       'oneToMany',
@@ -786,6 +827,10 @@ export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
     scrap: Schema.Attribute.Integer &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<0>;
+    unlocked_badges: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::badge.badge'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -808,6 +853,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    best_loot_posts: Schema.Attribute.Relation<'oneToMany', 'api::post.post'>;
     character: Schema.Attribute.Relation<
       'manyToOne',
       'api::character.character'
@@ -989,6 +1035,43 @@ export interface ApiPoiPoi extends Struct.CollectionTypeSchema {
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     visits: Schema.Attribute.Relation<'oneToMany', 'api::visit.visit'>;
+  };
+}
+
+export interface ApiPostPost extends Struct.CollectionTypeSchema {
+  collectionName: 'posts';
+  info: {
+    description: 'Social posts sharing runs - Refacto Bento';
+    displayName: 'Post';
+    pluralName: 'posts';
+    singularName: 'post';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    author: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    best_loot: Schema.Attribute.Relation<'manyToOne', 'api::item.item'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    likes: Schema.Attribute.Relation<
+      'manyToMany',
+      'plugin::users-permissions.user'
+    >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::post.post'> &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    run_history: Schema.Attribute.Relation<'manyToOne', 'api::run.run'>;
+    show_loot: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    tags: Schema.Attribute.JSON;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -1303,6 +1386,7 @@ export interface ApiRunRun extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     museum: Schema.Attribute.Relation<'manyToOne', 'api::museum.museum'>;
     npc: Schema.Attribute.Relation<'manyToOne', 'api::npc.npc'>;
+    posts: Schema.Attribute.Relation<'oneToMany', 'api::post.post'>;
     publishedAt: Schema.Attribute.DateTime;
     target_threshold: Schema.Attribute.Integer;
     threshold_reached: Schema.Attribute.Integer &
@@ -1853,6 +1937,10 @@ export interface PluginUsersPermissionsUser
       }>;
     friend_requests_enabled: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<true>;
+    friends: Schema.Attribute.Relation<
+      'manyToMany',
+      'plugin::users-permissions.user'
+    >;
     guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
@@ -1865,6 +1953,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    posts: Schema.Attribute.Relation<'oneToMany', 'api::post.post'>;
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1896,6 +1985,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::admin-action-log.admin-action-log': ApiAdminActionLogAdminActionLog;
+      'api::badge.badge': ApiBadgeBadge;
       'api::character.character': ApiCharacterCharacter;
       'api::comcom.comcom': ApiComcomComcom;
       'api::connection-log.connection-log': ApiConnectionLogConnectionLog;
@@ -1909,6 +1999,7 @@ declare module '@strapi/strapi' {
       'api::npc.npc': ApiNpcNpc;
       'api::player-friendship.player-friendship': ApiPlayerFriendshipPlayerFriendship;
       'api::poi.poi': ApiPoiPoi;
+      'api::post.post': ApiPostPost;
       'api::progression.progression': ApiProgressionProgression;
       'api::quest.quest': ApiQuestQuest;
       'api::quiz-attempt.quiz-attempt': ApiQuizAttemptQuizAttempt;
