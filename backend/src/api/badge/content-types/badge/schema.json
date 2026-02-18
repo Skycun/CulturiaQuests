@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "badges",
+  "info": {
+    "singularName": "badge",
+    "pluralName": "badges",
+    "displayName": "Badge",
+    "description": "Badges collection for players"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "category": {
+      "type": "string"
+    },
+    "guilds_unlocked": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::guild.guild",
+      "mappedBy": "unlocked_badges"
+    },
+    "guilds_equipped": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::guild.guild",
+      "mappedBy": "equipped_badges"
+    }
+  }
+}

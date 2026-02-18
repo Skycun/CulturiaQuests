@@ -1,12 +1,46 @@
 export default defineNuxtRouteMiddleware((to) => {
   const user = useStrapiUser()
+  const config = useRuntimeConfig()
+  
+  // Device detection (might be undefined if module not loaded or SSR issue)
+  let isDesktop = false
+  try {
+    const device = useDevice()
+    if (device) {
+      isDesktop = device.isDesktop
+    }
+  } catch (e) {
+    // Fallback or ignore if useDevice is not available
+  }
+
+  // Allow desktop access if ALLOW_DESKTOP is set to true in .env
+  // Handle both string 'true' and boolean true
+  const allowDesktop = String(config.public.allowDesktop) === 'true'
+
+  // Dashboard routes are always allowed on desktop (admin panel)
+  const isDashboardRoute = to.path.startsWith('/dashboard')
+
+  // Check if user is on desktop and desktop access is not allowed
+  if (!allowDesktop && isDesktop && !isDashboardRoute) {
+    // Only allow access to /pc-error for desktop users
+    if (to.path !== '/pc-error') {
+      return navigateTo('/pc-error')
+    }
+    return
+  }
+
+  // Prevent access to /pc-error if user is not a desktop or desktop is allowed
+  if (to.path === '/pc-error') {
+    return navigateTo('/')
+  }
 
   // Define public routes accessible without authentication
   const publicRoutes = [
     '/',
     '/error',
     '/account/login',
-    '/account/register'
+    '/account/register',
+    '/pc-error'
   ]
 
   // Check authentication

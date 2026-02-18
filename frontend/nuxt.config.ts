@@ -1,4 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import path from 'path';
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   future: {
@@ -16,6 +18,7 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
     '@nuxtjs/leaflet',
     'nuxt-charts',
+    '@nuxtjs/device',
   ],
 
   // Configuration pinia-plugin-persistedstate
@@ -60,6 +63,7 @@ export default defineNuxtConfig({
       strapi: {
         url: 'http://localhost:1337', // Public URL for Client
       },
+      allowDesktop: 'false', // Overridden by NUXT_PUBLIC_ALLOW_DESKTOP at runtime
     },
   },
   strapi: {
@@ -73,6 +77,33 @@ export default defineNuxtConfig({
       secure: process.env.NODE_ENV === 'production',
     },
     cookieName: 'culturia_jwt',
+  },
+
+  // Configuration de la compilation
+  build: {
+    transpile: [
+      'kdbush', 
+      'd3-sankey', 
+      'd3-array', 
+      'd3-shape', 
+      'd3-path', 
+      'd3-hierarchy',
+      '@unovis/ts', 
+      '@unovis/vue'
+    ],
+  },
+
+  // Configuration Vite
+  vite: {
+    optimizeDeps: {
+      exclude: ['d3-sankey', '@unovis/ts', '@unovis/vue'],
+    },
+    resolve: {
+      alias: {
+        // Alias direct vers le fichier source pour contourner les problèmes de package.json
+        'd3-sankey': path.resolve(__dirname, 'node_modules/d3-sankey/src/index.js'),
+      },
+    },
   },
 
   // Configuration de pinia-plugin-persistedstate

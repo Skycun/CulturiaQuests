@@ -34,11 +34,13 @@ services:
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: development
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      HOST: 0.0.0.0
     volumes:
       - ./backend:/opt/app
       - backend_node_modules:/opt/app/node_modules
     ports:
       - "${PORT:-1337}:1337"
+      - "5173:5173"
     depends_on:
       database:
         condition: service_healthy  # ✅ Attend que Postgres soit prêt

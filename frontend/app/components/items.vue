@@ -39,6 +39,7 @@
 import { computed } from 'vue';
 // IMPORT DU COMPOSABLE (Source unique de vérité pour les dégâts)
 import { useDamageCalculator } from '~/composables/useDamageCalculator';
+import { formatCompactNumber } from '~/utils/format';
 
 const props = defineProps({
   level: { type: [Number, String], default: 1 },
@@ -62,14 +63,9 @@ const calculatedDamage = computed(() => {
   });
 });
 
-// --- 2. Formatage (12000 -> 12k) ---
+// --- 2. Formatage ---
 const formattedDamage = computed(() => {
-  const val = calculatedDamage.value;
-  if (!val) return "0";
-  if (val >= 1000) {
-    return (val / 1000).toFixed(1).replace('.0', '') + 'k';
-  }
-  return val.toString();
+  return formatCompactNumber(calculatedDamage.value);
 });
 
 // --- 3. Gestion des Couleurs (Dégradés) ---
