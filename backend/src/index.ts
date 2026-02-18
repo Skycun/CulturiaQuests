@@ -88,6 +88,7 @@ export default {
         'api::user-settings.user-settings.updateSettings',
         'api::user-settings.user-settings.uploadAvatar',
         'api::user-settings.user-settings.removeAvatar',
+        'api::user-settings.user-settings.deleteAccount',
         // Quiz permissions
         'api::quiz-session.quiz-session.find',
         'api::quiz-session.quiz-session.findOne',

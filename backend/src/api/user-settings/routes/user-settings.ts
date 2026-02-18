@@ -40,5 +40,14 @@ export default {
         middlewares: [],
       },
     },
+    {
+      method: 'DELETE',
+      path: '/user-settings/me',
+      handler: 'user-settings.deleteAccount',
+      config: {
+        policies: [],
+        middlewares: [],
+      },
+    },
   ],
 };
