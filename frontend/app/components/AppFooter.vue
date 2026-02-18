@@ -1,7 +1,7 @@
 <template>
   <div 
     v-show="isFooterVisible"
-    class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around py-3 z-[10000] transition-opacity duration-300"
+    class="fixed bottom-0 w-full bg-black/75 text-white flex justify-around pt-3 pb-6 z-[10000] transition-opacity duration-300"
     :class="{ 'opacity-0 pointer-events-none': !isFooterVisible }">
 
     <NuxtLink
@@ -10,7 +10,7 @@
       :to="item.path"
       class="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 transition-opacity w-20"
       active-class="opacity-100 text-yellow-400">
-      <Icon :name="item.icon" class="w-6 h-6 bg-white" />
+      <Icon :name="item.icon" class="w-6 h-6 bg-white"/>
       <span class="text-xs font-medium">{{ item.name }}</span>
     </NuxtLink>
 
