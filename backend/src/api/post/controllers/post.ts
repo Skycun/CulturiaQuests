@@ -44,17 +44,10 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     ];
 
     if (!user) {
-        const sanitizedQuery = await this.sanitizeQuery(ctx);
-        const results = await strapi.documents('api::post.post').findMany({
-             ...sanitizedQuery,
-             populate
-        });
-        const sanitized = await this.sanitizeOutput(results, ctx);
-        return this.transformResponse(sanitized);
+        return this.transformResponse([]);
     }
 
     // 1. Récupérer l'utilisateur avec ses amis
-    // On utilise query car entityService peut être capricieux sur le polymorphisme id/documentId
     const fullUser: any = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         populate: ['friends']
@@ -66,81 +59,26 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
     const friendDocIds = friends.map(f => f.documentId).filter(Boolean);
     const friendNumericIds = friends.map(f => f.id).filter(Boolean);
     
-    // On s'ajoute soi-même à la liste
+    // On s'ajoute soi-même à la liste pour voir nos propres posts
     if (user.documentId) friendDocIds.push(user.documentId);
     friendNumericIds.push(user.id);
 
-    // 2. Algorithme de tri (Priorité au dernier post de chaque ami sur les 7 derniers jours)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    // 2. Récupérer les posts du cercle social uniquement (Soi-même + Amis)
+    const allPosts = await strapi.documents('api::post.post').findMany({
+        filters: {
+            author: { 
+                $or: [
+                    { documentId: { $in: friendDocIds } },
+                    { id: { $in: friendNumericIds } }
+                ]
+            }
+        },
+        sort: 'createdAt:desc',
+        limit: 50, // On peut augmenter la limite car c'est filtré
+        populate
+    });
 
-    let priorityPosts = [];
-    let excludeDocIds = [];
-
-    // Boucle sur les amis pour prendre leur dernier post récent
-    // Note: Dans un environnement réel avec 1000 amis, on optimiserait via une seule query groupée
-    for (const fDocId of friendDocIds) {
-        const posts = await strapi.documents('api::post.post').findMany({
-            filters: {
-                author: { documentId: fDocId },
-                createdAt: { $gte: oneWeekAgo.toISOString() }
-            },
-            sort: 'createdAt:desc',
-            limit: 1,
-            populate
-        });
-
-        if (posts && posts.length > 0) {
-            priorityPosts.push(posts[0]);
-            excludeDocIds.push(posts[0].documentId);
-        }
-    }
-
-    // 3. Remplissage jusqu'à 30 avec les posts restants des AMIS
-    const remainingSlots = 30 - priorityPosts.length;
-    let fillerPosts = [];
-
-    if (remainingSlots > 0) {
-        fillerPosts = await strapi.documents('api::post.post').findMany({
-            filters: {
-                author: { 
-                    $or: [
-                        { documentId: { $in: friendDocIds } },
-                        { id: { $in: friendNumericIds } }
-                    ]
-                },
-                documentId: { $notIn: excludeDocIds }
-            },
-            sort: 'createdAt:desc',
-            limit: remainingSlots,
-            populate
-        });
-        
-        fillerPosts.forEach(p => excludeDocIds.push(p.documentId));
-    }
-
-    // 4. FALLBACK : Si on a toujours moins de 30 posts (ou si le feed est vide), 
-    // on prend les derniers posts PUBLICS de n'importe qui pour ne pas avoir un écran vide
-    const finalSlots = 30 - (priorityPosts.length + fillerPosts.length);
-    let discoveryPosts = [];
-    
-    if (finalSlots > 0) {
-        discoveryPosts = await strapi.documents('api::post.post').findMany({
-            filters: {
-                documentId: { $notIn: excludeDocIds }
-            },
-            sort: 'createdAt:desc',
-            limit: finalSlots,
-            populate
-        });
-    }
-
-    let allPosts = [...priorityPosts, ...fillerPosts, ...discoveryPosts];
-    
-    // Tri final par date
-    allPosts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // 5. Enrichissement (Likes & Protection Auteur)
+    // 3. Enrichissement (Likes & Protection Auteur)
     const sanitized = await this.sanitizeOutput(allPosts, ctx) as any[];
     
     const enriched = sanitized.map((post, index) => {

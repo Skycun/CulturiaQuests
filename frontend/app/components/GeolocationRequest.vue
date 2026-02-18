@@ -46,9 +46,21 @@ const emit = defineEmits<{
 // State
 const showRequest = ref<boolean>(false)
 const permissionState = ref<PermissionState | null>(null)
+const GEOLOC_CHOICE_KEY = 'culturia_geoloc_choice'
 
 // Vérifier l'état de la permission de géolocalisation
 async function checkGeolocationPermission(): Promise<void> {
+  // 1. Vérifier si un choix a déjà été fait localement
+  const savedChoice = localStorage.getItem(GEOLOC_CHOICE_KEY)
+  if (savedChoice === 'allow') {
+    emit('allow')
+    return
+  } else if (savedChoice === 'deny') {
+    emit('deny')
+    return
+  }
+
+  // 2. Si pas de choix enregistré, essayer l'API Permissions
   if (!navigator.geolocation) {
     console.warn('Geolocation not supported')
     showRequest.value = true
@@ -56,23 +68,27 @@ async function checkGeolocationPermission(): Promise<void> {
   }
 
   try {
-    // Vérifier si l'API Permissions est disponible
-    if (!navigator.permissions) {
-      // Si l'API n'est pas disponible, afficher la demande
+    // Vérifier si l'API Permissions est disponible (souvent absente sur certains navigateurs mobiles)
+    if (!navigator.permissions || !navigator.permissions.query) {
       showRequest.value = true
       return
     }
 
-    const permission = await navigator.permissions.query({ name: 'geolocation' })
+    const permission = await navigator.permissions.query({ name: 'geolocation' as PermissionName })
     permissionState.value = permission.state
 
     // Afficher la demande uniquement si la permission n'est pas déjà accordée
     if (permission.state === 'granted') {
       showRequest.value = false
-      // Si déjà autorisé, émettre automatiquement l'événement allow
+      // Si déjà autorisé au niveau système, on enregistre et on émet
+      localStorage.setItem(GEOLOC_CHOICE_KEY, 'allow')
       emit('allow')
+    } else if (permission.state === 'denied') {
+      // Si déjà refusé au niveau système, on n'affiche pas notre modal inutilement
+      showRequest.value = false
+      emit('deny')
     } else {
-      // 'prompt' ou 'denied'
+      // 'prompt'
       showRequest.value = true
     }
 
@@ -81,22 +97,26 @@ async function checkGeolocationPermission(): Promise<void> {
       permissionState.value = permission.state
       if (permission.state === 'granted') {
         showRequest.value = false
+        localStorage.setItem(GEOLOC_CHOICE_KEY, 'allow')
+        emit('allow')
       }
     })
   } catch (error) {
     console.warn('Permission API error:', error)
-    // En cas d'erreur, afficher la demande par sécurité
+    // En cas d'erreur API, on affiche notre modal pour laisser le choix à l'utilisateur
     showRequest.value = true
   }
 }
 
 // Handlers
 function handleAllow(): void {
+  localStorage.setItem(GEOLOC_CHOICE_KEY, 'allow')
   showRequest.value = false
   emit('allow')
 }
 
 function handleDeny(): void {
+  localStorage.setItem(GEOLOC_CHOICE_KEY, 'deny')
   showRequest.value = false
   emit('deny')
 }

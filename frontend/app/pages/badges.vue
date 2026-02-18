@@ -1,7 +1,7 @@
 <template>
 <div class="min-h-screen bg-black text-white font-sans flex flex-col">
 
-    <div class="sticky top-0 z-20 bg-black/80 backdrop-blur-md p-4 border-b border-gray-800">
+    <div class="sticky top-[env(safe-area-inset-top)] z-20 bg-black/80 backdrop-blur-md p-4 border-b border-gray-800">
       <div class="flex items-center gap-4 mb-4">
         <button @click="router.back()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800 hover:bg-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
@@ -111,6 +111,10 @@ const tabs = [
     { id: 'region', label: 'Région' },
     { id: 'special', label: 'Spécial' },
 ]
+
+definePageMeta({
+  layout: 'blank',
+})
 
 onMounted(async () => {
   if (!zoneStore.isInitialized) {
