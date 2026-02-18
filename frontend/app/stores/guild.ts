@@ -18,6 +18,7 @@ import { usePlayerFriendshipStore } from './playerFriendship'
 export const useGuildStore = defineStore('guild', () => {
   // State
   const guild = ref<Guild | null>(null)
+  const inspectedGuild = ref<any | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -278,9 +279,36 @@ export const useGuildStore = defineStore('guild', () => {
     }
   }
 
+  /**
+   * Fetches a guild's public profile (for inspection)
+   */
+  async function fetchPublicGuild(documentId: string) {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+    inspectedGuild.value = null
+
+    try {
+      const response = await client<any>(`/guilds/inspect/${documentId}`, {
+        method: 'GET',
+      })
+
+      inspectedGuild.value = response.data || response
+      return inspectedGuild.value
+    } catch (e: any) {
+      console.error('Failed to fetch public guild:', e)
+      error.value = e?.message || 'Impossible de charger la guilde'
+      // Rethrow to handle in component (e.g. redirect)
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     // State
     guild,
+    inspectedGuild,
     loading,
     error,
     // Getters
@@ -301,6 +329,7 @@ export const useGuildStore = defineStore('guild', () => {
     refetchStats,
     createGuildSetup,
     deleteGuild,
+    fetchPublicGuild,
   }
 }, {
   persist: {

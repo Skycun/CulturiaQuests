@@ -49,6 +49,7 @@ import { useGuildStore } from '~/stores/guild';
 import { useInventoryStore } from '~/stores/inventory';
 // 1. IMPORT DU COMPOSABLE DE DÉGÂTS
 import { useDamageCalculator } from '~/composables/useDamageCalculator';
+import { useItemMapper } from '~/composables/useItemMapper';
 
 // --- CONFIGURATION ---
 const characterStore = useCharacterStore();
@@ -59,6 +60,7 @@ const strapiUrl = config.public.strapi?.url || 'http://localhost:1337';
 
 // 2. RÉCUPÉRATION DE LA FONCTION DE CALCUL
 const { calculateItemPower } = useDamageCalculator();
+const { getImageUrl, mapSingleItem, mapItems } = useItemMapper();
 
 // --- ÉTAT LOCAL ---
 const showOverlay = ref(false);
@@ -173,48 +175,6 @@ const saveEquipmentChange = async (characterId, newItemId, oldItemId) => {
 
 // --- MAPPERS & COMPUTED ---
 
-const getImageUrl = (imgData) => {
-  if (!imgData) return '/assets/default-avatar.png';
-  const data = imgData.data?.attributes || imgData.attributes || imgData;
-  const url = data?.url;
-  if (!url) return '/assets/default-avatar.png';
-  if (url.startsWith('/')) return `${strapiUrl}${url}`;
-  return url;
-};
-
-const mapSingleItem = (itemObj) => {
-   if (!itemObj) return null;
-   const item = itemObj.attributes || itemObj;
-   const rawTags = item.tags?.data || item.tags || [];
-   const tagList = rawTags.map(t => (t.attributes?.name || t.name || '').toLowerCase());
-
-   let rarityVal = 'common';
-   if (item.rarity) {
-      rarityVal = item.rarity.data?.attributes?.name || item.rarity.name || item.rarity;
-   }
-
-   // 3. UTILISATION DU COMPOSABLE pour calculer la puissance
-   // Utile pour afficher "Puissance: 450" ou pour le tri
-   const calculatedPower = calculateItemPower({
-       index_damage: item.index_damage,
-       level: item.level,
-       rarity: rarityVal
-   });
-
-   return {
-     id: item.id,
-     documentId: item.documentId, 
-     level: item.level || 1,
-     index_damage: item.index_damage || 0,
-     rarity: String(rarityVal).toLowerCase(),
-     category: item.slot || 'weapon',
-     image: getImageUrl(item.icon),
-     types: tagList,
-     isScrapped: item.isScrapped || false,
-     power: calculatedPower // Ajout de la puissance calculée
-   };
-};
-
 const formattedInventory = computed(() => {
   const allItems = inventoryStore.items || [];
   return allItems.map(mapSingleItem).filter(i => i !== null);
@@ -232,9 +192,4 @@ const formattedCharacters = computed(() => {
     };
   });
 });
-
-const mapItems = (itemsData) => {
-  const rawItems = (itemsData?.data) ? itemsData.data : (itemsData || []);
-  return rawItems.map(mapSingleItem).filter(i => i !== null);
-};
 </script>

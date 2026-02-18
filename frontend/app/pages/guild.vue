@@ -34,6 +34,22 @@
 
         <div class="px-4 py-8 bg-black">
 
+            <!-- Characters Section -->
+            <div class="mb-8">
+                <h3 class="font-power text-2xl mb-4 text-center text-white">Mes Héros</h3>
+                <div v-if="characterStore.loading" class="text-center text-gray-500 font-pixel">Chargement...</div>
+                <div v-else class="space-y-4">
+                    <CharacterRow 
+                        v-for="char in formattedCharacters"
+                        :key="char.id"
+                        :characterName="char.name"
+                        :characterImage="char.avatar"
+                        :items="char.equippedItems"
+                        @click-item="router.push('/equipement')"
+                    />
+                </div>
+            </div>
+
             <BadgeShowcase 
                 :equipped-badges="badgeStore.equippedBadges"
                 @open-collection="router.push('/badges')"
@@ -86,21 +102,26 @@ import { useRouter } from 'vue-router'
 import { useGuildStore } from '~/stores/guild'
 import { useStatisticsStore } from '~/stores/statistics'
 import { useBadgeStore } from '~/stores/badge'
+import { useCharacterStore } from '~/stores/character'
 
 // Composants
 import PixelButton from '~/components/form/PixelButton.vue'
 import GuildStatRow from '~/components/guild/GuildStatRow.vue'
 import BadgeShowcase from '~/components/guild/BadgeShowcase.vue'
+import CharacterRow from '~/components/CharacterRow.vue'
 
 // Composables
 import { useLogout } from '~/composables/useLogout'
+import { useItemMapper } from '~/composables/useItemMapper'
 
 const router = useRouter()
 const { logout } = useLogout()
+const { getImageUrl, mapItems } = useItemMapper()
 
 const guildStore = useGuildStore()
 const statsStore = useStatisticsStore()
 const badgeStore = useBadgeStore()
+const characterStore = useCharacterStore()
 
 const debugMode = computed(() => guildStore.debugMode)
 
@@ -114,10 +135,31 @@ onMounted(async () => {
 
     // 2. Calcul des statistiques
     statsStore.fetchStatistics()
+    
+    // 3. Charger les personnages avec leurs items
+    await characterStore.fetchCharacters(true)
 
-    // 3. (Optionnel) Si tes badges viennent d'une API, il faudra peut-être :
+    // 4. (Optionnel) Si tes badges viennent d'une API, il faudra peut-être :
     // await badgeStore.fetchBadges()
 })
+
+const formattedCharacters = computed(() => {
+  return characterStore.characters.map(char => {
+    // @ts-ignore
+    const c = char.attributes || char;
+    return {
+      id: char.id,
+      // @ts-ignore
+      documentId: c.documentId,
+      // @ts-ignore
+      name: `${c.firstname || ''} ${c.lastname || ''}`.trim(),
+      // @ts-ignore
+      avatar: getImageUrl(c.icon),
+      // @ts-ignore
+      equippedItems: mapItems(c.items)
+    };
+  });
+});
 
 // Configuration des statistiques à afficher
 const displayStats = computed(() => [

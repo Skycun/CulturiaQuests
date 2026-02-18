@@ -168,6 +168,86 @@ export default factories.createCoreController('api::guild.guild', ({ strapi }) =
   },
 
   /**
+   * Get public profile of a guild (for friends or self)
+   */
+  async getPublicProfile(ctx) {
+    const user = ctx.state.user;
+    if (!user) {
+      return ctx.unauthorized('You must be logged in');
+    }
+
+    const { documentId } = ctx.params;
+    if (!documentId) {
+      return ctx.badRequest('Guild documentId is required');
+    }
+
+    // Get requester's guild
+    const myGuild = await strapi.db.query('api::guild.guild').findOne({
+      where: { user: { id: user.id } },
+      select: ['documentId'],
+    });
+
+    if (!myGuild) {
+      return ctx.notFound('Your guild not found');
+    }
+
+    // Check if requesting own guild
+    const isSelf = myGuild.documentId === documentId;
+
+    if (!isSelf) {
+      // Check friendship
+      const friendship = await strapi.service('api::player-friendship.player-friendship').findExistingRelation(
+        myGuild.documentId,
+        documentId
+      );
+
+      if (!friendship || friendship.status !== 'accepted') {
+        return ctx.forbidden('You can only view profiles of your friends');
+      }
+    }
+
+    // Fetch the target guild with public data
+    const targetGuild = await strapi.documents('api::guild.guild').findOne({
+      documentId,
+      populate: {
+        characters: {
+          populate: {
+            icon: { fields: ['url'] },
+            items: {
+              populate: {
+                icon: { fields: ['url'] },
+                rarity: { fields: ['name'] },
+                tags: { fields: ['name'] }
+              }
+            }
+          }
+        },
+        equipped_badges: {
+          populate: {
+            image: { fields: ['url'] }
+          }
+        },
+        user: {
+          fields: ['username', 'createdAt']
+        },
+        // Populate stats if needed, otherwise rely on separate calls or computed fields
+      }
+    });
+
+    if (!targetGuild) {
+      return ctx.notFound('Guild not found');
+    }
+
+    // Fetch statistics for the target guild
+    const stats = await strapi.service('api::statistic.statistic').getSummaryByGuild(targetGuild);
+
+    // Sanitize output to remove sensitive fields if any (though we selected specific fields)
+    const sanitizedEntity = await this.sanitizeOutput(targetGuild, ctx);
+    
+    return this.transformResponse({ ...sanitizedEntity, stats });
+  },
+
+  /**
    * Delete guild and all associated data
    */
   async delete(ctx) {

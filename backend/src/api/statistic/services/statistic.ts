@@ -3,34 +3,9 @@
  */
 
 export default ({ strapi }) => ({
-  async getSummary(userId) {
-    // 1. Get Guild ID
-    const guild = await strapi.db.query('api::guild.guild').findOne({
-      where: { user: { id: userId } },
-      select: ['id', 'exp']
-    });
-
-    if (!guild) {
-      return {
-        totalExpeditions: 0,
-        totalTime: 0,
-        maxFloor: 0,
-        totalDamage: 0,
-        totalPoiVisits: 0,
-        totalDistinctPois: 0,
-        totalItemsCollected: 0,
-        totalItemsScrapped: 0,
-        totalScrapAccumulated: 0,
-        totalExp: 0,
-        totalGold: 0,
-        accountDays: 0,
-      };
-    }
-
-    const guildId = guild.id;
-
+  async calculateStats(guildId, guildExp, userCreatedAt) {
     // --- Parallel Data Fetching (Optimized Selects) ---
-    const [runs, visits, items, quests, user, mostVisitedPoi] = await Promise.all([
+    const [runs, visits, items, quests, mostVisitedPoi] = await Promise.all([
       // Runs: Need dates for time, dps for damage, threshold, gold
       strapi.db.query('api::run.run').findMany({
         where: { guild: guildId },
@@ -56,11 +31,6 @@ export default ({ strapi }) => ({
         where: { guild: guildId },
         select: ['gold_earned'],
       }),
-      // User info for account age
-      strapi.db.query('plugin::users-permissions.user').findOne({
-        where: { id: userId },
-        select: ['createdAt']
-      }),
       // Most Visited POI
       strapi.db.query('api::visit.visit').findMany({
         where: { guild: guildId },
@@ -74,8 +44,8 @@ export default ({ strapi }) => ({
 
     // 1. Account Days
     let accountDays = 0;
-    if (user && user.createdAt) {
-      const created = new Date(user.createdAt);
+    if (userCreatedAt) {
+      const created = new Date(userCreatedAt);
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - created.getTime());
       accountDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -159,9 +129,39 @@ export default ({ strapi }) => ({
       totalItemsCollected: items.length,
       totalItemsScrapped,
       totalScrapAccumulated,
-      totalExp: guild.exp || 0,
+      totalExp: guildExp || 0,
       totalGold,
       accountDays
     };
+  },
+
+  async getSummary(userId) {
+    // 1. Get Guild ID
+    const guild = await strapi.db.query('api::guild.guild').findOne({
+      where: { user: { id: userId } },
+      select: ['id', 'exp']
+    });
+
+    if (!guild) {
+      return this.calculateStats(null, 0, null);
+    }
+
+    // Get user info for account age
+    const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: userId },
+        select: ['createdAt']
+    });
+
+    return this.calculateStats(guild.id, guild.exp, user?.createdAt);
+  },
+
+  async getSummaryByGuild(guild) {
+    if (!guild) {
+        return this.calculateStats(null, 0, null);
+    }
+    // Ensure we have the user createdAt
+    const userCreatedAt = guild.user?.createdAt;
+    return this.calculateStats(guild.id, guild.exp, userCreatedAt);
   }
 });
+
