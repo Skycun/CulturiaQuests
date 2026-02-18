@@ -33,7 +33,6 @@ export default defineNuxtConfig({
   // Configuration des fonts avec @nuxt/fonts
   fonts: {
     families: [
-      // Google Fonts
       {
         name: 'Onest',
         provider: 'google',

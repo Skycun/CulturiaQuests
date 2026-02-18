@@ -257,7 +257,23 @@ export default {
         await strapi.documents('api::connection-log.connection-log').delete({ documentId: l.documentId });
       }
 
-      // 7. Supprimer l'avatar si existant
+      // 7. Supprimer les demandes RGPD
+      const gdprRequests = await strapi.db.query('api::gdpr-request.gdpr-request').findMany({
+        where: { user: user.id },
+      });
+      for (const r of gdprRequests) {
+        await strapi.documents('api::gdpr-request.gdpr-request').delete({ documentId: r.documentId });
+      }
+
+      // 8. Supprimer les admin-action-logs (en tant que cible ou admin)
+      const actionLogs = await strapi.db.query('api::admin-action-log.admin-action-log').findMany({
+        where: { $or: [{ target_user: user.id }, { admin: user.id }] },
+      });
+      for (const al of actionLogs) {
+        await strapi.documents('api::admin-action-log.admin-action-log').delete({ documentId: al.documentId });
+      }
+
+      // 9. Supprimer l'avatar
       const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: user.id },
         populate: { avatar: true },
@@ -266,7 +282,7 @@ export default {
         await strapi.plugin('upload').service('upload').remove(fullUser.avatar).catch(() => {});
       }
 
-      // 8. Supprimer le user
+      // 10. Supprimer le user
       await strapi.plugins['users-permissions'].services.user.remove({ id: user.id });
 
       return ctx.send({ message: 'Account deleted successfully' });

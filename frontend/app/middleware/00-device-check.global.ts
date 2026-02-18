@@ -32,7 +32,9 @@ export default defineNuxtRouteMiddleware((to) => {
     '/error',
     '/account/login',
     '/account/register',
-    '/CGU'
+    '/CGU',
+    '/mentions-legales',
+    '/politique-confidentialite'
   ]
 
   // Check authentication

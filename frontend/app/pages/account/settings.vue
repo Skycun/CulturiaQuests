@@ -76,16 +76,38 @@
       <!-- Legal Section -->
       <div class="bg-white rounded-[28px] p-6">
         <h2 class="text-xl font-power text-indigo-950 mb-5">Mentions légales</h2>
-        <NuxtLink
-          to="/CGU"
-          class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
-        >
-          <div class="flex items-center gap-3">
-            <Icon name="mdi:file-document-outline" class="w-5 h-5 shrink-0" />
-            <span class="font-onest text-base">Conditions Générales d'Utilisation</span>
-          </div>
-          <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
-        </NuxtLink>
+        <div class="space-y-4">
+          <NuxtLink
+            to="/CGU"
+            class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <Icon name="mdi:file-document-outline" class="w-5 h-5 shrink-0" />
+              <span class="font-onest text-base">Conditions Générales d'Utilisation</span>
+            </div>
+            <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
+          </NuxtLink>
+          <NuxtLink
+            to="/mentions-legales"
+            class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <Icon name="mdi:scale-balance" class="w-5 h-5 shrink-0" />
+              <span class="font-onest text-base">Mentions légales</span>
+            </div>
+            <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
+          </NuxtLink>
+          <NuxtLink
+            to="/politique-confidentialite"
+            class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <Icon name="mdi:shield-lock-outline" class="w-5 h-5 shrink-0" />
+              <span class="font-onest text-base">Politique de confidentialité</span>
+            </div>
+            <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Personal Data Section -->
