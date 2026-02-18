@@ -50,6 +50,19 @@
             :disabled="loading"
             required
           />
+
+          <div class="flex items-start gap-3 pt-1">
+            <PixelCheckbox
+              v-model="form.cguAccepted"
+              :disabled="loading"
+            />
+            <p class="text-sm font-pixel text-gray-700 leading-snug pt-0.5">
+              J'ai lu et j'accepte les
+              <a href="/CGU" target="_blank" class="text-indigo-600 underline hover:text-indigo-800">
+                Conditions Générales d'Utilisation
+              </a>
+            </p>
+          </div>
         </div>
 
         <!-- Step 2: Guild, Character & Icon -->
@@ -150,6 +163,7 @@ import { useGuildStore } from '~/stores/guild'
 import { useCharacterStore } from '~/stores/character'
 import PixelInput from '~/components/form/PixelInput.vue'
 import PixelButton from '~/components/form/PixelButton.vue'
+import PixelCheckbox from '~/components/form/PixelCheckbox.vue'
 import ProgressIndicator from '~/components/form/ProgressIndicator.vue'
 import IconPicker from '~/components/form/IconPicker.vue'
 import Alert from '~/components/form/Alert.vue'
@@ -187,6 +201,7 @@ const form = ref({
   email: '',
   password: '',
   passwordConfirm: '',
+  cguAccepted: false,
   guildName: '',
   firstname: '',
   lastname: '',
@@ -204,7 +219,8 @@ const canProceed = computed(() => {
         form.value.username &&
         form.value.email &&
         form.value.password &&
-        form.value.passwordConfirm
+        form.value.passwordConfirm &&
+        form.value.cguAccepted
       )
     case 2:
       return !!(

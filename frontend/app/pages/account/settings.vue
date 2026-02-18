@@ -73,6 +73,40 @@
         </div>
       </div>
 
+      <!-- Legal Section -->
+      <div class="bg-white rounded-[28px] p-6">
+        <h2 class="text-xl font-power text-indigo-950 mb-5">Mentions légales</h2>
+        <NuxtLink
+          to="/CGU"
+          class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
+        >
+          <div class="flex items-center gap-3">
+            <Icon name="mdi:file-document-outline" class="w-5 h-5 shrink-0" />
+            <span class="font-onest text-base">Conditions Générales d'Utilisation</span>
+          </div>
+          <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
+        </NuxtLink>
+      </div>
+
+      <!-- Personal Data Section -->
+      <div class="bg-white rounded-[28px] p-6">
+        <h2 class="text-xl font-power text-indigo-950 mb-2">Données personnelles</h2>
+        <p class="text-sm font-onest text-indigo-950 opacity-60 mb-5">
+          Conformément au RGPD, vous pouvez demander une copie de toutes vos données personnelles.
+          Nous vous contacterons par email dans un délai de 30 jours.
+        </p>
+        <div v-if="gdprSuccess" class="bg-emerald-100 border-2 border-emerald-400 rounded-2xl p-4 mb-4">
+          <p class="text-sm font-onest font-semibold text-emerald-700 text-center">{{ gdprSuccess }}</p>
+        </div>
+        <div v-if="gdprError" class="bg-red-100 border-2 border-red-400 rounded-2xl p-4 mb-4">
+          <p class="text-sm font-onest font-semibold text-red-700 text-center">{{ gdprError }}</p>
+        </div>
+        <FormPixelButton variant="outline" color="indigo" :disabled="gdprLoading" @click="handleGdprRequest">
+          <span v-if="gdprLoading">Envoi en cours...</span>
+          <span v-else>Demander mes données</span>
+        </FormPixelButton>
+      </div>
+
       <!-- Friend Requests Section -->
       <div class="bg-white rounded-[28px] p-6">
         <h2 class="text-xl font-power text-indigo-950 mb-5">Confidentialité</h2>
@@ -92,6 +126,61 @@
           />
         </div>
       </div>
+
+      <!-- Danger Zone Section -->
+      <div class="bg-white rounded-[28px] p-6 border-2 border-red-200">
+        <h2 class="text-xl font-power text-red-600 mb-2">Zone dangereuse</h2>
+        <p class="text-sm font-onest text-indigo-950 opacity-60 mb-5">
+          La suppression de votre compte est définitive et irréversible. Toutes vos données (guilde, personnage, équipement, quêtes, quiz, amitiés, progression) seront effacées.
+        </p>
+
+        <!-- Error from deleteAccount -->
+        <div v-if="deleteError" class="bg-red-100 border-2 border-red-400 rounded-2xl p-4 mb-4">
+          <p class="text-sm font-onest font-semibold text-red-700 text-center">{{ deleteError }}</p>
+        </div>
+
+        <!-- Initial state: show delete button -->
+        <div v-if="!showDeleteConfirm">
+          <FormPixelButton
+            variant="outline"
+            color="red"
+            :disabled="deleteLoading"
+            @click="showDeleteConfirm = true"
+          >
+            Supprimer mon compte
+          </FormPixelButton>
+        </div>
+
+        <!-- Confirmation state -->
+        <div v-else class="space-y-3">
+          <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <p class="text-sm font-onest font-semibold text-red-700 text-center">
+              Êtes-vous sûr ? Cette action est irréversible.
+            </p>
+          </div>
+          <div class="flex gap-3">
+            <FormPixelButton
+              variant="outline"
+              color="indigo"
+              :disabled="deleteLoading"
+              class="flex-1"
+              @click="showDeleteConfirm = false"
+            >
+              Annuler
+            </FormPixelButton>
+            <FormPixelButton
+              variant="filled"
+              color="red"
+              :disabled="deleteLoading"
+              class="flex-1"
+              @click="handleDeleteAccount"
+            >
+              <span v-if="deleteLoading">Suppression...</span>
+              <span v-else>Confirmer la suppression</span>
+            </FormPixelButton>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -109,11 +198,18 @@ const {
   removeAvatar,
   updateSettings,
 } = useUserAvatar()
+const { deleteAccount, loading: deleteLoading, error: deleteError } = useDeleteAccount()
+const { requestData: requestGdprData, loading: gdprLoading, error: gdprError, success: gdprSuccess } = useGdprRequest()
+
+const handleGdprRequest = async () => {
+  await requestGdprData()
+}
 
 const isAuthenticated = computed(() => !!user.value)
 const fileInput = ref<HTMLInputElement | null>(null)
 const uploadError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
+const showDeleteConfirm = ref(false)
 
 // Local reactive state for friend requests toggle
 const friendRequestsEnabled = computed(() => settings.value?.friend_requests_enabled ?? false)
@@ -206,6 +302,10 @@ const handleToggleFriendRequests = async (newValue: boolean) => {
     settings.value.friend_requests_enabled = !newValue
     uploadError.value = error.value
   }
+}
+
+const handleDeleteAccount = async () => {
+  await deleteAccount()
 }
 
 // Redirect to login if not authenticated

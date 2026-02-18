@@ -526,6 +526,16 @@ export default ({ strapi }) => ({
     };
   },
 
+  // ─── GDPR ──────────────────────────────────────────────────
+
+  async getGdprRequests() {
+    const requests = await strapi.db.query('api::gdpr-request.gdpr-request').findMany({
+      orderBy: { createdAt: 'desc' },
+      populate: { user: { select: ['id', 'username', 'email'] } },
+    });
+    return { requests };
+  },
+
   // ─── SOCIAL ────────────────────────────────────────────────
 
   async getSocialStats() {

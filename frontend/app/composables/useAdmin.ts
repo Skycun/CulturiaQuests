@@ -1,33 +1,21 @@
 /**
  * Composable for checking admin role status
- * Calls the /admin-dashboard/check endpoint which is restricted to the admin role.
- * If the call succeeds (200) the user is admin, if it fails (403) they are not.
+ * Reads the role directly from the user state (populated via /api/users/me with role).
+ * Strapi's JWT strategy returns the user with role populated by default.
  */
 export function useAdmin() {
   const user = useStrapiUser()
-  const client = useStrapiClient()
 
-  const isAdmin = ref(false)
-  const adminChecked = ref(false)
+  const isAdmin = computed(() => {
+    const u = user.value as any
+    return u?.role?.type === 'admin'
+  })
 
-  async function checkAdminRole() {
-    if (!user.value) {
-      isAdmin.value = false
-      adminChecked.value = true
-      return false
-    }
+  const adminChecked = computed(() => !!user.value)
 
-    try {
-      await client<{ isAdmin: boolean }>('/admin-dashboard/check', {
-        method: 'GET',
-      })
-      isAdmin.value = true
-    } catch {
-      isAdmin.value = false
-    }
-
-    adminChecked.value = true
-    return isAdmin.value
+  function checkAdminRole(): boolean {
+    if (!user.value) return false
+    return (user.value as any)?.role?.type === 'admin'
   }
 
   return {

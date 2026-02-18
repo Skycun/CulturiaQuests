@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gdpr_requests",
+  "info": {
+    "singularName": "gdpr-request",
+    "pluralName": "gdpr-requests",
+    "displayName": "GDPR Request"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "processed"],
+      "default": "pending",
+      "required": true
+    },
+    "ip_address": { "type": "string" }
+  }
+}

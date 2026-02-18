@@ -19,5 +19,7 @@ export default {
     route('GET', '/quiz', 'getQuizAnalytics'),
     route('GET', '/social', 'getSocialStats'),
     route('GET', '/connections', 'getConnectionAnalytics'),
+    route('GET', '/gdpr-requests', 'getGdprRequests'),
+    route('PUT', '/gdpr-requests/:id/process', 'markGdprProcessed'),
   ],
 };

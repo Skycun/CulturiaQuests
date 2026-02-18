@@ -205,6 +205,78 @@ export default {
   },
 
   /**
+   * Delete the current user's account and all associated data
+   */
+  async deleteAccount(ctx) {
+    const user = ctx.state.user;
+    if (!user) {
+      return ctx.unauthorized('You must be logged in');
+    }
+
+    try {
+      // 1. Trouver la guild de l'utilisateur
+      const guild = await strapi.db.query('api::guild.guild').findOne({
+        where: { user: { id: user.id } },
+        select: ['id', 'documentId'],
+      });
+
+      if (guild) {
+        // 2. Supprimer les player-friendships (des deux côtés)
+        const friendships = await strapi.db.query('api::player-friendship.player-friendship').findMany({
+          where: { $or: [{ requester: guild.id }, { receiver: guild.id }] },
+        });
+        for (const f of friendships) {
+          await strapi.documents('api::player-friendship.player-friendship').delete({ documentId: f.documentId });
+        }
+
+        // 3. Supprimer les quiz-attempts
+        const attempts = await strapi.db.query('api::quiz-attempt.quiz-attempt').findMany({
+          where: { guild: guild.id },
+        });
+        for (const a of attempts) {
+          await strapi.documents('api::quiz-attempt.quiz-attempt').delete({ documentId: a.documentId });
+        }
+
+        // 4. Supprimer les progressions
+        const progressions = await strapi.db.query('api::progression.progression').findMany({
+          where: { guild: guild.id },
+        });
+        for (const p of progressions) {
+          await strapi.documents('api::progression.progression').delete({ documentId: p.documentId });
+        }
+
+        // 5. Supprimer guild + items + runs + visits + quests + characters + legacy friendships
+        await strapi.service('api::guild.guild').deleteGuildWithRelations(guild.documentId);
+      }
+
+      // 6. Supprimer les connection-logs
+      const logs = await strapi.db.query('api::connection-log.connection-log').findMany({
+        where: { user: user.id },
+      });
+      for (const l of logs) {
+        await strapi.documents('api::connection-log.connection-log').delete({ documentId: l.documentId });
+      }
+
+      // 7. Supprimer l'avatar si existant
+      const fullUser = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: user.id },
+        populate: { avatar: true },
+      });
+      if (fullUser?.avatar) {
+        await strapi.plugin('upload').service('upload').remove(fullUser.avatar).catch(() => {});
+      }
+
+      // 8. Supprimer le user
+      await strapi.plugins['users-permissions'].services.user.remove({ id: user.id });
+
+      return ctx.send({ message: 'Account deleted successfully' });
+    } catch (error) {
+      strapi.log.error('Error deleting account:', error);
+      return ctx.internalServerError('Failed to delete account');
+    }
+  },
+
+  /**
    * Update user settings
    */
   async updateSettings(ctx) {
