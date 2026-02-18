@@ -29,6 +29,7 @@ export const useGuildStore = defineStore('guild', () => {
   const scrap = computed(() => guild.value?.scrap ?? guild.value?.attributes?.scrap ?? 0)
   const name = computed(() => guild.value?.name ?? guild.value?.attributes?.name ?? '')
   const debugMode = computed(() => guild.value?.debug_mode ?? guild.value?.attributes?.debug_mode ?? false)
+  const quizStreak = computed(() => guild.value?.quiz_streak ?? guild.value?.attributes?.quiz_streak ?? 0)
 
   /**
    * Calcule le niveau de la guilde à partir de l'XP
@@ -192,7 +193,7 @@ export const useGuildStore = defineStore('guild', () => {
       const response = await client<any>('/guilds', {
         method: 'GET',
         params: {
-          fields: ['name', 'gold', 'exp', 'scrap', 'debug_mode'],
+          fields: ['name', 'gold', 'exp', 'scrap', 'debug_mode', 'quiz_streak'],
         },
       })
 
@@ -206,6 +207,7 @@ export const useGuildStore = defineStore('guild', () => {
           exp: guildData.exp ?? guildData.attributes?.exp,
           scrap: guildData.scrap ?? guildData.attributes?.scrap,
           debug_mode: guildData.debug_mode ?? guildData.attributes?.debug_mode,
+          quiz_streak: guildData.quiz_streak ?? guildData.attributes?.quiz_streak,
         }
       }
     } catch (e: any) {
@@ -289,6 +291,7 @@ export const useGuildStore = defineStore('guild', () => {
     name,
     level,
     debugMode,
+    quizStreak,
     // Actions
     setGuild,
     clearGuild,

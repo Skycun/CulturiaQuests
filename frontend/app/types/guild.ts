@@ -17,6 +17,7 @@ export interface GuildAttributes {
   runs?: { data: Run[] }
   friendships?: { data: Friendship[] }
   quests?: { data: Quest[] }
+  quiz_streak?: number
   createdAt?: string
   updatedAt?: string
   publishedAt?: string
@@ -31,5 +32,6 @@ export interface Guild {
   gold?: number
   exp?: number | string
   scrap?: number
+  quiz_streak?: number
   debug_mode?: boolean
 }

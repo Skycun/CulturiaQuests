@@ -34,7 +34,8 @@
 
         <div 
           v-else 
-          class="flex items-center gap-3 px-3 py-1.5 rounded-full bg-yellow-50/50"
+          @click="router.push('/social/quiz')"
+          class="flex items-center gap-3 px-3 py-1.5 rounded-full bg-yellow-50/50 cursor-pointer hover:bg-yellow-100 transition-colors"
         >
           <div class="relative">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7 text-yellow-500 drop-shadow-sm">
@@ -46,7 +47,7 @@
               </svg>
             </div>
           </div>
-          <span class="font-bold text-yellow-700">Série en cours !</span>
+          <span class="font-bold text-yellow-700">Série : {{ quizStreak }} 🔥</span>
         </div>
         </div>
       </div>
@@ -87,17 +88,22 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import PostCard from '~/components/social/PostCard.vue';
 import { formatCompactNumber } from '~/utils/format';
 import { usePlayerFriendshipStore } from '~/stores/playerFriendship';
+import { useQuizStore } from '~/stores/quiz';
+import { useGuildStore } from '~/stores/guild';
 
 const router = useRouter();
 const playerFriendshipStore = usePlayerFriendshipStore();
+const quizStore = useQuizStore();
+const guildStore = useGuildStore();
 
 // --- ÉTAT DU QUIZ ---
-const isQuizDone = ref(false); 
+const isQuizDone = computed(() => quizStore.alreadyCompleted);
+const quizStreak = computed(() => guildStore.quizStreak);
 
 // --- RÉCUPÉRATION DES POSTS ---
 const posts = ref([]);
@@ -220,11 +226,12 @@ const fetchPosts = async () => {
 onMounted(() => {
     fetchPosts();
     playerFriendshipStore.fetchFriendships();
+    quizStore.fetchTodayQuiz();
+    guildStore.refetchStats();
 });
 
 const goToQuiz = () => {
     router.push('/social/quiz');
-    isQuizDone.value = true; 
 };
 </script>
 
