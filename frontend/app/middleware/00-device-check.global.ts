@@ -6,7 +6,8 @@ export default defineNuxtRouteMiddleware((to) => {
     '/',
     '/error',
     '/account/login',
-    '/account/register'
+    '/account/register',
+    '/CGU'
   ]
 
   // Check authentication
