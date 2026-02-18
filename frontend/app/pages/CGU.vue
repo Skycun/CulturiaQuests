@@ -112,6 +112,26 @@
               <p class="font-bold text-gray-800">Avatar (photo de profil)</p>
               <p class="text-gray-600 mt-1">Finalité : personnalisation du profil. Le téléchargement d'un avatar est facultatif.</p>
             </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-sm">
+              <p class="font-bold text-gray-800">Données de progression</p>
+              <p class="text-gray-600 mt-1">Finalité : fonctionnement du jeu. Inclut la progression par zone, l'inventaire d'objets, les quêtes, les expéditions et les badges collectés.</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-sm">
+              <p class="font-bold text-gray-800">Scores et tentatives de quiz</p>
+              <p class="text-gray-600 mt-1">Finalité : classement quotidien et attribution de récompenses. Les réponses et scores sont conservés.</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-sm">
+              <p class="font-bold text-gray-800">Relations sociales (amitiés)</p>
+              <p class="text-gray-600 mt-1">Finalité : fonctionnalités sociales du jeu. Les demandes d'amitié et relations entre joueurs sont enregistrées.</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-sm">
+              <p class="font-bold text-gray-800">Logs de connexion</p>
+              <p class="text-gray-600 mt-1">Finalité : sécurité et statistiques internes. La date et l'heure de chaque connexion sont enregistrées. Ces données sont conservées pour une durée maximale de 6 mois.</p>
+            </div>
+            <div class="p-3 bg-gray-50 rounded-lg text-sm">
+              <p class="font-bold text-gray-800">Adresse IP</p>
+              <p class="text-gray-600 mt-1">Finalité : sécurité et audit. L'adresse IP est collectée uniquement lors de l'envoi d'une demande d'exercice de droits RGPD.</p>
+            </div>
           </div>
           <p class="leading-relaxed mt-4">
             <strong>Base légale</strong> : le traitement est fondé sur l'exécution du contrat (compte utilisateur) et le consentement
@@ -142,9 +162,9 @@
             utilisation de la carte et peut être révoqué à tout moment dans les paramètres de votre appareil.
           </p>
           <p class="leading-relaxed mt-2">
-            Nous collectons la localisation même lorsque l'application est fermée ou non utilisée, afin de valider
-            la présence dans un musée lors des expéditions. Cette collecte en arrière-plan est limitée à cet usage
-            et ne fait l'objet d'aucune transmission à des tiers ni d'un stockage permanent sur nos serveurs.
+            La géolocalisation est utilisée uniquement lorsque l'application est ouverte et au premier plan.
+            Aucune collecte de position n'est effectuée en arrière-plan. Les données de localisation ne sont
+            pas stockées de manière permanente sur nos serveurs et ne font l'objet d'aucune transmission à des tiers.
           </p>
         </section>
 
