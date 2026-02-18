@@ -167,6 +167,63 @@
         </div>
       </div>
 
+      <!-- GDPR Requests -->
+      <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div class="flex items-center gap-3 mb-4">
+          <h2 class="text-lg font-power text-white">Demandes RGPD</h2>
+          <span
+            v-if="pendingGdprCount > 0"
+            class="bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full"
+          >
+            {{ pendingGdprCount }} en attente
+          </span>
+        </div>
+        <div v-if="adminStore.gdprRequests.length === 0" class="text-gray-500 text-sm font-onest py-4 text-center">
+          Aucune demande pour le moment
+        </div>
+        <div v-else class="overflow-x-auto">
+          <table class="w-full text-sm font-onest">
+            <thead>
+              <tr class="text-gray-500 border-b border-gray-800">
+                <th class="text-left py-2 pr-4">Utilisateur</th>
+                <th class="text-left py-2 px-4">Email</th>
+                <th class="text-left py-2 px-4">Date</th>
+                <th class="text-left py-2 px-4">Statut</th>
+                <th class="py-2 pl-4" />
+              </tr>
+            </thead>
+            <tbody class="text-gray-300">
+              <tr
+                v-for="req in adminStore.gdprRequests"
+                :key="req.id"
+                class="border-b border-gray-800/50"
+              >
+                <td class="py-3 pr-4">{{ req.user?.username || '–' }}</td>
+                <td class="py-3 px-4 text-gray-400">{{ req.user?.email || '–' }}</td>
+                <td class="py-3 px-4 text-gray-500">{{ formatDate(req.createdAt) }}</td>
+                <td class="py-3 px-4">
+                  <span
+                    class="text-xs font-medium px-2 py-0.5 rounded-full"
+                    :class="req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'"
+                  >
+                    {{ req.status === 'pending' ? 'En attente' : 'Traité' }}
+                  </span>
+                </td>
+                <td class="py-3 pl-4 text-right">
+                  <button
+                    v-if="req.status === 'pending'"
+                    class="text-xs text-indigo-400 hover:text-indigo-300 underline"
+                    @click="handleMarkGdprProcessed(req.id)"
+                  >
+                    Marquer traité
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Secondary KPIs -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div
@@ -196,6 +253,7 @@ const adminStore = useAdminStore()
 onMounted(() => {
   adminStore.fetchOverview()
   adminStore.fetchConnections()
+  adminStore.fetchGdprRequests()
 })
 
 // KPI data
@@ -307,6 +365,18 @@ const peakHoursCategories = {
 const peakHoursXFormatter = (tick: number): string => {
   const entry = peakHoursData.value[tick]
   return entry?.label ?? ''
+}
+
+// GDPR
+const pendingGdprCount = computed(() => adminStore.gdprRequests.filter(r => r.status === 'pending').length)
+
+async function handleMarkGdprProcessed(id: number) {
+  await adminStore.markGdprProcessed(id)
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '–'
+  return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
 // Helpers

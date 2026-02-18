@@ -689,6 +689,41 @@ export interface ApiFriendshipFriendship extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiGdprRequestGdprRequest extends Struct.CollectionTypeSchema {
+  collectionName: 'gdpr_requests';
+  info: {
+    displayName: 'GDPR Request';
+    pluralName: 'gdpr-requests';
+    singularName: 'gdpr-request';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    ip_address: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::gdpr-request.gdpr-request'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<['pending', 'processed']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiGuildGuild extends Struct.CollectionTypeSchema {
   collectionName: 'guilds';
   info: {
@@ -1867,6 +1902,7 @@ declare module '@strapi/strapi' {
       'api::department.department': ApiDepartmentDepartment;
       'api::dialog.dialog': ApiDialogDialog;
       'api::friendship.friendship': ApiFriendshipFriendship;
+      'api::gdpr-request.gdpr-request': ApiGdprRequestGdprRequest;
       'api::guild.guild': ApiGuildGuild;
       'api::item.item': ApiItemItem;
       'api::museum.museum': ApiMuseumMuseum;

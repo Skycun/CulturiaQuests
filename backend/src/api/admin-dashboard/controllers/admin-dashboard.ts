@@ -206,4 +206,32 @@ export default {
       return ctx.internalServerError('Failed to fetch connection analytics');
     }
   },
+
+  async getGdprRequests(ctx) {
+    try {
+      return ctx.send(await svc().getGdprRequests());
+    } catch (error) {
+      strapi.log.error('Admin dashboard - getGdprRequests failed:', error);
+      return ctx.internalServerError('Failed to fetch GDPR requests');
+    }
+  },
+
+  async markGdprProcessed(ctx) {
+    const isAdmin = await verifyAdminRole(ctx);
+    if (!isAdmin) return ctx.forbidden('Admin role required');
+
+    const { id } = ctx.params;
+    const request = await strapi.db.query('api::gdpr-request.gdpr-request').findOne({
+      where: { id: Number(id) },
+      select: ['id', 'documentId'],
+    });
+    if (!request) return ctx.notFound();
+
+    await strapi.documents('api::gdpr-request.gdpr-request').update({
+      documentId: request.documentId,
+      data: { status: 'processed' },
+    });
+
+    return ctx.send({ message: 'Marked as processed' });
+  },
 };

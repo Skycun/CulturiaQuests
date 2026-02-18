@@ -66,6 +66,9 @@ export default defineNuxtConfig({
     prefix: '/api',
     admin: '/admin',
     version: 'v5',
+    auth: {
+      populate: ['role'],
+    },
     cookie: {
       path: '/',
       maxAge: 14 * 24 * 60 * 60, // 14 jours

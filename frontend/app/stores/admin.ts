@@ -41,6 +41,7 @@ export const useAdminStore = defineStore('admin', () => {
   const quizData = ref<any>(null)
   const socialData = ref<any>(null)
   const connectionData = ref<any>(null)
+  const gdprRequests = ref<any[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -142,16 +143,33 @@ export const useAdminStore = defineStore('admin', () => {
     finally { loading.value = false }
   }
 
+  async function fetchGdprRequests() {
+    const client = useStrapiClient()
+    try {
+      const res = await client<{ requests: any[] }>('/admin-dashboard/gdpr-requests', { method: 'GET' })
+      gdprRequests.value = res.requests
+    } catch (e: any) { error.value = e?.message || 'Failed to fetch GDPR requests' }
+  }
+
+  async function markGdprProcessed(id: number) {
+    const client = useStrapiClient()
+    await client(`/admin-dashboard/gdpr-requests/${id}/process`, { method: 'PUT' })
+    const req = gdprRequests.value.find(r => r.id === id)
+    if (req) req.status = 'processed'
+  }
+
   function clearAdmin() {
     overview.value = null; players.value = []; playerDetail.value = null
     pagination.value = { page: 1, pageSize: 25, pageCount: 0, total: 0 }
     mapData.value = null; economyData.value = null; expeditionsData.value = null
-    quizData.value = null; socialData.value = null; connectionData.value = null; error.value = null
+    quizData.value = null; socialData.value = null; connectionData.value = null
+    gdprRequests.value = []; error.value = null
   }
 
   return {
     overview, players, playerDetail, pagination, mapData, economyData, expeditionsData, quizData, socialData, connectionData, loading, error,
     fetchOverview, fetchPlayers, fetchPlayerDetail, toggleBlockPlayer, changePlayerRole,
-    fetchMapData, fetchEconomy, fetchExpeditions, fetchQuiz, fetchSocial, fetchConnections, clearAdmin,
+    fetchMapData, fetchEconomy, fetchExpeditions, fetchQuiz, fetchSocial, fetchConnections,
+    gdprRequests, fetchGdprRequests, markGdprProcessed, clearAdmin,
   }
 })

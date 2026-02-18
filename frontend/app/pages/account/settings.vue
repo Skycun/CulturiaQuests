@@ -88,6 +88,25 @@
         </NuxtLink>
       </div>
 
+      <!-- Personal Data Section -->
+      <div class="bg-white rounded-[28px] p-6">
+        <h2 class="text-xl font-power text-indigo-950 mb-2">Données personnelles</h2>
+        <p class="text-sm font-onest text-indigo-950 opacity-60 mb-5">
+          Conformément au RGPD, vous pouvez demander une copie de toutes vos données personnelles.
+          Nous vous contacterons par email dans un délai de 30 jours.
+        </p>
+        <div v-if="gdprSuccess" class="bg-emerald-100 border-2 border-emerald-400 rounded-2xl p-4 mb-4">
+          <p class="text-sm font-onest font-semibold text-emerald-700 text-center">{{ gdprSuccess }}</p>
+        </div>
+        <div v-if="gdprError" class="bg-red-100 border-2 border-red-400 rounded-2xl p-4 mb-4">
+          <p class="text-sm font-onest font-semibold text-red-700 text-center">{{ gdprError }}</p>
+        </div>
+        <FormPixelButton variant="outline" color="indigo" :disabled="gdprLoading" @click="handleGdprRequest">
+          <span v-if="gdprLoading">Envoi en cours...</span>
+          <span v-else>Demander mes données</span>
+        </FormPixelButton>
+      </div>
+
       <!-- Friend Requests Section -->
       <div class="bg-white rounded-[28px] p-6">
         <h2 class="text-xl font-power text-indigo-950 mb-5">Confidentialité</h2>
@@ -180,6 +199,11 @@ const {
   updateSettings,
 } = useUserAvatar()
 const { deleteAccount, loading: deleteLoading, error: deleteError } = useDeleteAccount()
+const { requestData: requestGdprData, loading: gdprLoading, error: gdprError, success: gdprSuccess } = useGdprRequest()
+
+const handleGdprRequest = async () => {
+  await requestGdprData()
+}
 
 const isAuthenticated = computed(() => !!user.value)
 const fileInput = ref<HTMLInputElement | null>(null)

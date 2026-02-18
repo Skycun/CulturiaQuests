@@ -101,6 +101,8 @@ export default {
         'api::quiz-attempt.quiz-attempt.submitQuiz',
         'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
         'api::quiz-attempt.quiz-attempt.getMyHistory',
+        // GDPR
+        'api::gdpr-request.gdpr-request.requestData',
       ], 'Authenticated');
     }
 
@@ -144,6 +146,8 @@ export default {
         'api::admin-dashboard.admin-dashboard.getQuizAnalytics',
         'api::admin-dashboard.admin-dashboard.getSocialStats',
         'api::admin-dashboard.admin-dashboard.getConnectionAnalytics',
+        'api::admin-dashboard.admin-dashboard.getGdprRequests',
+        'api::admin-dashboard.admin-dashboard.markGdprProcessed',
       ];
 
       // Merge: all authenticated permissions + admin-only permissions
