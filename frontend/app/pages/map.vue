@@ -35,6 +35,7 @@
           <!-- Marqueurs extraits (Optimisé JS pur) -->
           <MapMarkers
             v-if="isMapReady"
+            ref="mapMarkersRef"
             :map="mapRef.leafletObject"
             :museums="validMuseums"
             :pois="validPOIs"
@@ -44,9 +45,9 @@
             @select-museum="selectItem"
             @select-poi="selectItem"
           />
-          
+
           <!-- Brouillard de guerre -->
-          <FogLayer v-if="isMapReady" :map="mapRef.leafletObject" />
+          <FogLayer v-if="isMapReady" ref="fogLayerRef" :map="mapRef.leafletObject" />
         </LMap>
       </ClientOnly>
 
@@ -66,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, toRaw } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, toRaw } from 'vue'
 import type * as Leaflet from 'leaflet' // Type only import for SSR safety
 import { useMuseumStore } from '~/stores/museum'
 import { usePOIStore } from '~/stores/poi'
@@ -112,6 +113,10 @@ const zoneCompletion = useZoneCompletion()
 // Refs
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapRef = ref<any>(null) // Type any car Leaflet map non typé
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fogLayerRef = ref<any>(null)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mapMarkersRef = ref<any>(null)
 const currentZoom = ref(13)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapBounds = ref<any>(null) // Limites visibles de la carte
@@ -129,6 +134,7 @@ let labelMarkersMap = new Map<string | number, Leaflet.Marker>()
 
 // Debounce & rAF helpers
 let moveDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let mapReadyTimer: ReturnType<typeof setTimeout> | null = null
 let rafId: number | null = null
 let lastZoneType: 'regions' | 'departments' | 'comcoms' | null = null
 
@@ -390,9 +396,27 @@ function onMapReady() {
   if (map?.getBounds) {
     mapBounds.value = map.getBounds().pad(0.2)
   }
-  setTimeout(() => {
+
+  // Patch Leaflet map.remove() pour absorber les erreurs internes pendant le teardown.
+  // vue-leaflet appelle map.remove() dans LMap.beforeUnmount, mais Leaflet peut throw
+  // quand des layers/handlers référencent des éléments DOM déjà détruits
+  // (ex: Marker._removeIcon → DomEvent.off(this._icon) avec _icon undefined).
+  if (map) {
+    const originalRemove = map.remove
+    map.remove = function () {
+      try {
+        return originalRemove.call(this)
+      } catch (_) {
+        // Erreur de cleanup Leaflet pendant navigation — inoffensive
+      }
+    }
+  }
+
+  mapReadyTimer = setTimeout(() => {
+    mapReadyTimer = null
     const m = mapRef.value?.leafletObject
-    if (m) m.invalidateSize()
+    if (!m) return // La carte a déjà été détruite (navigation rapide)
+    m.invalidateSize()
     isMapReady.value = true
     updateMapLayers()
   }, 100)
@@ -471,16 +495,39 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  geolocation.stopTracking()
-  if (moveDebounceTimer) clearTimeout(moveDebounceTimer)
-  if (rafId !== null) cancelAnimationFrame(rafId)
+// onBeforeUnmount : nettoyer AVANT que LMap.beforeUnmount détruise la carte Leaflet
+// Si on attend onUnmounted, le map est déjà détruit → "_leaflet_events undefined"
+onBeforeUnmount(() => {
+  // 1. Nettoyer les composants enfants qui tiennent des ressources Leaflet
+  // DOIT se faire avant isMapReady = false (les refs existent encore)
+  try { fogLayerRef.value?.cleanup() } catch (_) { /* ignore */ }
+  try { mapMarkersRef.value?.cleanup() } catch (_) { /* ignore */ }
+
+  // 2. Bloquer tout nouveau rendu immédiatement
+  isMapReady.value = false
+
+  // Annuler les opérations asynchrones en attente
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+  if (moveDebounceTimer) {
+    clearTimeout(moveDebounceTimer)
+    moveDebounceTimer = null
+  }
+  if (mapReadyTimer) {
+    clearTimeout(mapReadyTimer)
+    mapReadyTimer = null
+  }
+
+  // Supprimer les layers Leaflet pendant que la carte existe encore
   destroyZoneRenderer()
   for (const marker of labelMarkersMap.values()) {
     try { marker.remove() } catch (_) { /* ignore */ }
   }
   labelMarkersMap.clear()
 })
+
 </script>
 
 <style>

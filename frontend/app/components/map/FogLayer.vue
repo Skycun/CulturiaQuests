@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch, ref } from 'vue'
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import { useFogStore } from '~/stores/fog'
 import { useZoneStore } from '~/stores/zone'
 import { useProgressionStore } from '~/stores/progression'
@@ -240,13 +240,25 @@ onMounted(() => {
   drawFog()
 })
 
-onUnmounted(() => {
-  if (fogRafId !== null) cancelAnimationFrame(fogRafId)
-  if (props.map) {
-    const map = props.map as Map
-    map.off('moveend zoomend resize', drawFog)
-    if (canvas.value && fogPane) fogPane.removeChild(canvas.value)
+function cleanup() {
+  if (fogRafId !== null) {
+    cancelAnimationFrame(fogRafId)
+    fogRafId = null
   }
+  if (props.map) {
+    try { (props.map as Map).off('moveend zoomend resize', drawFog) } catch (_) { /* ignore */ }
+  }
+  if (canvas.value && fogPane) {
+    try { fogPane.removeChild(canvas.value) } catch (_) { /* ignore */ }
+  }
+  canvas.value = null
+  fogPane = null
+}
+
+defineExpose({ cleanup })
+
+onBeforeUnmount(() => {
+  cleanup()
 })
 
 // Réactivité — un seul watcher + rAF pour coalescer les appels

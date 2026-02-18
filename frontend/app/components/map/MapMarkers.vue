@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, watch, toRaw, computed } from 'vue'
+import { onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue'
 import L from 'leaflet'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
@@ -117,15 +117,18 @@ onMounted(() => {
   if (props.map) renderMarkers()
 })
 
-onUnmounted(() => {
+function cleanup() {
   if (markersLayer && props.map) {
     const rawMap = toRaw(props.map)
-    try {
-      rawMap.removeLayer(markersLayer)
-    } catch (e) {
-      // Ignore
-    }
+    try { rawMap.removeLayer(markersLayer) } catch (_) { /* ignore */ }
+    markersLayer = null
   }
+}
+
+defineExpose({ cleanup })
+
+onBeforeUnmount(() => {
+  cleanup()
 })
 
 // Réactivité Optimisée
