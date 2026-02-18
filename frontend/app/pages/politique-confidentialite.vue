@@ -3,7 +3,7 @@
     <div class="w-full max-w-2xl mx-auto">
 
       <!-- En-tête -->
-      <div class="mb-8 text-center">
+      <div class="mb-8 text-center pt-[env(safe-area-inset-top)]">
         <h1 class="text-3xl font-bold font-power text-indigo-600 mb-2">
           Politique de Confidentialité
         </h1>

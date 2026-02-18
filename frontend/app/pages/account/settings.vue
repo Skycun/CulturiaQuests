@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex flex-col bg-[#f3f3f3] pb-24">
     <!-- Header -->
-    <div class="flex items-center px-6 pt-10 pb-4">
+    <div class="flex items-center px-6 pt-[env(safe-area-inset-top)] pb-4">
       <div class="bg-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 cursor-pointer" @click="$router.back()">
         <Icon name="mdi:arrow-left" class="w-6 h-6 text-black" />
       </div>

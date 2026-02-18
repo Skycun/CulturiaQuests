@@ -19,6 +19,7 @@
           v-model:zoom="currentZoom"
           :center="[userLat, userLng]"
           :use-global-leaflet="false"
+          :zoom-control="false"
           class="h-full w-full"
           @ready="onMapReady"
           @moveend="onMapMove"

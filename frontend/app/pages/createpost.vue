@@ -2,12 +2,12 @@
   <div class="min-h-screen bg-[#F8F9FF] font-sans pb-40">
     
     <!-- Top Bar -->
-    <div class="bg-white p-4 sticky top-0 z-30 shadow-sm flex items-center justify-between border-b border-gray-100">
+    <div class="bg-white pt-[env(safe-area-inset-top)] p-4 sticky top-0 z-30 shadow-sm flex items-center justify-between border-b border-gray-100">
         <div class="flex items-center gap-4">
             <button @click="router.back()" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-all active:scale-90 border border-gray-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <h1 class="text-lg font-bold font-power text-slate-800 tracking-tight">Partager une aventure</h1>
+            <h1 class="text-lg font-power text-slate-800">Partager une aventure</h1>
         </div>
         <div v-if="selectedRun" class="text-xs font-bold text-indigo-500 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100">
             Aperçu en direct

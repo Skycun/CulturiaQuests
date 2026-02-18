@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen w-full flex flex-col bg-[#f3f3f3] font-onest overflow-hidden">
     <!-- Header -->
-    <div class="shrink-0 pt-4 pb-2 px-6 relative flex items-center justify-between z-20">
+    <div class="shrink-0 pt-[env(safe-area-inset-top)] pb-2 px-6 relative flex items-center justify-between z-20">
       <div 
         class="bg-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 cursor-pointer shadow-sm active:scale-95 transition-transform" 
         @click="handleBack"

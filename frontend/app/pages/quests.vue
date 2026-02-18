@@ -15,7 +15,7 @@ onMounted(async () => {
 
 <template>
     <div class="min-h-screen bg-gray-50 pb-20 pt-6 px-4 flex flex-col">
-        <h1 class="text-3xl text-center text-gray-800 mb-8 font-power">
+        <h1 class="text-3xl text-center text-gray-800 mb-8 font-power pt-[env(safe-area-inset-top)]">
             Tableau de quêtes
         </h1>
 

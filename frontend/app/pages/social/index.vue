@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-100 font-sans pb-24">
     
-    <header class="sticky top-0 z-50 p-4 bg-gray-100/90 backdrop-blur-sm">
+    <header class="sticky top-0 z-50 p-4 pt-[env(safe-area-inset-top)] bg-gray-100/90 backdrop-blur-sm">
       <div class="bg-white rounded-[30px] shadow-sm p-4 pl-6 flex justify-between items-center">
         
         <h1 class="text-2xl font-bold text-slate-800">Social</h1>
