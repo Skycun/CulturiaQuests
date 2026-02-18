@@ -23,6 +23,7 @@ export default defineNuxtRouteMiddleware((to) => {
   // Check if user is on desktop and desktop access is not allowed
   if (!allowDesktop && isDesktop && !isDashboardRoute) {
     return
+
   }
 
   // Define public routes accessible without authentication

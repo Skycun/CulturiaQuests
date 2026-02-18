@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { shallowRef, triggerRef, ref } from 'vue'
+import { shallowRef, ref } from 'vue'
 import { get, set } from 'idb-keyval'
 
 // Interfaces génériques
@@ -27,7 +27,7 @@ export interface Comcom extends GeoZone {
 }
 
 const DB_VERSION_KEY = 'zones-version'
-const CURRENT_DATA_VERSION = '2.0' // Bumped version for new architecture
+const CURRENT_DATA_VERSION = '2.1' // Bumped: ajout relations parent comcom→dept, dept→region
 
 export const useZoneStore = defineStore('zone', () => {
   // 3 États distincts — shallowRef car les géométries (~18MB) ne sont jamais mutées
@@ -43,7 +43,7 @@ export const useZoneStore = defineStore('zone', () => {
    * Initialise le store : Charge les 3 collections en parallèle
    */
   async function init() {
-    if (isInitialized.value) return
+    if (import.meta.server || isInitialized.value) return
     
     loading.value = true
     error.value = null
@@ -108,6 +108,14 @@ export const useZoneStore = defineStore('zone', () => {
     let hasMore = true
     const allItems: any[] = []
 
+    // Query params additionnels pour récupérer les relations parent
+    const extraQuery: Record<string, string> = {}
+    if (endpoint === 'comcoms') {
+      extraQuery['populate[department][fields][0]'] = 'documentId'
+    } else if (endpoint === 'departments') {
+      extraQuery['populate[region][fields][0]'] = 'documentId'
+    }
+
     while (hasMore && page <= MAX_PAGES) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response: any = await $fetch(`${config.public.strapi.url}/api/${endpoint}`, {
@@ -117,7 +125,8 @@ export const useZoneStore = defineStore('zone', () => {
           'fields[0]': 'name',
           'fields[1]': 'code',
           'fields[2]': 'geometry',
-          'fields[3]': 'documentId' // Important pour Strapi v5
+          'fields[3]': 'documentId', // Important pour Strapi v5
+          ...extraQuery
         }
       })
 
@@ -136,7 +145,7 @@ export const useZoneStore = defineStore('zone', () => {
         page++
       }
     }
-    
+
     return allItems.map((item: any) => {
       // Calcul du centroïde pour filtrage BBOX
       let centerLat: number | undefined
@@ -167,7 +176,7 @@ export const useZoneStore = defineStore('zone', () => {
         // Silent error
       }
 
-      return {
+      const mapped: any = {
         id: item.id,
         documentId: item.documentId,
         name: item.name,
@@ -176,6 +185,16 @@ export const useZoneStore = defineStore('zone', () => {
         centerLat,
         centerLng
       }
+
+      // Relations parent
+      if (item.department?.documentId) {
+        mapped.department = { documentId: item.department.documentId }
+      }
+      if (item.region?.documentId) {
+        mapped.region = { documentId: item.region.documentId }
+      }
+
+      return mapped
     })
   }
 
