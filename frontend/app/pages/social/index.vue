@@ -6,9 +6,21 @@
         
         <h1 class="text-2xl font-bold text-slate-800">Social</h1>
 
-        <button 
-          v-if="!isQuizDone" 
-          @click="goToQuiz" 
+        <div class="flex items-center gap-2">
+        <button
+          @click="router.push('/social/friends')"
+          class="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-indigo-50 transition-colors cursor-pointer"
+        >
+          <Icon name="mdi:account-group" class="w-7 h-7 text-indigo-500" />
+          <span
+            v-if="playerFriendshipStore.hasPendingRequests"
+            class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"
+          />
+        </button>
+
+        <button
+          v-if="!isQuizDone"
+          @click="goToQuiz"
           class="flex items-center gap-3 cursor-pointer group hover:bg-orange-50 px-3 py-1.5 rounded-full transition-all"
         >
           <div class="relative">
@@ -35,6 +47,7 @@
             </div>
           </div>
           <span class="font-bold text-yellow-700">Série en cours !</span>
+        </div>
         </div>
       </div>
     </header>
@@ -76,10 +89,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import PostCard from '~/components/social/PostCard.vue'; 
+import PostCard from '~/components/social/PostCard.vue';
 import { formatCompactNumber } from '~/utils/format';
+import { usePlayerFriendshipStore } from '~/stores/playerFriendship';
 
 const router = useRouter();
+const playerFriendshipStore = usePlayerFriendshipStore();
 
 // --- ÉTAT DU QUIZ ---
 const isQuizDone = ref(false); 
@@ -204,6 +219,7 @@ const fetchPosts = async () => {
 
 onMounted(() => {
     fetchPosts();
+    playerFriendshipStore.fetchFriendships();
 });
 
 const goToQuiz = () => {

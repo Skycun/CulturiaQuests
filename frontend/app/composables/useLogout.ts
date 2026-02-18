@@ -5,16 +5,14 @@
 export function useLogout() {
   const { logout: strapiLogout } = useStrapiAuth()
   const guildStore = useGuildStore()
-  const router = useRouter()
-
   /**
    * Performs a complete logout:
    * 1. Clears the Strapi JWT token
    * 2. Clears all Pinia stores
    * 3. Clears localStorage
-   * 4. Optionally redirects to a specified route
+   * 4. Redirects to a specified route (default: '/')
    */
-  async function logout(redirectTo?: string) {
+  async function logout(redirectTo: string = '/') {
     // Explicitly clear the Strapi JWT cookie
     const token = useCookie('culturia_jwt', { path: '/' })
     token.value = null
@@ -31,10 +29,8 @@ export function useLogout() {
       sessionStorage.clear()
     }
 
-    // Redirect if specified
-    if (redirectTo) {
-      router.push(redirectTo)
-    }
+    // Force full page reload to reset all state cleanly
+    await navigateTo(redirectTo, { external: true })
   }
 
   return {

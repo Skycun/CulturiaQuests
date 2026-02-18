@@ -9,7 +9,7 @@
         <Icon name="mdi:close" class="w-6 h-6 text-[#1e1a4d]" />
       </div>
 
-      <div class="absolute left-0 right-0 top-6 flex flex-col items-center pointer-events-none">
+      <div class="absolute left-0 right-0 top-[env(safe-area-inset-top)] flex flex-col items-center pointer-events-none">
         <p class="text-[13px] font-medium text-[#1e1a4d] opacity-80">Quiz Terminé</p>
         <h1 class="text-[24px] font-power font-extrabold text-[#1e1a4d] leading-none mt-0.5">Résultats</h1>
       </div>

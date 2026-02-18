@@ -13,6 +13,7 @@ import { useQuizStore } from './quiz'
 import { useStatisticsStore } from './statistics'
 import { useProgressionStore } from './progression'
 import { useFogStore } from './fog'
+import { usePlayerFriendshipStore } from './playerFriendship'
 
 export const useGuildStore = defineStore('guild', () => {
   // State
@@ -68,6 +69,7 @@ export const useGuildStore = defineStore('guild', () => {
     useStatisticsStore().clearStatistics()
     useProgressionStore().clearProgressions()
     useFogStore().clearFog()
+    usePlayerFriendshipStore().clearPlayerFriendships()
   }
 
   /**

@@ -9,7 +9,7 @@
         <Icon name="mdi:arrow-left" class="w-6 h-6 text-[#1e1a4d]" />
       </div>
 
-      <div class="absolute left-0 right-0 top-4 flex flex-col items-center pointer-events-none">
+      <div class="absolute left-0 right-0 top-[env(safe-area-inset-top)]  flex flex-col items-center pointer-events-none">
         <p class="text-[12px] font-medium text-[#1e1a4d] opacity-70">{{ formattedDate }}</p>
         <h1 class="text-[22px] font-power font-extrabold text-[#1e1a4d] leading-none mt-0.5">Quiz Culture</h1>
       </div>
