@@ -63,7 +63,7 @@ export default defineNuxtConfig({
       strapi: {
         url: 'http://localhost:1337', // Public URL for Client
       },
-      allowDesktop: 'false', // Overridden by NUXT_PUBLIC_ALLOW_DESKTOP at runtime
+      allowDesktop: 'true', // Overridden by NUXT_PUBLIC_ALLOW_DESKTOP at runtime
     },
   },
   strapi: {
