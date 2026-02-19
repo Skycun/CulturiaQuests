@@ -413,6 +413,7 @@ function onMapReady() {
     mapReadyTimer = null
     const m = mapRef.value?.leafletObject
     if (!m) return // La carte a déjà été détruite (navigation rapide)
+    m.zoomControl?.remove()
     m.invalidateSize()
 
     // Ajout de la tile layer programmatiquement pour supporter maxNativeZoom
