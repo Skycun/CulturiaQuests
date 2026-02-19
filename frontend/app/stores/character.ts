@@ -20,6 +20,20 @@ export const useCharacterStore = defineStore('character', () => {
     return (id: number) => characters.value.find(c => c.id === id)
   })
 
+  const usedIconIds = computed(() => {
+    return characters.value
+      .map(c => {
+        const attrs = c.attributes || c
+        const icon = attrs.icon?.data || attrs.icon
+        return icon?.id ?? null
+      })
+      .filter((id): id is number => id !== null)
+  })
+
+  const filteredAvailableIcons = computed(() => {
+    return availableIcons.value.filter(icon => !usedIconIds.value.includes(icon.id))
+  })
+
   // Actions
   function setCharacters(data: Character[]) {
     characters.value = data
@@ -194,6 +208,8 @@ export const useCharacterStore = defineStore('character', () => {
     hasCharacters,
     characterCount,
     getCharacterById,
+    usedIconIds,
+    filteredAvailableIcons,
     // Actions
     setCharacters,
     clearCharacters,

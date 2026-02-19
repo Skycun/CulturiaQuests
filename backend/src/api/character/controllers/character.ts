@@ -3,6 +3,7 @@
  */
 
 import { factories } from '@strapi/strapi';
+import { getMaxCharacters, calculateGuildLevel } from '../../../utils/guild-level';
 
 export default factories.createCoreController('api::character.character', ({ strapi }) => ({
   /**
@@ -117,7 +118,7 @@ export default factories.createCoreController('api::character.character', ({ str
   },
 
   /**
-   * Create character - automatically assigns to user's guild and creates starter items
+   * Create character - assigns to user's guild with level-based limit and icon uniqueness
    */
   async create(ctx) {
     const user = ctx.state.user;
@@ -126,16 +127,56 @@ export default factories.createCoreController('api::character.character', ({ str
       return ctx.unauthorized('You must be logged in to create a character');
     }
 
+    // Fetch guild with exp and existing characters (with their icon ids)
     const userGuild = await strapi.db.query('api::guild.guild').findOne({
       where: { user: { id: user.id } },
-      select: ['id', 'documentId'],
+      select: ['id', 'documentId', 'exp'],
+      populate: {
+        characters: {
+          select: ['id', 'documentId'],
+          populate: {
+            icon: { select: ['id'] },
+          },
+        },
+      },
     });
 
     if (!userGuild) {
       return ctx.badRequest('You must have a guild to create a character');
     }
 
+    // Validate max character count based on guild level
+    const guildLevel = calculateGuildLevel(Number(userGuild.exp || 0));
+    const maxChars = getMaxCharacters(guildLevel);
+    const currentCount = userGuild.characters?.length || 0;
+
+    if (currentCount >= maxChars) {
+      return ctx.badRequest(
+        `Votre niveau de guilde (${guildLevel}) autorise un maximum de ${maxChars} personnage(s). Vous en avez déjà ${currentCount}.`
+      );
+    }
+
     const { data } = ctx.request.body;
+
+    // Validate required fields
+    if (!data?.firstname || !data?.lastname) {
+      return ctx.badRequest('Le prénom et le nom sont obligatoires.');
+    }
+
+    // Validate icon is provided
+    const requestedIconId = data.icon;
+    if (!requestedIconId) {
+      return ctx.badRequest('Une icône est obligatoire pour la création du personnage.');
+    }
+
+    // Validate icon uniqueness within the guild
+    const existingIconIds = (userGuild.characters || [])
+      .map((c: any) => c.icon?.id)
+      .filter(Boolean);
+
+    if (existingIconIds.includes(requestedIconId)) {
+      return ctx.badRequest('Cette icône est déjà utilisée par un autre personnage de votre guilde.');
+    }
 
     const characterData = {
       ...data,
@@ -148,7 +189,7 @@ export default factories.createCoreController('api::character.character', ({ str
       data: characterData,
     });
 
-    // Create starter items automatically
+    // Create starter items (3 basic items: weapon, helmet, charm)
     await strapi.service('api::character.character').createStarterItems(
       entity.documentId,
       userGuild.documentId
@@ -160,9 +201,9 @@ export default factories.createCoreController('api::character.character', ({ str
       populate: {
         icon: { fields: ['id', 'url', 'name'] },
         items: {
-          populate: ['icon', 'rarity']
-        }
-      }
+          populate: ['icon', 'rarity'],
+        },
+      },
     });
 
     const sanitizedEntity = await this.sanitizeOutput(populatedCharacter, ctx);
