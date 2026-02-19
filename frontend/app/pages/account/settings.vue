@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col bg-[#f3f3f3] pb-24">
     <!-- Header -->
     <div class="flex items-center px-6 pt-[env(safe-area-inset-top)] pb-4">
-      <div class="bg-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 cursor-pointer" @click="$router.back()">
+      <div class="bg-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 cursor-pointer" @click="navigateTo('/guild')">
         <Icon name="mdi:arrow-left" class="w-6 h-6 text-black" />
       </div>
       <h1 class="flex-1 text-center text-2xl font-power text-indigo-950 pr-10">Paramètres</h1>
@@ -149,6 +149,24 @@
         </div>
       </div>
 
+      <!-- Dashboard Admin (visible uniquement pour les admins) -->
+      <!-- ClientOnly car le rôle user n'est disponible que côté client (JWT cookie) -->
+      <ClientOnly>
+        <div v-if="isAdmin" class="bg-white rounded-[28px] p-6">
+          <h2 class="text-xl font-power text-indigo-950 mb-5">Dashboard</h2>
+          <NuxtLink
+            to="/dashboard"
+            class="flex items-center justify-between text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            <div class="flex items-center gap-3">
+              <Icon name="mdi:view-dashboard-outline" class="w-5 h-5 shrink-0" />
+              <span class="font-onest text-base">Accéder au tableau de bord</span>
+            </div>
+            <Icon name="mdi:chevron-right" class="w-5 h-5 shrink-0 opacity-50" />
+          </NuxtLink>
+        </div>
+      </ClientOnly>
+
       <!-- Danger Zone Section -->
       <div class="bg-white rounded-[28px] p-6 border-2 border-red-200">
         <h2 class="text-xl font-power text-red-600 mb-2">Zone dangereuse</h2>
@@ -209,6 +227,7 @@
 
 <script setup lang="ts">
 const user = useStrapiUser()
+const { isAdmin, verifyAdmin } = useAdmin()
 const { logout } = useLogout()
 const {
   settings,
@@ -236,10 +255,10 @@ const showDeleteConfirm = ref(false)
 // Local reactive state for friend requests toggle
 const friendRequestsEnabled = computed(() => settings.value?.friend_requests_enabled ?? false)
 
-// Fetch settings on mount
+// Fetch settings and verify admin status on mount
 onMounted(async () => {
   if (isAuthenticated.value) {
-    await fetchSettings()
+    await Promise.all([fetchSettings(), verifyAdmin()])
   }
 })
 

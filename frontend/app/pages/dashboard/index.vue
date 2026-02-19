@@ -277,7 +277,7 @@ const mainKpis = computed(() => {
       color: 'amber',
     },
     {
-      icon: 'bxs-sword',
+      icon: 'mdi:sword',
       label: 'Personnages',
       value: t.characters,
       sub: null,

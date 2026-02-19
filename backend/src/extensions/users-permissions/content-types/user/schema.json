@@ -74,12 +74,6 @@
     "age": {
       "type": "integer"
     },
-    "friends": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "plugin::users-permissions.user",
-      "mappedBy": "friends"
-    },
     "posts": {
       "type": "relation",
       "relation": "oneToMany",

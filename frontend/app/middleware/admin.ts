@@ -2,7 +2,7 @@
  * Admin route middleware
  * Protects /dashboard routes - redirects non-admin users to home
  */
-export default defineNuxtRouteMiddleware(() => {
+export default defineNuxtRouteMiddleware(async () => {
   // Skip SSR: useStrapiToken can't read the cookie name from the private runtimeConfig
   // (which only has `url`). The client will re-run this middleware on hydration.
   if (import.meta.server) return
@@ -13,8 +13,11 @@ export default defineNuxtRouteMiddleware(() => {
     return navigateTo('/account/login')
   }
 
-  const { checkAdminRole } = useAdmin()
+  const { checkAdminRole, verifyAdmin } = useAdmin()
   if (!checkAdminRole()) {
-    return navigateTo('/')
+    await verifyAdmin()
+    if (!checkAdminRole()) {
+      return navigateTo('/')
+    }
   }
 })

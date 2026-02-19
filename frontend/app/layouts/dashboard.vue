@@ -35,6 +35,13 @@
             <p class="text-xs text-gray-500">Admin</p>
           </div>
         </div>
+        <NuxtLink
+          to="/account/settings"
+          class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+        >
+          <Icon name="mdi:cog-outline" class="w-4 h-4" />
+          <span>Paramètres</span>
+        </NuxtLink>
         <button
           class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
           @click="handleBackToGame"
