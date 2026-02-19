@@ -222,20 +222,22 @@ const selectedItemObject = computed(() => {
     if (!selectedItemId.value) return null;
     return props.allInventory.find(i => i.id === selectedItemId.value);
 });
-const getLevelCost = (level, rarity) => {
-    let rarityMult = 1;
-    switch(rarity?.toLowerCase()) {
-        case 'common': rarityMult = 1.5; break; case 'rare': rarityMult = 3; break; case 'epic': rarityMult = 6; break; case 'legendary': rarityMult = 10; break;
-    }
-    return { scrap: Math.floor(5 * level * rarityMult), gold: Math.floor(50 * level * rarityMult) };
+const getLevelCost = (level, rarity, indexDamage) => {
+    const POWER_RARITY_MULT = { basic: 1, common: 1.5, rare: 2, epic: 3, legendary: 5 };
+    const rarityKey = (typeof rarity === 'string' ? rarity : rarity?.name || 'common').toLowerCase();
+    const rarityMult = POWER_RARITY_MULT[rarityKey] || 1;
+    const damageGain = (indexDamage || 0) * rarityMult;
+    const levelTax = 1 + level * 0.05;
+    return { scrap: Math.ceil(damageGain * 0.5 * levelTax), gold: Math.ceil(damageGain * 5 * levelTax) };
 };
 const upgradeCost = computed(() => {
     if (!selectedItemObject.value) return { scrap: 0, gold: 0 };
     const currentLevel = selectedItemObject.value.level || 1;
     const rarity = selectedItemObject.value.rarity;
+    const indexDamage = selectedItemObject.value.index_damage || 0;
     let totalScrap = 0, totalGold = 0;
     for (let i = 0; i < upgradeIncrement.value; i++) {
-        const lvlCost = getLevelCost(currentLevel + i, rarity);
+        const lvlCost = getLevelCost(currentLevel + i, rarity, indexDamage);
         totalScrap += lvlCost.scrap; totalGold += lvlCost.gold;
     }
     return { scrap: totalScrap, gold: totalGold };
@@ -255,9 +257,10 @@ const setMaxUpgrade = () => {
     if (!selectedItemObject.value) return;
     const userGold = guildStore.gold || 0, userScrap = guildStore.scrap || 0;
     const currentLevel = selectedItemObject.value.level || 1, rarity = selectedItemObject.value.rarity;
+    const indexDamage = selectedItemObject.value.index_damage || 0;
     let possibleLevels = 0, currentCostScrap = 0, currentCostGold = 0;
     for (let i = 0; i < 1000; i++) {
-        const nextLvlCost = getLevelCost(currentLevel + i, rarity);
+        const nextLvlCost = getLevelCost(currentLevel + i, rarity, indexDamage);
         if (currentCostScrap + nextLvlCost.scrap <= userScrap && currentCostGold + nextLvlCost.gold <= userGold) {
             currentCostScrap += nextLvlCost.scrap; currentCostGold += nextLvlCost.gold; possibleLevels++;
         } else break;
