@@ -59,7 +59,7 @@
               class="h-full rounded-full transition-all bg-white"
               :style="{ width: `${Math.min(badge.completion, 100)}%` }"
             ></div>
-          </div>²
+          </div>
 
           <p class="text-[10px] text-center mt-0.5 truncate font-bold text-white">
               {{ badge.name }}
