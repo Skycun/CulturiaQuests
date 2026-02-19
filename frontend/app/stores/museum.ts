@@ -83,5 +83,11 @@ export const useMuseumStore = defineStore('museum', () => {
     }
   }
 
-  return { museums, loading, error, isInitialized, init, fetchAll, hasMuseums }
+  function clearMuseums() {
+    museums.value = []
+    isInitialized.value = false
+    error.value = null
+  }
+
+  return { museums, loading, error, isInitialized, init, fetchAll, hasMuseums, clearMuseums }
 })

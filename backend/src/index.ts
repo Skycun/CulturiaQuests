@@ -101,6 +101,10 @@ export default {
         'api::quiz-attempt.quiz-attempt.submitQuiz',
         'api::quiz-attempt.quiz-attempt.getTodayLeaderboard',
         'api::quiz-attempt.quiz-attempt.getMyHistory',
+        // Post (social feed)
+        'api::post.post.find',
+        'api::post.post.create',
+        'api::post.post.toggleLike',
         // GDPR
         'api::gdpr-request.gdpr-request.requestData',
       ], 'Authenticated');

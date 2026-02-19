@@ -81,5 +81,11 @@ export const usePOIStore = defineStore('poi', () => {
     }
   }
 
-  return { pois, loading, error, isInitialized, init, fetchAll, hasPOIs }
+  function clearPOIs() {
+    pois.value = []
+    isInitialized.value = false
+    error.value = null
+  }
+
+  return { pois, loading, error, isInitialized, init, fetchAll, hasPOIs, clearPOIs }
 })

@@ -29,17 +29,17 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
 
   async find(ctx) {
     const user = ctx.state.user;
-    
+
     // Configuration de base pour la population
     const populate: any = [
-        'author', 
-        'author.avatar', 
-        'run_history', 
-        'run_history.museum', 
-        'run_history.museum.tags', 
-        'likes', 
-        'best_loot', 
-        'best_loot.rarity', 
+        'author',
+        'author.avatar',
+        'run_history',
+        'run_history.museum',
+        'run_history.museum.tags',
+        'likes',
+        'best_loot',
+        'best_loot.rarity',
         'best_loot.icon'
     ];
 
@@ -47,34 +47,62 @@ export default factories.createCoreController('api::post.post', ({ strapi }) => 
         return this.transformResponse([]);
     }
 
-    // 1. Récupérer l'utilisateur avec ses amis
-    const fullUser: any = await strapi.db.query('plugin::users-permissions.user').findOne({
-        where: { id: user.id },
-        populate: ['friends']
+    // 1. Récupérer la guilde de l'utilisateur courant
+    const myGuild: any = await strapi.db.query('api::guild.guild').findOne({
+        where: { user: { id: user.id } },
+        select: ['documentId'],
     });
 
-    const friends = fullUser?.friends || [];
-    
-    // On collecte TOUS les identifiants possibles (id et documentId) pour être sûr
-    const friendDocIds = friends.map(f => f.documentId).filter(Boolean);
-    const friendNumericIds = friends.map(f => f.id).filter(Boolean);
-    
-    // On s'ajoute soi-même à la liste pour voir nos propres posts
-    if (user.documentId) friendDocIds.push(user.documentId);
-    friendNumericIds.push(user.id);
+    // Initialiser la liste avec soi-même
+    const friendUserDocIds: string[] = user.documentId ? [user.documentId] : [];
+    const friendUserNumericIds: number[] = [user.id];
 
-    // 2. Récupérer les posts du cercle social uniquement (Soi-même + Amis)
+    if (myGuild) {
+        // 2. Trouver toutes les amitiés acceptées impliquant la guilde courante
+        const acceptedFriendships: any[] = await strapi.db.query('api::player-friendship.player-friendship').findMany({
+            where: {
+                status: 'accepted',
+                $or: [
+                    { requester: { documentId: myGuild.documentId } },
+                    { receiver: { documentId: myGuild.documentId } },
+                ],
+            },
+            populate: {
+                requester: {
+                    select: ['documentId'],
+                    populate: { user: { select: ['id', 'documentId'] } },
+                },
+                receiver: {
+                    select: ['documentId'],
+                    populate: { user: { select: ['id', 'documentId'] } },
+                },
+            },
+        });
+
+        // 3. Extraire les IDs utilisateur des guildes amies
+        for (const friendship of acceptedFriendships) {
+            const friendGuild = friendship.requester?.documentId === myGuild.documentId
+                ? friendship.receiver
+                : friendship.requester;
+
+            const friendUser = friendGuild?.user;
+            if (friendUser?.documentId) friendUserDocIds.push(friendUser.documentId);
+            if (friendUser?.id) friendUserNumericIds.push(friendUser.id);
+        }
+    }
+
+    // 4. Récupérer les posts du cercle social (Soi-même + Amis)
     const allPosts = await strapi.documents('api::post.post').findMany({
         filters: {
-            author: { 
+            author: {
                 $or: [
-                    { documentId: { $in: friendDocIds } },
-                    { id: { $in: friendNumericIds } }
+                    { documentId: { $in: friendUserDocIds } },
+                    { id: { $in: friendUserNumericIds } }
                 ]
             }
         },
         sort: 'createdAt:desc',
-        limit: 50, // On peut augmenter la limite car c'est filtré
+        limit: 50,
         populate
     }) as any[];
 
