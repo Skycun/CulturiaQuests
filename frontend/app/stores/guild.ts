@@ -129,7 +129,11 @@ export const useGuildStore = defineStore('guild', () => {
             },
             quests: {
               populate: {
-                npc: { populate: ['dialogs'] },
+                npc: {
+                  populate: {
+                    dialogs: true,
+                  },
+                },
                 poi_a: true,
                 poi_b: true,
               },

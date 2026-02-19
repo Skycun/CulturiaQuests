@@ -31,7 +31,7 @@
     </div>
 
     <!-- Dialogue overlay RPG -->
-    <DialogueDialogue
+    <Dialogue
       v-if="dialogLines.length > 0"
       :lines="dialogLines"
       :npc-firstname="npcFirstname"

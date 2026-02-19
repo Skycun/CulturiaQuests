@@ -101,7 +101,7 @@ const router = useRouter()
 const badgeStore = useBadgeStore()
 const zoneStore = useZoneStore()
 
-const activeTab = ref('region')
+const activeTab = ref('comcom')
 const showMaxAlert = ref(false)
 const zonesLoading = ref(false)
 

@@ -6,19 +6,28 @@
 
         <div class="header-pill pointer-events-auto">
           <img src="/assets/coin.png" alt="Or" class="header-icon">
-          <span class="block sm:hidden">{{ formatCompact(guildStore.gold) }}</span>
-          <span class="hidden sm:block">{{ formatFull(guildStore.gold) }}</span>
+          <ClientOnly>
+            <span class="block sm:hidden">{{ formatCompact(guildStore.gold) }}</span>
+            <span class="hidden sm:block">{{ formatFull(guildStore.gold) }}</span>
+            <template #fallback><span>--</span></template>
+          </ClientOnly>
         </div>
 
         <div class="header-pill pointer-events-auto">
           <img src="/assets/scrap.png" alt="Scrap" class="header-icon">
-          <span class="block sm:hidden">{{ formatCompact(guildStore.scrap) }}</span>
-          <span class="hidden sm:block">{{ formatFull(guildStore.scrap) }}</span>
+          <ClientOnly>
+            <span class="block sm:hidden">{{ formatCompact(guildStore.scrap) }}</span>
+            <span class="hidden sm:block">{{ formatFull(guildStore.scrap) }}</span>
+            <template #fallback><span>--</span></template>
+          </ClientOnly>
         </div>
 
         <div class="header-pill pointer-events-auto">
           <img src="/assets/level.png" alt="Niveau" class="header-icon">
-          <span>Lvl {{ guildStore.level }}</span>
+          <ClientOnly>
+            <span>Lvl {{ guildStore.level }}</span>
+            <template #fallback><span>--</span></template>
+          </ClientOnly>
         </div>
 
       </div>

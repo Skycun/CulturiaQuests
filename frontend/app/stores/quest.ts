@@ -87,7 +87,15 @@ export const useQuestStore = defineStore('quest', () => {
       const response = await client<any>('/quests', {
         method: 'GET',
         params: {
-          populate: ['npc', 'poi_a', 'poi_b'],
+          populate: {
+            npc: {
+              populate: {
+                dialogs: true,
+              },
+            },
+            poi_a: true,
+            poi_b: true,
+          },
         },
       })
 

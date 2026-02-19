@@ -3,26 +3,38 @@
     <Transition name="overlay">
       <div
         v-if="visible"
-        class="fixed inset-0 z-[9999] flex flex-col justify-end bg-black/70 backdrop-blur-sm"
+        class="fixed inset-0 z-[9999] flex flex-col bg-black/70 backdrop-blur-sm overflow-hidden"
         @click="advance"
       >
-        <!-- Zone de dialogue en bas de l'écran -->
-        <div class="p-6 pb-10" @click.stop="advance">
-          <div class="max-w-lg mx-auto">
-            <DialogueLigneDialogue
-              :key="currentIndex"
-              :text="currentLine"
-              :npc-image="npcImage"
-            />
+        <!-- Container scrollable centré sur la dernière ligne -->
+        <div ref="scrollContainer" class="flex-1 overflow-y-auto flex flex-col">
+          <!-- Spacer haut pour centrer la première ligne -->
+          <div class="flex-1 min-h-[40vh]" />
 
-            <!-- Indicateur "tap to continue" -->
-            <p v-if="currentIndex < resolvedLines.length - 1" class="text-center text-white/40 text-xs mt-4 font-onest animate-pulse">
-              Appuyez pour continuer...
-            </p>
-            <p v-else class="text-center text-white/40 text-xs mt-4 font-onest animate-pulse">
-              Appuyez pour fermer
-            </p>
+          <!-- Toutes les lignes visibles -->
+          <div class="px-3 space-y-4 w-full">
+            <DialogueLigneDialogue
+              v-for="(line, index) in visibleLines"
+              :key="index"
+              :text="line"
+              :npc-image="npcImage"
+              :class="index < currentIndex ? 'opacity-40' : ''"
+              class="transition-opacity duration-300"
+            />
           </div>
+
+          <!-- Spacer bas pour centrer la dernière ligne -->
+          <div class="flex-1 min-h-[40vh]" />
+        </div>
+
+        <!-- Indicateur fixe en bas -->
+        <div class="p-4 text-center">
+          <p v-if="currentIndex < resolvedLines.length - 1" class="text-white/40 text-xs font-onest animate-pulse">
+            Appuyez pour continuer...
+          </p>
+          <p v-else class="text-white/40 text-xs font-onest animate-pulse">
+            Appuyez pour fermer
+          </p>
         </div>
       </div>
     </Transition>
@@ -30,6 +42,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ inheritAttrs: false })
+
 const EMOTION_MAP: Record<string, string> = {
   quest_description: 'Quest.png',
   expedition_fail: 'Echec.png',
@@ -71,12 +85,25 @@ const resolvedLines = computed(() => {
 })
 
 const currentIndex = ref(0)
+const scrollContainer = ref<HTMLElement | null>(null)
 
-const currentLine = computed(() => resolvedLines.value[currentIndex.value] || '')
+const visibleLines = computed(() => resolvedLines.value.slice(0, currentIndex.value + 1))
 
 // Reset l'index quand le dialogue s'ouvre
 watch(() => props.visible, (val) => {
   if (val) currentIndex.value = 0
+})
+
+// Scroll vers la dernière ligne pour la garder centrée
+watch(currentIndex, () => {
+  nextTick(() => {
+    if (!scrollContainer.value) return
+    const lines = scrollContainer.value.querySelectorAll('.dialogue-bubble')
+    const lastLine = lines[lines.length - 1]
+    if (lastLine) {
+      lastLine.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  })
 })
 
 function advance() {

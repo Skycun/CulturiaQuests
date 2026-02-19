@@ -1,7 +1,7 @@
 <template>
   <div class="h-screen bg-gradient-to-b from-[#040050] to-black flex flex-col text-white">
     <!-- Dialogue overlay RPG -->
-    <DialogueDialogue
+    <Dialogue
       :lines="dialogLines"
       :npc-firstname="npcFirstname"
       text-type="expedition_appear"
