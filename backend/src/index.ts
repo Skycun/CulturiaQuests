@@ -61,6 +61,8 @@ export default {
     if (authenticatedRole) {
       await grantPermissions(strapi, authenticatedRole.id, [
         'api::guild.guild.setup',
+        'api::character.character.create',
+        'api::character.character.getCharacterIcons',
         'api::item.item.getItemIcons',
         'api::museum.museum.find',
         'api::museum.museum.findOne',

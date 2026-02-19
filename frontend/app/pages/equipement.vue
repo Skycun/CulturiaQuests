@@ -14,29 +14,53 @@
       </div>
 
       <div v-else>
-        <CharacterRow 
-          v-for="perso in formattedCharacters" 
+        <CharacterRow
+          v-for="perso in formattedCharacters"
           :key="perso.id"
           :characterName="perso.name"
           :characterImage="perso.avatar"
           :items="perso.equippedItems"
-          @click-item="(item) => openOverlay(perso, item)" 
+          @click-item="(item) => openOverlay(perso, item)"
         />
-        
+
+        <!-- Slot d'ajout de personnage (ClientOnly car maxCharacters dépend de l'exp persistée en localStorage) -->
+        <ClientOnly>
+          <div
+            v-if="guildStore.canAddCharacter"
+            class="bg-white rounded-[30px] p-4 flex items-center justify-center shadow-sm mb-4 w-full max-w-lg mx-auto cursor-pointer hover:bg-gray-50 transition-colors border-2 border-dashed border-gray-300"
+            @click="showCreationOverlay = true"
+          >
+            <div class="flex flex-col items-center gap-2 py-4">
+              <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                <span class="text-3xl sm:text-4xl text-gray-400 font-bold">+</span>
+              </div>
+              <span class="font-pixel text-gray-400 text-sm">
+                Nouveau personnage ({{ characterStore.characterCount }}/{{ guildStore.maxCharacters }})
+              </span>
+            </div>
+          </div>
+        </ClientOnly>
+
         <div v-if="formattedCharacters.length === 0" class="text-center text-gray-400 mt-10">
           Aucun personnage trouvé.
         </div>
       </div>
     </main>
 
-    <EquipmentOverlay 
+    <EquipmentOverlay
       :is-open="showOverlay"
       :character="selectedCharacter"
       :initial-slot="selectedSlot"
-      :all-inventory="formattedInventory" 
+      :all-inventory="formattedInventory"
       :loading="isOverlayLoading"
       @close="showOverlay = false"
-      @equip="handleEquipItem" 
+      @equip="handleEquipItem"
+    />
+
+    <CharacterCreationOverlay
+      :is-open="showCreationOverlay"
+      @close="showCreationOverlay = false"
+      @created="handleCharacterCreated"
     />
 
   </div>
@@ -62,15 +86,21 @@ const { calculateItemPower } = useDamageCalculator();
 
 // --- ÉTAT LOCAL ---
 const showOverlay = ref(false);
+const showCreationOverlay = ref(false);
 const isOverlayLoading = ref(false);
 const selectedCharacter = ref(null);
-const selectedSlot = ref('weapon'); 
+const selectedSlot = ref('weapon');
 
 // --- LIFECYCLE ---
 onMounted(async () => {
   await characterStore.fetchCharacters(true);
   if (!guildStore.hasGuild) guildStore.fetchGuild();
 });
+
+// --- GESTION CRÉATION DE PERSONNAGE ---
+const handleCharacterCreated = async () => {
+  await characterStore.fetchCharacters(true);
+};
 
 // --- GESTION OVERLAY ---
 const openOverlay = async (character, item) => {

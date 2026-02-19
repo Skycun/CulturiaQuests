@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Guild } from '~/types/guild'
+import { getMaxCharacters } from '~/utils/guildLevel'
 import { useCharacterStore } from './character'
 import { useInventoryStore } from './inventory'
 import { useQuestStore } from './quest'
@@ -40,6 +41,13 @@ export const useGuildStore = defineStore('guild', () => {
   const level = computed(() => {
     const currentExp = Number(exp.value)
     return Math.floor(Math.sqrt(currentExp / 75)) + 1
+  })
+
+  const maxCharacters = computed(() => getMaxCharacters(level.value))
+
+  const canAddCharacter = computed(() => {
+    const characterStore = useCharacterStore()
+    return characterStore.characterCount < maxCharacters.value
   })
 
   // Actions
@@ -298,6 +306,8 @@ export const useGuildStore = defineStore('guild', () => {
     scrap,
     name,
     level,
+    maxCharacters,
+    canAddCharacter,
     debugMode,
     quizStreak,
     // Actions

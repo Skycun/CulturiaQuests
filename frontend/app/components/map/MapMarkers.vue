@@ -1,6 +1,7 @@
 <template>
   <!-- Marqueur position utilisateur (Géré par Vue car unique et très dynamique) -->
-  <LMarker :lat-lng="[userLat, userLng]">
+  <!-- isActive empêche LMarker d'essayer un removeLayer sur une carte déjà détruite -->
+  <LMarker v-if="isActive" :lat-lng="[userLat, userLng]">
     <LIcon
       icon-url="/assets/map/userpoint.svg"
       :icon-size="[20, 20]"
@@ -10,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, watch, toRaw, computed } from 'vue'
 import L from 'leaflet'
 import type { Museum } from '~/types/museum'
 import type { Poi } from '~/types/poi'
@@ -32,6 +33,9 @@ const emit = defineEmits<{
   'select-museum': [museum: Museum]
   'select-poi': [poi: Poi]
 }>()
+
+// Flag pour désactiver le LMarker Vue avant la destruction de la carte
+const isActive = ref(true)
 
 // LayerGroup natif pour les performances
 let markersLayer: L.LayerGroup | null = null
@@ -128,6 +132,9 @@ function cleanup() {
 defineExpose({ cleanup })
 
 onBeforeUnmount(() => {
+  // Désactiver le LMarker Vue AVANT que la carte soit détruite
+  // Cela permet à Vue de faire un unmount propre du LMarker pendant que le map est encore intact
+  isActive.value = false
   cleanup()
 })
 
