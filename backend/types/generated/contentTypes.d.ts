@@ -1937,10 +1937,6 @@ export interface PluginUsersPermissionsUser
       }>;
     friend_requests_enabled: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<true>;
-    friends: Schema.Attribute.Relation<
-      'manyToMany',
-      'plugin::users-permissions.user'
-    >;
     guild: Schema.Attribute.Relation<'oneToOne', 'api::guild.guild'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
