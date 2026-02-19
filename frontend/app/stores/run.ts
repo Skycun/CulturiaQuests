@@ -10,6 +10,7 @@ export const useRunStore = defineStore('run', () => {
   // État pour l'interaction NPC (après start-expedition avec questRolled=true)
   const lastQuestRolled = ref(false)
   const lastNpcDialog = ref<string[]>([])
+  const lastNpcInfo = ref<{ firstname: string; lastname: string; nickname: string } | null>(null)
 
   // Getters
   const hasRuns = computed(() => runs.value.length > 0)
@@ -106,14 +107,15 @@ export const useRunStore = defineStore('run', () => {
         body: { museumDocumentId, userLat, userLng },
       })
 
-      const { run, questRolled, dialog } = response
+      const { run, questRolled, dialog, npc } = response
       if (run) {
         addRun(run)
       }
       // Stocker pour la page npc-interaction
       lastQuestRolled.value = questRolled || false
       lastNpcDialog.value = dialog || []
-      return { run, questRolled, dialog }
+      lastNpcInfo.value = npc || null
+      return { run, questRolled, dialog, npc }
     } catch (e: any) {
       console.error('Failed to start expedition:', e)
       error.value = e?.error?.message || e?.message || 'Failed to start expedition'
@@ -189,6 +191,7 @@ export const useRunStore = defineStore('run', () => {
     error,
     lastQuestRolled,
     lastNpcDialog,
+    lastNpcInfo,
     // Getters
     hasRuns,
     runCount,

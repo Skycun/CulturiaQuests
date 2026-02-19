@@ -125,13 +125,34 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
     
     if (activeRuns.length > 0) return ctx.badRequest('An expedition is already active');
 
+    // 4b. Check cooldown (10 minutes entre chaque expédition)
+    const COOLDOWN_MINUTES = 10;
+    const lastRun = await strapi.documents('api::run.run').findMany({
+      filters: {
+        guild: { documentId: guild.documentId },
+        date_end: { $notNull: true }
+      },
+      sort: { date_end: 'desc' },
+      limit: 1
+    });
+
+    if (lastRun.length > 0 && lastRun[0].date_end) {
+      const lastEndTime = new Date(lastRun[0].date_end).getTime();
+      const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
+      const remaining = cooldownMs - (Date.now() - lastEndTime);
+      if (remaining > 0) {
+        const remainingMin = Math.ceil(remaining / 60000);
+        return ctx.badRequest(`Cooldown active. Réessayez dans ${remainingMin} minute(s).`, { remainingMs: remaining });
+      }
+    }
+
     // 5. Calculate DPS
     const runService = strapi.service('api::run.run');
     const dps = await runService.calculateGuildDPS(guild.documentId);
 
-    // 6. Roll NPC Chance (1/6)
-    const roll = Math.floor(Math.random() * 6) + 1; // 1 to 6
-    const hasNpc = roll === 1; // 1/6 chance
+    // 6. Roll NPC Chance (1/5)
+    const roll = Math.floor(Math.random() * 5) + 1; // 1 to 5
+    const hasNpc = roll === 1; // 1/5 chance
 
     let assignedNpc = null;
     let targetThreshold = null;
@@ -176,7 +197,8 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
     return {
       run,
       questRolled: hasNpc,
-      dialog: dialogLines
+      dialog: dialogLines,
+      npc: assignedNpc ? { firstname: assignedNpc.firstname, lastname: assignedNpc.lastname, nickname: assignedNpc.nickname } : null
     };
   },
 
