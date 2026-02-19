@@ -295,7 +295,7 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
       documentId: guild.documentId,
       data: {
         gold: (fullGuild.gold || 0) + gold,
-        exp: (fullGuild.exp || 0) + xp
+        exp: (Number(fullGuild.exp) || 0) + xp
       }
     });
 

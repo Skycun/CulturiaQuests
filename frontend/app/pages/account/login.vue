@@ -14,13 +14,23 @@
           :disabled="loading"
         />
 
-        <PixelInput
-          v-model="form.password"
-          type="password"
-          label="Mot de passe"
-          placeholder="Entrez votre mot de passe"
-          :disabled="loading"
-        />
+        <div class="relative">
+          <PixelInput
+            v-model="form.password"
+            :type="showPassword ? 'text' : 'password'"
+            label="Mot de passe"
+            placeholder="Entrez votre mot de passe"
+            :disabled="loading"
+          />
+          <button
+            type="button"
+            class="absolute right-3 bottom-3 text-gray-500 hover:text-indigo-600 transition-colors"
+            @click="showPassword = !showPassword"
+            tabindex="-1"
+          >
+            <Icon :name="showPassword ? 'mdi:eye-off' : 'mdi:eye'" size="22" />
+          </button>
+        </div>
 
         <div v-if="error" class="text-red-500 text-sm mt-2">
           {{ error }}
@@ -64,6 +74,7 @@ const form = ref({
 })
 
 const loading = ref(false)
+const showPassword = ref(false)
 const error = ref<string | null>(null)
 
 const handleSubmit = async () => {
