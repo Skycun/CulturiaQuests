@@ -98,7 +98,6 @@ export default defineNuxtConfig({
   // Configuration Vite
   vite: {
     optimizeDeps: {
-      include: ['leaflet'],
       exclude: ['d3-sankey', '@unovis/ts', '@unovis/vue'],
     },
     resolve: {
