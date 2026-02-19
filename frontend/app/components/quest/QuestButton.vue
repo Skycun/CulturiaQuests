@@ -4,6 +4,7 @@
       buttonColor,
       'text-white text-sm font-semibold py-2 px-6 rounded-lg transition-colors shadow-sm active:transform active:scale-95'
     ]"
+    @click="$emit('toggle')"
   >
   {{ buttonLabel }}
   </button>
@@ -14,6 +15,10 @@ import type { Quest } from '~/types/quest'
 
 const props = defineProps<{
   quest?: Quest
+}>()
+
+defineEmits<{
+  toggle: []
 }>()
 
 const isCompleted = computed(() => {

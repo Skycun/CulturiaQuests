@@ -20,16 +20,12 @@
           :center="[userLat, userLng]"
           :use-global-leaflet="false"
           :zoom-control="false"
+          :max-zoom="20"
           class="h-full w-full"
           @ready="onMapReady"
           @moveend="onMapMove"
         >
-          <LTileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a> contributors"
-            layer-type="base"
-            name="OpenStreetMap"
-          />
+          <!-- Tile layer ajoutée programmatiquement dans onMapReady pour maxNativeZoom -->
 
           <!-- Zones et Labels gérés manuellement dans le script via updateMapLayers -->
 
@@ -118,7 +114,7 @@ const mapRef = ref<any>(null) // Type any car Leaflet map non typé
 const fogLayerRef = ref<any>(null)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapMarkersRef = ref<any>(null)
-const currentZoom = ref(13)
+const currentZoom = ref(16)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mapBounds = ref<any>(null) // Limites visibles de la carte
 const isMapReady = ref(false) // Flag de sécurité pour l'initialisation
@@ -417,7 +413,16 @@ function onMapReady() {
     mapReadyTimer = null
     const m = mapRef.value?.leafletObject
     if (!m) return // La carte a déjà été détruite (navigation rapide)
+    m.zoomControl?.remove()
     m.invalidateSize()
+
+    // Ajout de la tile layer programmatiquement pour supporter maxNativeZoom
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 20,
+      maxNativeZoom: 18
+    }).addTo(m)
+
     isMapReady.value = true
     updateMapLayers()
   }, 100)

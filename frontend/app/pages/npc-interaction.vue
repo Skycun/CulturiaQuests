@@ -1,29 +1,32 @@
 <template>
   <div class="h-screen bg-gradient-to-b from-[#040050] to-black flex flex-col text-white">
-    <!-- Header avec infos NPC -->
-    <div class="pt-12 px-6 text-center">
-      <div class="w-24 h-24 mx-auto mb-4 bg-indigo-900/50 rounded-full flex items-center justify-center border-2 border-indigo-400">
-        <!-- Placeholder avatar NPC -->
-        <span class="text-5xl">🧙</span>
-      </div>
-      <h1 class="font-pixel text-2xl text-indigo-300">{{ npcName }}</h1>
-      <p class="font-onest text-sm text-gray-400 mt-1">Un aventurier mystérieux</p>
-    </div>
+    <!-- Dialogue overlay RPG -->
+    <Dialogue
+      :lines="dialogLines"
+      :npc-firstname="npcFirstname"
+      text-type="expedition_appear"
+      :target-threshold="targetThreshold"
+      :visible="showDialogue"
+      @complete="onDialogueComplete"
+    />
 
-    <!-- Zone de dialogue -->
-    <div class="flex-1 px-6 py-8 overflow-y-auto">
-      <div class="max-w-md mx-auto space-y-4">
-        <div
-          v-for="(line, index) in dialogLines"
-          :key="index"
-          class="bg-indigo-900/30 border border-indigo-500/30 rounded-xl p-4 dialog-bubble"
-          :style="{ animationDelay: `${index * 0.3}s` }"
-        >
-          <p class="font-onest text-sm leading-relaxed">{{ line }}</p>
+    <!-- Contenu affiché après le dialogue -->
+    <template v-if="!showDialogue">
+      <!-- Header avec infos NPC -->
+      <div class="pt-12 px-6 text-center">
+        <div class="w-24 h-24 mx-auto mb-4 bg-indigo-900/50 rounded-full flex items-center justify-center border-2 border-indigo-400">
+          <img
+            :src="`/assets/npc/${npcFirstname}/${npcFirstname}.png`"
+            :alt="npcName"
+            class="w-full h-full object-cover rounded-full"
+          >
         </div>
+        <h1 class="font-pixel text-2xl text-indigo-300">{{ npcName }}</h1>
+      </div>
 
-        <!-- Info quête si présente -->
-        <div v-if="hasQuest" class="bg-yellow-900/30 border border-yellow-500/30 rounded-xl p-4 mt-6">
+      <!-- Info quête si présente -->
+      <div class="flex-1 px-6 py-8 flex items-center justify-center">
+        <div v-if="hasQuest" class="max-w-md w-full bg-yellow-900/30 border border-yellow-500/30 rounded-xl p-4">
           <div class="flex items-center gap-2 mb-2">
             <span class="text-xl">⚔️</span>
             <span class="font-pixel text-yellow-300">Quête disponible</span>
@@ -33,19 +36,19 @@
           </p>
         </div>
       </div>
-    </div>
 
-    <!-- Bouton action -->
-    <div class="p-6 bg-gradient-to-t from-black to-transparent">
-      <FormPixelButton
-        color="indigo"
-        variant="filled"
-        class="w-full"
-        @click="continueToExpedition"
-      >
-        Commencer l'expédition
-      </FormPixelButton>
-    </div>
+      <!-- Bouton action -->
+      <div class="p-6 bg-gradient-to-t from-black to-transparent">
+        <FormPixelButton
+          color="indigo"
+          variant="filled"
+          class="w-full"
+          @click="continueToExpedition"
+        >
+          Commencer l'expédition
+        </FormPixelButton>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -57,10 +60,11 @@ definePageMeta({ layout: 'blank' })
 const router = useRouter()
 const runStore = useRunStore()
 
+const showDialogue = ref(true)
+
 // Récupérer les données depuis le store (déjà rempli par map.vue)
 const activeRun = computed(() => runStore.activeRun)
 const dialogLines = computed(() => {
-  // Utiliser les dialogues stockés, ou des placeholders
   if (runStore.lastNpcDialog.length > 0) {
     return runStore.lastNpcDialog
   }
@@ -71,14 +75,15 @@ const dialogLines = computed(() => {
   ]
 })
 
+const npcInfo = computed(() => runStore.lastNpcInfo)
+
 const npcName = computed(() => {
-  const npc = activeRun.value?.npc
-  if (npc) {
-    const data = npc.data?.attributes || npc.attributes || npc
-    return data.nickname || `${data.firstname} ${data.lastname}` || 'Inconnu'
-  }
+  const info = npcInfo.value
+  if (info) return info.nickname || `${info.firstname} ${info.lastname}` || 'Inconnu'
   return 'Aventurier Mystérieux'
 })
+
+const npcFirstname = computed(() => npcInfo.value?.firstname || 'Inconnu')
 
 const hasQuest = computed(() => !!activeRun.value?.target_threshold)
 const targetThreshold = computed(() => activeRun.value?.target_threshold || 10)
@@ -86,7 +91,6 @@ const targetThreshold = computed(() => activeRun.value?.target_threshold || 10)
 // Vérifier qu'on a bien un run actif, sinon rediriger
 onMounted(async () => {
   if (!activeRun.value) {
-    // Essayer de récupérer le run actif
     const run = await runStore.fetchActiveRun()
     if (!run) {
       router.push('/map')
@@ -94,25 +98,11 @@ onMounted(async () => {
   }
 })
 
+function onDialogueComplete() {
+  showDialogue.value = false
+}
+
 function continueToExpedition() {
   router.push('/expedition')
 }
 </script>
-
-<style scoped>
-.dialog-bubble {
-  opacity: 0;
-  animation: fadeInUp 0.5s ease-out forwards;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-</style>

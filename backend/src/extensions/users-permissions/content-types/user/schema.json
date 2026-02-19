@@ -78,7 +78,7 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "friends"
+      "mappedBy": "friends"
     },
     "posts": {
       "type": "relation",
@@ -97,12 +97,6 @@
     "friend_requests_enabled": {
       "type": "boolean",
       "default": true
-    },
-    "avatar": {
-      "type": "media",
-      "multiple": false,
-      "required": false,
-      "allowedTypes": ["images"]
     }
   }
 }
