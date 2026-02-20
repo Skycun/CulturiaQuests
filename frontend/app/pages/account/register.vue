@@ -58,9 +58,13 @@
             />
             <p class="text-sm font-pixel text-gray-700 leading-snug pt-0.5">
               J'ai lu et j'accepte les
-              <a href="/CGU" target="_blank" class="text-indigo-600 underline hover:text-indigo-800">
+              <button
+                type="button"
+                class="text-indigo-600 underline hover:text-indigo-800"
+                @click="showCgu = true"
+              >
                 Conditions Générales d'Utilisation
-              </a>
+              </button>
             </p>
           </div>
         </div>
@@ -155,6 +159,11 @@
         </div>
       </form>
     </div>
+
+    <!-- CGU Overlay -->
+    <OverlayPanel v-if="showCgu" @close="showCgu = false">
+      <CguContent />
+    </OverlayPanel>
   </div>
 </template>
 
@@ -167,6 +176,8 @@ import PixelCheckbox from '~/components/form/PixelCheckbox.vue'
 import ProgressIndicator from '~/components/form/ProgressIndicator.vue'
 import IconPicker from '~/components/form/IconPicker.vue'
 import Alert from '~/components/form/Alert.vue'
+import OverlayPanel from '~/components/ui/OverlayPanel.vue'
+import CguContent from '~/components/legal/CguContent.vue'
 
 const { register } = useStrapiAuth()
 const user = useStrapiUser()
@@ -210,6 +221,7 @@ const form = ref({
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const showCgu = ref(false)
 
 // Validation for each step
 const canProceed = computed(() => {
