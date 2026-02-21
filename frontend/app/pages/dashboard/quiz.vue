@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Quiz</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Quiz</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Analytique des quiz, scores et sessions</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="adminStore.loading && !adminStore.quizData" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div v-for="i in 3" :key="i" class="bg-gray-900 rounded-xl p-6 animate-pulse">
           <div class="h-4 bg-gray-800 rounded w-24 mb-3" />
           <div class="h-8 bg-gray-800 rounded w-16" />
@@ -34,7 +34,7 @@
     <!-- Data -->
     <div v-else-if="adminStore.quizData" class="space-y-8">
       <!-- Top KPIs -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardKpiCard
           icon="bxs-brain"
           label="Tentatives totales"
@@ -102,7 +102,7 @@
           <h2 class="text-lg font-power text-white">Questions par tag</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="questionsByTag.length > 0" class="w-full text-sm font-onest">
+          <table v-if="questionsByTag.length > 0" class="w-full text-sm font-onest min-w-[400px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">Tag</th>
@@ -140,7 +140,7 @@
           <h2 class="text-lg font-power text-white">Historique des sessions</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="sessionHistory.length > 0" class="w-full text-sm font-onest">
+          <table v-if="sessionHistory.length > 0" class="w-full text-sm font-onest min-w-[700px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">Date</th>
@@ -184,7 +184,7 @@
           <h2 class="text-lg font-power text-white">Classement global</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="leaderboard.length > 0" class="w-full text-sm font-onest">
+          <table v-if="leaderboard.length > 0" class="w-full text-sm font-onest min-w-[600px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4 text-center w-16">Rang</th>

@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Economie</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Economie</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Sources de revenus, distribution des items et niveaux</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="adminStore.loading && !adminStore.economyData" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div v-for="i in 4" :key="i" class="bg-gray-900 border border-gray-800 rounded-xl p-6 animate-pulse">
           <div class="h-5 bg-gray-800 rounded w-48 mb-4" />
           <div class="grid grid-cols-2 gap-3">
@@ -32,7 +32,7 @@
       <!-- Gold Sources -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 class="text-lg font-power text-white mb-4">Sources d'or</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <DashboardStatBlock
             label="Expeditions"
             :value="formatNumber(goldSources.expeditions)"
@@ -88,7 +88,7 @@
       <!-- XP Sources -->
       <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 class="text-lg font-power text-white mb-4">Sources d'XP</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <DashboardStatBlock
             label="Expeditions"
             :value="formatNumber(xpSources.expeditions)"

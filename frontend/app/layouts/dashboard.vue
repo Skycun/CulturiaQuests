@@ -1,15 +1,35 @@
 <template>
-  <div class="min-h-screen bg-gray-950 text-gray-100 flex">
+  <div class="min-h-screen bg-gray-950 text-gray-100 flex relative">
+    <!-- Mobile Overlay -->
+    <div 
+      v-if="isSidebarOpen" 
+      class="fixed inset-0 bg-black/50 z-40 md:hidden"
+      @click="isSidebarOpen = false"
+    />
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col fixed h-full z-30">
+    <aside 
+      class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 border-r border-gray-800 flex flex-col transition-transform duration-300 ease-in-out"
+      :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+    >
       <!-- Logo / Title -->
-      <div class="p-6 border-b border-gray-800">
-        <h1 class="font-power text-xl text-amber-400 tracking-wide">CulturiaQuests</h1>
-        <p class="text-xs text-gray-500 mt-1 font-onest">Administration</p>
+      <div class="p-6 border-b border-gray-800 flex items-center justify-between">
+        <div>
+          <h1 class="font-power text-xl text-amber-400 tracking-wide">CulturiaQuests</h1>
+          <p class="text-xs text-gray-500 mt-1 font-onest">Administration</p>
+        </div>
+        <!-- Close Button -->
+        <button 
+          @click="toggleSidebar" 
+          class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors"
+          title="Fermer le menu"
+        >
+          <Icon name="bx-chevron-left" class="w-6 h-6" />
+        </button>
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 py-4 px-3 space-y-1 font-onest">
+      <nav class="flex-1 py-4 px-3 space-y-1 font-onest overflow-y-auto">
         <NuxtLink
           v-for="item in navItems"
           :key="item.path"
@@ -18,6 +38,7 @@
           :class="isActive(item.path)
             ? 'bg-amber-400/10 text-amber-400'
             : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'"
+          @click="closeOnMobile"
         >
           <Icon :name="item.icon" class="w-5 h-5 shrink-0" />
           <span>{{ item.label }}</span>
@@ -53,7 +74,24 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="flex-1 ml-64">
+    <main 
+      class="flex-1 min-h-screen transition-all duration-300 ease-in-out min-w-0 flex flex-col"
+      :class="isSidebarOpen ? 'md:ml-64' : ''"
+    >
+      <!-- Top Bar (Mobile / Sidebar Closed) -->
+      <header 
+        v-if="!isSidebarOpen"
+        class="sticky top-0 z-20 bg-gray-950/80 backdrop-blur border-b border-gray-800 px-4 h-16 flex items-center"
+      >
+        <button 
+          @click="toggleSidebar" 
+          class="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800 transition-colors"
+          title="Ouvrir le menu"
+        >
+          <Icon name="bx-menu" class="w-6 h-6" />
+        </button>
+      </header>
+
       <slot />
     </main>
   </div>
@@ -64,6 +102,7 @@ const route = useRoute()
 const router = useRouter()
 const user = useStrapiUser()
 
+const isSidebarOpen = ref(true)
 const username = computed(() => (user.value as any)?.username || 'Admin')
 
 const navItems = [
@@ -75,6 +114,23 @@ const navItems = [
   { path: '/dashboard/quiz', icon: 'bxs-brain', label: 'Quiz' },
   { path: '/dashboard/social', icon: 'bxs-user-account', label: 'Social' },
 ]
+
+onMounted(() => {
+  // Close sidebar on mobile by default
+  if (window.innerWidth < 768) {
+    isSidebarOpen.value = false
+  }
+})
+
+function toggleSidebar() {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+function closeOnMobile() {
+  if (window.innerWidth < 768) {
+    isSidebarOpen.value = false
+  }
+}
 
 function isActive(path: string) {
   if (path === '/dashboard') {

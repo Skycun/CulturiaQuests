@@ -1,8 +1,8 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Carte & Geolocalisation</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Carte & Geolocalisation</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Points d'interet et musees enregistres</p>
     </div>
 
@@ -37,7 +37,7 @@
             <p class="text-xs text-gray-500 font-onest mt-1">{{ sortedPois.length }} POIs enregistres</p>
           </div>
           <div class="overflow-x-auto">
-            <table v-if="sortedPois.length > 0" class="w-full text-sm font-onest">
+            <table v-if="sortedPois.length > 0" class="w-full text-sm font-onest min-w-[600px]">
               <thead>
                 <tr class="text-gray-500 border-b border-gray-800 text-left">
                   <th class="py-3 px-4">Nom</th>
@@ -79,7 +79,7 @@
             <p class="text-xs text-gray-500 font-onest mt-1">{{ sortedMuseums.length }} musees enregistres</p>
           </div>
           <div class="overflow-x-auto">
-            <table v-if="sortedMuseums.length > 0" class="w-full text-sm font-onest">
+            <table v-if="sortedMuseums.length > 0" class="w-full text-sm font-onest min-w-[600px]">
               <thead>
                 <tr class="text-gray-500 border-b border-gray-800 text-left">
                   <th class="py-3 px-4">Nom</th>

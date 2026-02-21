@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Social</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Social</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Amities entre joueurs et progression PNJ</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="adminStore.loading && !adminStore.socialData" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="i in 4" :key="i" class="bg-gray-900 rounded-xl p-6 animate-pulse">
           <div class="h-4 bg-gray-800 rounded w-24 mb-3" />
           <div class="h-8 bg-gray-800 rounded w-16" />
@@ -36,7 +36,7 @@
       <!-- Friendship KPIs -->
       <div>
         <h2 class="text-lg font-power text-white mb-4">Amities entre joueurs</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <DashboardKpiCard
             icon="bxs-group"
             label="Total demandes"
@@ -76,7 +76,7 @@
           <h2 class="text-lg font-power text-white">Joueurs les plus connectes</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="mostConnected.length > 0" class="w-full text-sm font-onest">
+          <table v-if="mostConnected.length > 0" class="w-full text-sm font-onest min-w-[500px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4 text-center w-16">Rang</th>
@@ -116,7 +116,7 @@
           <h2 class="text-lg font-power text-white">Progression d'amitie PNJ</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="npcFriendshipProgress.length > 0" class="w-full text-sm font-onest">
+          <table v-if="npcFriendshipProgress.length > 0" class="w-full text-sm font-onest min-w-[800px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">PNJ</th>

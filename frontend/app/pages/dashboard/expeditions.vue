@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Expeditions & Quetes</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Expeditions & Quetes</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Statistiques des expeditions, quetes et PNJs</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="adminStore.loading && !adminStore.expeditionsData" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="i in 4" :key="i" class="bg-gray-900 rounded-xl p-6 animate-pulse">
           <div class="h-4 bg-gray-800 rounded w-24 mb-3" />
           <div class="h-8 bg-gray-800 rounded w-16" />
@@ -36,7 +36,7 @@
       <!-- Quest KPI Cards -->
       <div>
         <h2 class="text-lg font-power text-white mb-4">Quetes</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <DashboardKpiCard
             icon="game-icons:scroll-quill"
             label="Total quetes"
@@ -71,7 +71,7 @@
           <h2 class="text-lg font-power text-white">Statistiques par musee</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="museumStats.length > 0" class="w-full text-sm font-onest">
+          <table v-if="museumStats.length > 0" class="w-full text-sm font-onest min-w-[600px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">Nom</th>
@@ -112,7 +112,7 @@
           <h2 class="text-lg font-power text-white">Classement PNJ par quetes</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="npcQuestRanking.length > 0" class="w-full text-sm font-onest">
+          <table v-if="npcQuestRanking.length > 0" class="w-full text-sm font-onest min-w-[600px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">PNJ</th>
@@ -154,7 +154,7 @@
           <h2 class="text-lg font-power text-white">Classement PNJ par expeditions</h2>
         </div>
         <div class="overflow-x-auto">
-          <table v-if="npcExpeditionRanking.length > 0" class="w-full text-sm font-onest">
+          <table v-if="npcExpeditionRanking.length > 0" class="w-full text-sm font-onest min-w-[600px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800 text-left">
                 <th class="py-3 px-4">Nom</th>
