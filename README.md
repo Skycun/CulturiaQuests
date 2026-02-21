@@ -188,6 +188,7 @@ CulturiaQuests/
 | **Arrêter** | `docker compose down` | Arrête les conteneurs |
 | **Sauvegarde BDD** | `bash scripts/backup-db.sh` | Crée une sauvegarde |
 | **Restaurer BDD** | `bash scripts/restore-db.sh <fichier>.tar.gz` | Restaure une sauvegarde |
+| **Import POIs** | `npx tsx scripts/pois_importer/comcom-import.ts` | Import par ComCom (Google + Gemini) |
 
 ---
 
