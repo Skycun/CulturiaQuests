@@ -71,8 +71,9 @@
       "relation": "oneToOne",
       "target": "api::guild.guild"
     },
-    "age": {
-      "type": "integer"
+    "date_of_birth": {
+      "type": "date",
+      "private": true
     },
     "posts": {
       "type": "relation",

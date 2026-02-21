@@ -5,7 +5,7 @@ export default () => ({
   'users-permissions': {
     config: {
       register: {
-        allowedFields: ['age'],
+        allowedFields: ['date_of_birth'],
       },
     },
   },
