@@ -51,6 +51,17 @@
             required
           />
 
+          <PixelInput
+            v-model="form.dateOfBirth"
+            type="date"
+            label="Date de naissance"
+            :disabled="loading"
+            required
+          />
+          <p v-if="dateOfBirthError" class="text-red-500 text-xs font-pixel -mt-2">
+            {{ dateOfBirthError }}
+          </p>
+
           <div class="flex items-start gap-3 pt-1">
             <PixelCheckbox
               v-model="form.cguAccepted"
@@ -212,6 +223,7 @@ const form = ref({
   email: '',
   password: '',
   passwordConfirm: '',
+  dateOfBirth: '',
   cguAccepted: false,
   guildName: '',
   firstname: '',
@@ -223,6 +235,19 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const showCgu = ref(false)
 
+// Date of birth validation (min 15 years old)
+const dateOfBirthError = computed(() => {
+  if (!form.value.dateOfBirth) return ''
+  const birth = new Date(form.value.dateOfBirth)
+  if (isNaN(birth.getTime())) return 'Date invalide.'
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  if (age < 15) return 'Vous devez avoir au moins 15 ans pour vous inscrire.'
+  return ''
+})
+
 // Validation for each step
 const canProceed = computed(() => {
   switch (currentStep.value) {
@@ -232,6 +257,8 @@ const canProceed = computed(() => {
         form.value.email &&
         form.value.password &&
         form.value.passwordConfirm &&
+        form.value.dateOfBirth &&
+        !dateOfBirthError.value &&
         form.value.cguAccepted
       )
     case 2:
@@ -312,6 +339,7 @@ const handleSubmit = async () => {
       username: form.value.username,
       email: form.value.email,
       password: form.value.password,
+      date_of_birth: form.value.dateOfBirth,
     })
 
     // Attendre que l'utilisateur soit bien créé
