@@ -41,6 +41,24 @@
           </div>
         </ClientOnly>
 
+        <!-- Slots verrouillés (niveaux futurs) -->
+        <ClientOnly>
+          <div
+            v-for="locked in lockedSlots"
+            :key="`locked-${locked.slot}`"
+            class="bg-white rounded-[30px] p-4 flex items-center justify-center shadow-sm mb-4 w-full max-w-lg mx-auto opacity-50 border-2 border-dashed border-gray-300"
+          >
+            <div class="flex flex-col items-center gap-2 py-4">
+              <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gray-200 flex items-center justify-center">
+                <Icon name="mdi:lock" class="text-3xl sm:text-4xl text-gray-400" />
+              </div>
+              <span class="font-pixel text-gray-400 text-sm">
+                Niveau {{ locked.level }} requis
+              </span>
+            </div>
+          </div>
+        </ClientOnly>
+
         <div v-if="formattedCharacters.length === 0" class="text-center text-gray-400 mt-10">
           Aucun personnage trouvé.
         </div>
@@ -90,6 +108,16 @@ const showCreationOverlay = ref(false);
 const isOverlayLoading = ref(false);
 const selectedCharacter = ref(null);
 const selectedSlot = ref('weapon');
+
+// --- SLOTS VERROUILLÉS ---
+const lockedSlots = computed(() => {
+  const thresholds = [
+    { slot: 2, level: 10 },
+    { slot: 3, level: 30 },
+    { slot: 4, level: 50 },
+  ];
+  return thresholds.filter(t => t.slot > guildStore.maxCharacters);
+});
 
 // --- LIFECYCLE ---
 onMounted(async () => {
