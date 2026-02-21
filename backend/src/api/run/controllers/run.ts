@@ -136,14 +136,11 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
       limit: 1
     });
 
+    let isOnCooldown = false;
     if (lastRun.length > 0 && lastRun[0].date_end) {
       const lastEndTime = new Date(lastRun[0].date_end).getTime();
       const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
-      const remaining = cooldownMs - (Date.now() - lastEndTime);
-      if (remaining > 0) {
-        const remainingMin = Math.ceil(remaining / 60000);
-        return ctx.badRequest(`Cooldown active. Réessayez dans ${remainingMin} minute(s).`, { remainingMs: remaining });
-      }
+      isOnCooldown = (Date.now() - lastEndTime) < cooldownMs;
     }
 
     // 5. Calculate DPS
@@ -152,7 +149,7 @@ export default factories.createCoreController('api::run.run', ({ strapi }) => ({
 
     // 6. Roll NPC Chance (1/5)
     const roll = Math.floor(Math.random() * 5) + 1; // 1 to 5
-    const hasNpc = roll === 1; // 1/5 chance
+    const hasNpc = !isOnCooldown && roll === 1; // 1/5 chance, 0% si cooldown actif
 
     let assignedNpc = null;
     let targetThreshold = null;
