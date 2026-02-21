@@ -43,6 +43,7 @@
           :activeTag="activeTag"
           :availableTags="availableTags"
           :isRecycleMode="currentMode === 'recycle'"
+          :isUpgradeMode="currentMode === 'upgrade'"
           :selectedId="selectedItemId"
           :selectedRecycleIds="itemsToRecycle"
           @toggle-tag="toggleTag"
@@ -306,36 +307,51 @@ const filteredItems = computed(() => {
     // 2. Filtrer par slot (Arme, Armure...)
     const isCategoryMatch = (item.category || item.slot || '').toLowerCase() === activeSlot.value.toLowerCase();
 
-    // 3. NOUVEAU : Vérifier si l'objet est déjà équipé par QUICONQUE
-    // On doit regarder dans l'inventoryStore car 'item' (formatted) n'a pas l'info du propriétaire
+    // 3. Vérifier si l'objet est déjà équipé par QUICONQUE
     const rawItem = inventoryStore.items.find(i => i.id === item.id);
     let isEquipped = false;
-    
+
     if (rawItem) {
         const attrs = rawItem.attributes || rawItem;
-        
-        // Strapi renvoie soit un ID (si non populé), soit un objet { data: ... } (si populé)
-        // S'il y a une donnée dans 'character', c'est que l'item est pris
+
         if (attrs.character) {
-             // Cas Strapi v4 populated
              if (attrs.character.data) isEquipped = true;
-             // Cas Strapi v4 ID simple ou Strapi v5
              else if (typeof attrs.character === 'number' || attrs.character.id) isEquipped = true;
         }
     }
-    
-    // On garde l'item seulement si :
-    // - C'est la bonne catégorie
-    // - Il n'est PAS équipé (ni par moi, ni par les autres)
-    // - Il n'est pas recyclé
-    return isCategoryMatch && !isEquipped && isNotScrapped;
+
+    // 4. En mode upgrade, autoriser les items équipés par le personnage sélectionné
+    const isEquippedByCurrentChar = isEquipped && rawItem && (() => {
+      const attrs = rawItem.attributes || rawItem;
+      const charData = attrs.character?.data || attrs.character;
+      const equippedCharId = charData?.id ?? charData;
+      return equippedCharId === props.character?.id;
+    })();
+
+    const shouldExclude = isEquipped && !(currentMode.value === 'upgrade' && isEquippedByCurrentChar);
+    return isCategoryMatch && !shouldExclude && isNotScrapped;
+  });
+
+  // Enrichir les items avec le flag isEquippedByCurrentChar pour l'affichage du badge
+  items = items.map(item => {
+    const rawItem = inventoryStore.items.find(i => i.id === item.id);
+    let equipped = false;
+    if (rawItem) {
+      const attrs = rawItem.attributes || rawItem;
+      if (attrs.character) {
+        const charData = attrs.character?.data || attrs.character;
+        const equippedCharId = charData?.id ?? charData;
+        equipped = equippedCharId === props.character?.id;
+      }
+    }
+    return equipped ? { ...item, isEquippedByCurrentChar: true } : item;
   });
 
   // Filtrage par Tag (Nature, Art...)
   if (activeTag.value) {
       items = items.filter(item => item.types && item.types.includes(activeTag.value.toLowerCase()));
   }
-  
+
   // Tri
   return items.sort((a, b) => {
     if (sortBy.value === 'damage') {
