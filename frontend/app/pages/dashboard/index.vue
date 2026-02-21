@@ -1,14 +1,14 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-power text-white tracking-wide">Vue d'ensemble</h1>
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Vue d'ensemble</h1>
       <p class="text-gray-400 mt-1 font-onest text-sm">Statistiques globales de CulturiaQuests</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="adminStore.loading && !adminStore.overview" class="space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="i in 4" :key="i" class="bg-gray-900 rounded-xl p-6 animate-pulse">
           <div class="h-4 bg-gray-800 rounded w-24 mb-3" />
           <div class="h-8 bg-gray-800 rounded w-16" />
@@ -28,7 +28,7 @@
     <!-- Data -->
     <div v-else-if="adminStore.overview" class="space-y-8">
       <!-- KPI Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardKpiCard
           v-for="kpi in mainKpis"
           :key="kpi.label"
@@ -46,7 +46,7 @@
         <div class="bg-gray-900 rounded-xl p-6 border border-gray-800">
           <h2 class="text-lg font-power text-white mb-4">Activite recente</h2>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm font-onest">
+            <table class="w-full text-sm font-onest min-w-[400px]">
               <thead>
                 <tr class="text-gray-500 border-b border-gray-800">
                   <th class="text-left py-2 pr-4">Metrique</th>
@@ -75,7 +75,7 @@
           <h2 class="text-lg font-power text-white mb-4">Economie</h2>
           <div class="space-y-4">
             <!-- Gold & XP -->
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div class="bg-gray-800/50 rounded-lg p-4">
                 <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Or en circulation</p>
                 <p class="text-2xl font-bold text-amber-400">{{ formatNumber(adminStore.overview.economy.totalGoldInCirculation) }}</p>
@@ -182,7 +182,7 @@
           Aucune demande pour le moment
         </div>
         <div v-else class="overflow-x-auto">
-          <table class="w-full text-sm font-onest">
+          <table class="w-full text-sm font-onest min-w-[600px]">
             <thead>
               <tr class="text-gray-500 border-b border-gray-800">
                 <th class="text-left py-2 pr-4">Utilisateur</th>
@@ -225,7 +225,7 @@
       </div>
 
       <!-- Secondary KPIs -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div
           v-for="kpi in secondaryKpis"
           :key="kpi.label"

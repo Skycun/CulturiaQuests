@@ -1,9 +1,9 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
+    <div class="flex flex-col items-center justify-center mb-8 text-center">
       <div>
-        <h1 class="text-3xl font-power text-white tracking-wide">Joueurs</h1>
+        <h1 class="text-2xl md:text-3xl font-power text-white tracking-wide">Joueurs</h1>
         <p class="text-gray-400 mt-1 font-onest text-sm">
           {{ adminStore.pagination.total }} utilisateurs enregistres
         </p>
@@ -57,7 +57,7 @@
     <!-- Player Table -->
     <div v-else class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm font-onest">
+        <table class="w-full text-sm font-onest min-w-[1000px]">
           <thead>
             <tr class="text-gray-500 border-b border-gray-800 text-left">
               <th class="py-3 px-4">Joueur</th>

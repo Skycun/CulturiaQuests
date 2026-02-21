@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
     <!-- Back button -->
     <button
       class="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6 font-onest text-sm"
@@ -84,7 +84,7 @@
       <!-- Guild info -->
       <div v-if="player.guild" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 class="text-lg font-power text-white mb-4">Guilde : {{ player.guild.name }}</h2>
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           <StatBlock label="Niveau" :value="player.guild.level" color="text-white" />
           <StatBlock label="Or" :value="player.guild.gold" color="text-amber-400" />
           <StatBlock label="XP" :value="formatNumber(Number(player.guild.exp))" color="text-blue-400" />
@@ -127,7 +127,7 @@
       <!-- Statistics -->
       <div v-if="player.stats" class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 class="text-lg font-power text-white mb-4">Statistiques</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatBlock label="Expeditions" :value="player.stats.totalExpeditions" />
           <StatBlock label="Etage max" :value="player.stats.maxFloor" />
           <StatBlock label="Coffres ouverts" :value="player.stats.totalPoiVisits" />
