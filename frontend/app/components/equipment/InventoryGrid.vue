@@ -41,6 +41,10 @@
           <div v-if="isRecycleMode && selectedRecycleIds.has(item.id)" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center z-20 shadow-sm border border-white">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
           </div>
+
+          <div v-if="isUpgradeMode && item.isEquippedByCurrentChar" class="absolute -top-1 -left-1 bg-indigo-500 text-white rounded-full w-5 h-5 flex items-center justify-center z-20 shadow-sm border border-white">
+            <Icon name="mdi:account-check" class="h-3 w-3" />
+          </div>
         </div>
       </div>
 
@@ -60,6 +64,7 @@ defineProps({
   activeTag: String,
   availableTags: Array,
   isRecycleMode: Boolean,
+  isUpgradeMode: Boolean,
   selectedId: [String, Number],
   selectedRecycleIds: Set // On passe le Set directement
 });
