@@ -8,368 +8,30 @@
  */
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
+import fs from 'fs';
+import inquirer from 'inquirer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import axios, { AxiosInstance } from 'axios';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import inquirer from 'inquirer';
-import * as fs from 'fs';
+// Import depuis UTILS
+import {
+  GOOGLE_MAPS_API_KEY, GEMINI_API_KEY, STRAPI_BASE_URL, STRAPI_API_TOKEN,
+  SEARCH_TYPES, CULTURAL_TYPES,
+  EpciEntry, DepartmentEntry, ComcomsData, POIOutput,
+  computeAreaKm2,
+  StrapiClient, fetchPlaceDetails, scanEpci, categorizeWithGemini, testGeminiConnection,
+  loadImportState, updateEpciState
+} from './utils';
 
-// ===== CONFIG =====
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const STRAPI_BASE_URL = process.env.STRAPI_BASE_URL || 'http://localhost:1337';
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
-
-const SEARCH_TYPES = [
-  'tourist_attraction', 'museum', 'historical_place', 'park', 'church',
-];
-
-const CULTURAL_TYPES = [
-  'art_gallery', 'auditorium', 'performing_arts_theater',
-  'historical_place', 'monument', 'museum', 'sculpture',
-  'church', 'mosque', 'synagogue', 'hindu_temple', 'place_of_worship',
-  'tourist_attraction', 'park', 'cemetery',
-];
-
-const GAME_CATEGORIES = ['Art', 'Nature', 'Science', 'Histoire', 'Savoir-faire', 'Société'];
-
-// Grille de recherche selon la surface de l'EPCI (km²)
-// Plus grand EPCI → plus de points, rayon par point plus petit pour éviter les doublons
-const GRID_THRESHOLDS = [
-  { maxAreaKm2: 150,     gridSize: 1, radiusM: 8000 },  // 1 point
-  { maxAreaKm2: 500,     gridSize: 2, radiusM: 5000 },  // 2×2 = 4 points
-  { maxAreaKm2: 1500,    gridSize: 3, radiusM: 5000 },  // 3×3 = 9 points
-  { maxAreaKm2: Infinity, gridSize: 4, radiusM: 5000 }, // 4×4 = 16 points
-];
-
-// ===== INTERFACES =====
-interface BBox { minLat: number; maxLat: number; minLng: number; maxLng: number }
-
-interface EpciEntry {
-  code: string;
-  nom: string;
-  communes: number;
-  bbox: BBox;
-}
-
-interface DepartmentEntry {
-  code: string;
-  nom: string;
-  region: string;
-  epci: EpciEntry[];
-}
-
-interface ComcomsData {
-  generated: string;
-  departments: DepartmentEntry[];
-}
-
-interface SearchPoint { lat: number; lng: number }
-
-interface PlaceDetails {
-  openingHours: string[] | null;
-  baseRadiusMeters: number | null;
-}
-
-interface AIResult {
-  categories: string[];
-  reasoning: string;
-  isPubliclyAccessible: boolean;
-  accessType: 'payant' | 'gratuit' | 'inconnu';
-  radiusMeters: number;
-}
-
-interface POIOutput {
-  name: string;
-  description: string;
-  latitude: number;
-  longitude: number;
-  type: 'museum' | 'poi';
-  categories: string[];
-  accessType: 'payant' | 'gratuit' | 'inconnu';
-  radiusMeters: number;
-  rating: number | null;
-  epci: string;
-  department: string;
-  region: string;
-}
-
-// ===== GRILLE DE RECHERCHE =====
-function computeAreaKm2(bbox: BBox): number {
-  const midLat = (bbox.minLat + bbox.maxLat) / 2;
-  const latKm  = (bbox.maxLat - bbox.minLat) * 111;
-  const lngKm  = (bbox.maxLng - bbox.minLng) * 111 * Math.cos((midLat * Math.PI) / 180);
-  return latKm * lngKm;
-}
-
-function generateSearchPoints(bbox: BBox): { points: SearchPoint[]; radiusM: number } {
-  const area   = computeAreaKm2(bbox);
-  const config = GRID_THRESHOLDS.find(t => area <= t.maxAreaKm2)!;
-
-  const latStep = (bbox.maxLat - bbox.minLat) / config.gridSize;
-  const lngStep = (bbox.maxLng - bbox.minLng) / config.gridSize;
-
-  const points: SearchPoint[] = [];
-  for (let row = 0; row < config.gridSize; row++) {
-    for (let col = 0; col < config.gridSize; col++) {
-      points.push({
-        lat: bbox.minLat + latStep * (row + 0.5),
-        lng: bbox.minLng + lngStep * (col + 0.5),
-      });
-    }
-  }
-
-  return { points, radiusM: config.radiusM };
-}
-
-// ===== STRAPI CLIENT =====
-class StrapiClient {
-  private client: AxiosInstance;
-  private tagCache = new Map<string, number>();
-  private zoneCache = new Map<string, number>(); // Cache "collection:name" -> id
-
-  constructor(baseURL: string, token: string) {
-    this.client = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    });
-  }
-
-  private async findOne(collection: string, params: Record<string, string>) {
-    try {
-      const res = await this.client.get(`/api/${collection}`, { params });
-      return res.data.data[0] || null;
-    } catch { return null; }
-  }
-
-  private async create(collection: string, data: Record<string, unknown>) {
-    const res = await this.client.post(`/api/${collection}`, { data });
-    return res.data.data;
-  }
-
-  private async getOrCreateTag(tagName: string): Promise<number | null> {
-    if (this.tagCache.has(tagName)) return this.tagCache.get(tagName)!;
-
-    const existing = await this.findOne('tags', { 'filters[name][$eq]': tagName });
-    if (existing) { this.tagCache.set(tagName, existing.id); return existing.id; }
-
-    try {
-      const created = await this.create('tags', { name: tagName, publishedAt: new Date().toISOString() });
-      this.tagCache.set(tagName, created.id);
-      return created.id;
-    } catch (e) {
-      console.error(`  ⚠️ Tag "${tagName}":`, e instanceof Error ? e.message : e);
-      return null;
-    }
-  }
-
-  async findZoneId(collection: string, name: string): Promise<number | null> {
-    if (!name) return null;
-    const cacheKey = `${collection}:${name}`;
-    if (this.zoneCache.has(cacheKey)) return this.zoneCache.get(cacheKey)!;
-
-    const existing = await this.findOne(collection, { 'filters[name][$eq]': name });
-    if (existing) {
-      this.zoneCache.set(cacheKey, existing.id);
-      return existing.id;
-    }
-    return null;
-  }
-
-  async importPOI(poi: POIOutput): Promise<boolean> {
-    const collection = poi.type === 'museum' ? 'museums' : 'pois';
-
-    // 1. Check existence (Name + Location)
-    let duplicate = null;
-    try {
-      const res = await this.client.get(`/api/${collection}`, { 
-        params: { 
-          'filters[name][$eq]': poi.name,
-          'fields[0]': 'lat',
-          'fields[1]': 'lng'
-        } 
-      });
-      const candidates = res.data.data;
-      duplicate = candidates.find((c: any) => {
-        const dLat = Math.abs((c.lat || 0) - poi.latitude);
-        const dLng = Math.abs((c.lng || 0) - poi.longitude);
-        return dLat < 0.0001 && dLng < 0.0001;
-      });
-    } catch { /* proceed */ }
-
-    if (duplicate) {
-      // console.log(`⚠️  ${poi.name} existe déjà au même endroit. Skip.`);
-      return false;
-    }
-
-    // 2. Tags
-    const tagIds: number[] = [];
-    for (const cat of poi.categories) {
-      const id = await this.getOrCreateTag(cat);
-      if (id) tagIds.push(id);
-    }
-
-    // 3. Zones
-    const regionId = await this.findZoneId('regions', poi.region);
-    const deptId = await this.findZoneId('departments', poi.department);
-    const comcomId = await this.findZoneId('comcoms', poi.epci);
-
-    // 4. Payload
-    const payload: Record<string, unknown> = {
-      name: poi.name,
-      lat: poi.latitude,
-      lng: poi.longitude,
-    };
-
-    if (regionId) payload.region = regionId;
-    if (deptId) payload.department = deptId;
-    if (comcomId) payload.comcom = comcomId;
-
-    if (poi.type === 'museum') {
-      payload.radius = poi.radiusMeters;
-      if (tagIds.length) payload.tags = { connect: tagIds };
-    }
-
-    await this.create(collection, payload);
-    return true;
-  }
-}
-
-// ===== GOOGLE MAPS =====
-async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const res = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
-    params: { place_id: placeId, fields: 'opening_hours,geometry', key: GOOGLE_MAPS_API_KEY },
-  });
-
-  const result = res.data.result;
-  const openingHours: string[] | null = result?.opening_hours?.weekday_text || null;
-  const viewport = result?.geometry?.viewport || null;
-
-  let baseRadiusMeters: number | null = null;
-  if (viewport) {
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
-    const R = 6371000;
-    const dLat = toRad(viewport.southwest.lat - viewport.northeast.lat);
-    const dLng = toRad(viewport.southwest.lng - viewport.northeast.lng);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(viewport.northeast.lat)) *
-        Math.cos(toRad(viewport.southwest.lat)) *
-        Math.sin(dLng / 2) ** 2;
-    baseRadiusMeters = Math.round((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) / 2);
-  }
-
-  return { openingHours, baseRadiusMeters };
-}
-
-/**
- * Scan un EPCI complet :
- *  - génère la grille de points selon la surface
- *  - lance une recherche Google Maps par point × par type
- *  - déduplique par place_id
- *  - filtre par types culturels
- */
-async function scanEpci(epci: EpciEntry, deptNom: string, regionNom: string): Promise<Record<string, unknown>[]> {
-  const { points, radiusM } = generateSearchPoints(epci.bbox);
-  const seen = new Map<string, Record<string, unknown>>();
-
-  for (const pt of points) {
-    for (const type of SEARCH_TYPES) {
-      try {
-        const res = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', {
-          params: { location: `${pt.lat},${pt.lng}`, radius: radiusM, type, key: GOOGLE_MAPS_API_KEY },
-        });
-        for (const p of res.data.results as Record<string, unknown>[]) {
-          const id = p.place_id as string;
-          if (!seen.has(id)) {
-            seen.set(id, { ...p, _sourceEpci: epci.nom, _sourceDept: deptNom, _sourceRegion: regionNom });
-          }
-        }
-      } catch { /* silencer erreurs réseau par type */ }
-    }
-    // Petit délai entre les points pour éviter 429
-    await new Promise(r => setTimeout(r, 250));
-  }
-
-  // Filtrer : garder uniquement les lieux avec au moins un type culturel
-  return [...seen.values()].filter(p =>
-    (p.types as string[])?.some(t => CULTURAL_TYPES.includes(t))
-  );
-}
-
-// ===== GEMINI =====
-async function categorizeWithGemini(place: Record<string, unknown>, details: PlaceDetails): Promise<AIResult> {
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
-  const prompt = `
-Analyse ce lieu pour un jeu RPG culturel géolocalisé en France.
-
-Lieu: "${place.name}" (${(place.types as string[])?.join(', ') || 'N/A'})
-Adresse: ${place.vicinity || 'N/A'}
-Département: ${place._sourceDept}
-EPCI source: ${place._sourceEpci}
-Horaires: ${details.openingHours ? details.openingHours.join(' | ') : 'Non spécifiés'}
-Rayon viewport: ${details.baseRadiusMeters || 'N/A'} m
-
-Tâches:
-1. Catégories: Choisis 1-2 parmi [${GAME_CATEGORIES.join(', ')}].
-   - Art: musées d'art, galeries, théâtres
-   - Nature: jardins, parcs remarquables, aquariums
-   - Science: musées scientifiques, planétariums
-   - Histoire: monuments, châteaux, sites historiques, mémoriaux
-   - Savoir-faire: musées artisanat, industrie
-   - Société: lieux de culte historiques, bibliothèques, centres culturels
-
-2. Accessible: Est-ce un lieu culturel visitable par le public? (true/false)
-   - Parcs: true SEULEMENT si intérêt historique/monumental
-   - Cimetières militaires: true (patrimoine mémoriel)
-   - Boutiques/Restos: false sauf historique majeur
-
-3. Accès: "gratuit" | "payant" | "inconnu"
-
-4. Rayon: Rayon d'interaction en mètres.
-   - Base: utilise le viewport si disponible
-   - Petit lieu local: 50-200m
-   - Musée/monument moyen: 200-1000m
-   - Grand site: 1000-5000m
-
-Réponds UNIQUEMENT avec du JSON valide:
-{
-  "categories": ["string"],
-  "reasoning": "courte explication en français",
-  "isPubliclyAccessible": boolean,
-  "accessType": "gratuit"|"payant"|"inconnu",
-  "radiusMeters": number
-}`;
-
-  let attempts = 0;
-  let delay = 1000;
-
-  while (attempts < 5) {
-    try {
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(jsonStr);
-    } catch (e: unknown) {
-      attempts++;
-      const msg = e instanceof Error ? e.message : '';
-      if ((msg.includes('503') || msg.includes('429')) && attempts < 5) {
-        await new Promise(r => setTimeout(r, delay));
-        delay *= 2;
-        continue;
-      }
-      break;
-    }
-  }
-
-  return { categories: [], reasoning: 'Erreur IA', isPubliclyAccessible: false, accessType: 'inconnu', radiusMeters: 50 };
+// ===== CACHE EPCI =====
+function epciCacheFileName(epciNom: string): string {
+  const slug = epciNom
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+  return `raw-${slug}.json`;
 }
 
 // ===== DASHBOARD =====
@@ -378,12 +40,13 @@ interface DashboardState {
   analysisTotal: number;
   analysisAccepted: number;
   analysisRejected: number;
+  analysisErrors: number;
   analysisProcessing: number;
   recentLogs: string[];
 }
 
 function renderDashboard(state: DashboardState) {
-  process.stdout.write('\x1B[2J\x1B[0f');
+  // process.stdout.write('\x1B[2J\x1B[0f'); // Désactivé pour DEBUG
 
   console.log('🗺️  CulturiaQuests — Import par Communautés de Communes\n');
 
@@ -396,12 +59,12 @@ function renderDashboard(state: DashboardState) {
 
   // --- Analyse (phase 2) ---
   if (state.analysisTotal > 0) {
-    const pending  = state.analysisTotal - state.analysisAccepted - state.analysisRejected - state.analysisProcessing;
+    const pending  = state.analysisTotal - state.analysisAccepted - state.analysisRejected - state.analysisErrors - state.analysisProcessing;
     const done2    = state.analysisTotal - pending;
     const pct      = Math.round((done2 / state.analysisTotal) * 100);
     const filled   = Math.floor(pct / 5);
     const bar      = `[${'='.repeat(filled)}${' '.repeat(20 - filled)}] ${pct}%`;
-    console.log(`🤖 Analyse: ✅ ${state.analysisAccepted} | ❌ ${state.analysisRejected} | 🔄 ${state.analysisProcessing} | ${bar}`);
+    console.log(`🤖 Analyse: ✅ ${state.analysisAccepted} | ❌ ${state.analysisRejected} | ⚠️ ${state.analysisErrors} | 🔄 ${state.analysisProcessing} | ${bar}`);
   }
 
   console.log(''.padEnd(70, '-'));
@@ -428,14 +91,23 @@ function renderDashboard(state: DashboardState) {
 
 /** Étape 1 — sélection des départements */
 async function promptDepartments(departments: DepartmentEntry[]): Promise<DepartmentEntry[]> {
+  const importState = loadImportState();
+  
   const { selected } = await inquirer.prompt([{
     type: 'checkbox',
     name: 'selected',
     message: 'Sélectionnez les départements à explorer :',
-    choices: departments.map(d => ({
-      name: `[${d.code}] ${d.nom}  (${d.epci.length} EPCI)`,
-      value: d,
-    })),
+    choices: departments.map(d => {
+      const state = importState.departments[d.code];
+      let icon = '⬜';
+      if (state?.status === 'done') icon = '✅';
+      else if (state?.status === 'partial') icon = '⚠️';
+      
+      return {
+        name: `${icon} [${d.code}] ${d.nom}  (${d.epci.length} EPCI)`,
+        value: d,
+      };
+    }),
     pageSize: 30,
   }]);
   return selected as DepartmentEntry[];
@@ -445,17 +117,31 @@ async function promptDepartments(departments: DepartmentEntry[]): Promise<Depart
 async function promptEpcis(
   depts: DepartmentEntry[]
 ): Promise<{ epci: EpciEntry; dept: DepartmentEntry }[]> {
+  const importState = loadImportState();
+  
   // Construire la liste avec des séparateurs visuels par département
   const choices: unknown[] = [];
 
   for (const dept of depts) {
     choices.push(new inquirer.Separator(`\n  ── ${dept.nom} (${dept.code}) ──`));
 
+    const deptState = importState.departments[dept.code]?.epci || {};
+
     for (const epci of dept.epci) {
-      const area   = computeAreaKm2(epci.bbox).toFixed(0);
-      const nbPts  = generateSearchPoints(epci.bbox).points.length;
+      const area   = computeAreaKm2(epci.communes).toFixed(0);
+      const nbCommunes = epci.communesCount || epci.communes.length;
+      
+      const epciState = deptState[epci.code];
+      let icon = '⬜';
+      let info = '';
+      
+      if (epciState?.status === 'done') {
+        icon = '✅';
+        info = ` | ${epciState.pois_found} POIs`;
+      }
+
       choices.push({
-        name:  `${epci.nom}  —  ${epci.communes} communes | ~${area} km² | ${nbPts} pt${nbPts > 1 ? 's' : ''} de search`,
+        name:  `${icon} ${epci.nom}${info} — ${nbCommunes} communes | ~${area} km²`,
         value: { epci, dept },
       });
     }
@@ -516,15 +202,15 @@ async function main() {
   // ============================================================
   // Résumé avant lancement
   // ============================================================
-  const totalPoints = selectedEpcis.reduce(
-    (sum, { epci }) => sum + generateSearchPoints(epci.bbox).points.length, 0
+  const totalCommunes = selectedEpcis.reduce(
+    (sum, { epci }) => sum + (epci.communesCount || epci.communes.length), 0
   );
 
   console.log('\n📋 Résumé de la sélection :');
   console.log(`   Départements :  ${[...new Set(selectedEpcis.map(s => s.dept.nom))].join(', ')}`);
   console.log(`   EPCIs :          ${selectedEpcis.length}`);
-  console.log(`   Points search :  ${totalPoints}`);
-  console.log(`   Requêtes API est.: ${totalPoints * SEARCH_TYPES.length} (Google Maps)\n`);
+  console.log(`   Communes :       ${totalCommunes} (Points de recherche)`);
+  console.log(`   Requêtes API est.: ${totalCommunes * SEARCH_TYPES.length} (Google Maps)\n`);
 
   const { go } = await inquirer.prompt([{
     type: 'confirm',
@@ -541,7 +227,7 @@ async function main() {
     epciList: selectedEpcis.map(({ epci, dept }) => ({
       nom: epci.nom, dept: dept.nom, status: 'pending' as const, placesFound: 0,
     })),
-    analysisTotal: 0, analysisAccepted: 0, analysisRejected: 0, analysisProcessing: 0,
+    analysisTotal: 0, analysisAccepted: 0, analysisRejected: 0, analysisErrors: 0, analysisProcessing: 0,
     recentLogs: ['🚀 Démarrage du scan...'],
   };
 
@@ -550,8 +236,31 @@ async function main() {
 
   renderDashboard(state);
 
+  const exportDir = path.join(__dirname, 'exports');
+  fs.mkdirSync(exportDir, { recursive: true });
+
   for (let i = 0; i < selectedEpcis.length; i++) {
     const { epci, dept } = selectedEpcis[i];
+
+    // Vérifier le cache avant de scanner
+    const cacheFile = path.join(exportDir, epciCacheFileName(epci.nom));
+    if (fs.existsSync(cacheFile)) {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8')) as Record<string, unknown>[];
+      let newCount = 0;
+      for (const p of cached) {
+        const id = p.place_id as string;
+        if (!globalSeen.has(id)) {
+          globalSeen.add(id);
+          allPlaces.push(p);
+          newCount++;
+        }
+      }
+      state.epciList[i].placesFound = newCount;
+      state.epciList[i].status = 'done';
+      state.recentLogs.push(`  📦 ${epci.nom} → ${newCount} lieux (cache)`);
+      renderDashboard(state);
+      continue;
+    }
 
     state.epciList[i].status = 'scanning';
     state.recentLogs.push(`🔍 ${epci.nom} (${dept.nom})…`);
@@ -573,6 +282,10 @@ async function main() {
       state.epciList[i].placesFound = newCount;
       state.epciList[i].status = 'done';
       state.recentLogs.push(`  ✅ ${epci.nom} → ${newCount} nouveaux lieux`);
+
+      // Sauvegarder le cache raw pour cet EPCI
+      const epciPlaces = allPlaces.filter(p => p._sourceEpci === epci.nom);
+      fs.writeFileSync(cacheFile, JSON.stringify(epciPlaces, null, 2));
     } catch {
       state.epciList[i].status = 'done';
       state.recentLogs.push(`  ⚠️ ${epci.nom} — erreur réseau`);
@@ -582,7 +295,7 @@ async function main() {
   }
 
   // Sortie phase 1
-  process.stdout.write('\x1B[2J\x1B[0f');
+  console.log('\n' + '='.repeat(70));
   console.log(`\n📊 Phase 1 terminée : ${allPlaces.length} lieux uniques trouvés\n`);
 
   if (allPlaces.length === 0) {
@@ -601,13 +314,18 @@ async function main() {
   }]);
 
   if (!doAnalysis) {
-    // Export brut quand même
-    const exportDir = path.join(__dirname, 'exports');
-    fs.mkdirSync(exportDir, { recursive: true });
-    const rawFile = path.join(exportDir, `comcom-raw-${Date.now()}.json`);
-    fs.writeFileSync(rawFile, JSON.stringify(allPlaces, null, 2));
-    console.log(`💾 Données brutes sauvegardées : ${rawFile}`);
+    console.log(`💾 Données brutes en cache dans exports/ (${selectedEpcis.length} fichiers EPCI)`);
     process.exit(0);
+  }
+
+  // Test de connectivité Gemini avant de lancer l'analyse en masse
+  console.log('\n🔌 Test de connexion Gemini...');
+  const geminiOk = await testGeminiConnection();
+  if (!geminiOk) {
+    console.error('\n❌ Impossible de contacter Gemini. Abandon de l\'analyse.');
+    console.log(`💾 Données brutes en cache dans exports/ (${selectedEpcis.length} fichiers EPCI)`);
+    console.log('   Relancez le script pour reprendre sans rescanner.');
+    process.exit(1);
   }
 
   // Réinitialise dashboard pour la phase 2
@@ -616,68 +334,82 @@ async function main() {
 
   renderDashboard(state);
 
-  const BATCH_SIZE = 10;
-  for (let i = 0; i < allPlaces.length; i += BATCH_SIZE) {
-    const batch = allPlaces.slice(i, i + BATCH_SIZE);
+  // Concurrence limitée à 3 pour respecter les rate limits Gemini/Google
+  const CONCURRENCY = 3;
 
-    await Promise.all(batch.map(async (place) => {
-      state.analysisProcessing++;
-      renderDashboard(state);
-
-      try {
-        const details  = await fetchPlaceDetails(place.place_id as string);
-        const analysis = await categorizeWithGemini(place, details);
-
-        state.analysisProcessing--;
-
-        if (analysis.isPubliclyAccessible) {
-          state.analysisAccepted++;
-
-          const isMuseum = (place.types as string[])?.some(t =>
-            ['museum', 'art_gallery', 'aquarium', 'zoo'].includes(t)
-          );
-
-          validPOIs.push({
-            name:        place.name as string,
-            description: analysis.reasoning,
-            latitude:    (place.geometry as { location: { lat: number } }).location.lat,
-            longitude:   (place.geometry as { location: { lng: number } }).location.lng,
-            type:        isMuseum ? 'museum' : 'poi',
-            categories:  analysis.categories,
-            accessType:  analysis.accessType,
-            radiusMeters: analysis.radiusMeters,
-            rating:      (place.rating as number) || null,
-            epci:        place._sourceEpci as string,
-            department:  place._sourceDept as string,
-            region:      place._sourceRegion as string,
-          });
-
-          state.recentLogs.push(`  ✅ ${(place.name as string).substring(0, 36)}… (${analysis.categories[0] || '-'})`);
-        } else {
-          state.analysisRejected++;
-          state.recentLogs.push(`  ❌ ${(place.name as string).substring(0, 36)}…`);
-        }
-      } catch {
-        state.analysisProcessing--;
-        state.analysisRejected++;
-        state.recentLogs.push(`  ⚠️ Erreur : ${((place.name as string) || '?').substring(0, 30)}…`);
+  async function processWithConcurrency<T>(
+    items: T[],
+    concurrency: number,
+    fn: (item: T, index: number) => Promise<void>
+  ) {
+    let index = 0;
+    async function worker() {
+      while (index < items.length) {
+        const currentIndex = index++;
+        await fn(items[currentIndex], currentIndex);
       }
-
-      renderDashboard(state);
-    }));
-
-    // Pause entre les lots pour le rate-limiting Gemini
-    await new Promise(r => setTimeout(r, 500));
+    }
+    await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()));
   }
+
+  await processWithConcurrency(allPlaces, CONCURRENCY, async (place) => {
+    state.analysisProcessing++;
+    renderDashboard(state);
+
+    try {
+      const details  = await fetchPlaceDetails(place.place_id as string);
+      const analysis = await categorizeWithGemini(place, details);
+
+      state.analysisProcessing--;
+
+      if (analysis._error) {
+        // Erreur technique Gemini (rate limit, parsing, etc.)
+        state.analysisErrors++;
+        state.recentLogs.push(`  ⚠️ ERREUR: ${((place.name as string) || '?').substring(0, 30)}…`);
+      } else if (analysis.isPubliclyAccessible) {
+        state.analysisAccepted++;
+
+        const isMuseum = (place.types as string[])?.some(t =>
+          ['museum', 'art_gallery', 'aquarium', 'zoo'].includes(t)
+        );
+
+        validPOIs.push({
+          name:        place.name as string,
+          description: analysis.reasoning,
+          latitude:    (place.geometry as { location: { lat: number } }).location.lat,
+          longitude:   (place.geometry as { location: { lng: number } }).location.lng,
+          type:        isMuseum ? 'museum' : 'poi',
+          categories:  analysis.categories,
+          accessType:  analysis.accessType,
+          radiusMeters: analysis.radiusMeters,
+          rating:      (place.rating as number) || null,
+          epci:        place._sourceEpci as string,
+          department:  place._sourceDept as string,
+          region:      place._sourceRegion as string,
+        });
+
+        state.recentLogs.push(`  ✅ ${(place.name as string).substring(0, 36)}… (${analysis.categories[0] || '-'})`);
+      } else {
+        state.analysisRejected++;
+        state.recentLogs.push(`  ❌ ${(place.name as string).substring(0, 36)}…`);
+      }
+    } catch (err: any) {
+      state.analysisProcessing--;
+      state.analysisErrors++;
+      state.recentLogs.push(`  ⚠️ ERREUR: ${((place.name as string) || '?').substring(0, 30)} — ${err.message?.substring(0, 40)}`);
+    }
+
+    renderDashboard(state);
+
+    // Délai entre chaque appel pour respecter les rate limits (500ms)
+    await new Promise(r => setTimeout(r, 500));
+  });
 
   // ============================================================
   // PHASE 3 — Export JSON + résumés
   // ============================================================
-  process.stdout.write('\x1B[2J\x1B[0f');
+  console.log('\n' + '='.repeat(70));
   console.log('✅ Analyse terminée!\n');
-
-  const exportDir = path.join(__dirname, 'exports');
-  fs.mkdirSync(exportDir, { recursive: true });
 
   const deptCodes  = [...new Set(selectedEpcis.map(s => s.dept.code))].sort().join('-');
   const timestamp  = new Date().toISOString().replace(/[:.]/g, '-');
@@ -685,6 +417,22 @@ async function main() {
   fs.writeFileSync(exportFile, JSON.stringify(validPOIs, null, 2));
 
   console.log(`💾 ${validPOIs.length} lieux exportés → ${path.basename(exportFile)}\n`);
+
+  // Nettoyage des caches raw des EPCIs traités
+  const cacheFiles = selectedEpcis.map(({ epci }) => path.join(exportDir, epciCacheFileName(epci.nom)));
+  const existingCaches = cacheFiles.filter(f => fs.existsSync(f));
+  if (existingCaches.length > 0) {
+    const { cleanCache } = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'cleanCache',
+      message: `Supprimer les ${existingCaches.length} fichiers de cache raw ?`,
+      default: true,
+    }]);
+    if (cleanCache) {
+      existingCaches.forEach(f => fs.unlinkSync(f));
+      console.log(`🧹 ${existingCaches.length} fichiers de cache supprimés.\n`);
+    }
+  }
 
   if (validPOIs.length === 0) {
     console.log('Aucun lieu validé par l\'IA.');
@@ -747,6 +495,13 @@ async function main() {
         } catch { console.log('❌'); }
       }
       console.log(`\n✨ ${imported}/${validPOIs.length} importés dans Strapi.`);
+
+      // --- Mise à jour de l'état d'import ---
+      console.log('📝 Mise à jour du registre des imports...');
+      for (const { epci, dept } of selectedEpcis) {
+        const count = validPOIs.filter(p => p.epci === epci.nom).length;
+        updateEpciState(dept, epci, count);
+      }
     }
   }
 

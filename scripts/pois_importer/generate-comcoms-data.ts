@@ -1,23 +1,33 @@
 /**
  * generate-comcoms-data.ts
- * Extrait les EPCIs (communautés de communes / agglomérations) depuis le fichier INSEE
- * et génère un fichier compact comcoms-data.json utilisé par comcom-import.ts
+ * Génère le fichier de référence des Communautés de Communes (EPCI) via l'API Géo Gouv.
+ * Version améliorée : Stocke la liste des communes pour un scan précis (pas de BBox globale).
  *
  * Usage: npx tsx generate-comcoms-data.ts
  */
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ===== INTERFACES =====
+interface CommuneEntry {
+  code: string;
+  nom: string;
+  lat: number;
+  lng: number;
+  // On peut ajouter la surface si l'API le donne, sinon on fera une estimation de rayon par défaut
+  surface?: number; 
+}
+
 interface EpciEntry {
   code: string;
   nom: string;
-  communes: number;
-  bbox: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+  communesCount: number;
+  communes: CommuneEntry[];
 }
 
 interface DepartmentEntry {
@@ -34,96 +44,107 @@ interface ComcomsData {
   departments: DepartmentEntry[];
 }
 
+// ===== API GOUV =====
+const API_GEO = 'https://geo.api.gouv.fr';
+
+async function fetchFromApi(endpoint: string) {
+  try {
+    const res = await axios.get(`${API_GEO}${endpoint}`);
+    return res.data;
+  } catch (e: any) {
+    return [];
+  }
+}
+
 // ===== MAIN =====
 async function main() {
-  const sourceFile = 'communes-france-avec-polygon-2025.json';
-  const sourcePath = path.join(__dirname, sourceFile);
+  console.log('🌍 Génération de la base de données EPCI détaillée (via geo.api.gouv.fr)...\n');
 
-  if (!fs.existsSync(sourcePath)) {
-    console.error(`❌ Fichier source introuvable: ${sourcePath}`);
-    process.exit(1);
+  // 1. Récupérer les Départements
+  process.stdout.write('   Chargement des départements... ');
+  const deptsRaw = await fetchFromApi('/departements?fields=code,nom,region');
+  const deptsMap = new Map<string, { nom: string; region: string }>();
+  deptsRaw.forEach((d: any) => deptsMap.set(d.code, { nom: d.nom, region: d.region?.nom || 'Inconnue' }));
+  console.log(`✅ ${deptsRaw.length} départements.`);
+
+  // 2. Récupérer TOUS les EPCIs d'un coup
+  process.stdout.write('   Chargement de la liste des EPCIs... ');
+  const allEpcis = await fetchFromApi('/epcis?fields=code,nom');
+  console.log(`✅ ${allEpcis.length} EPCIs trouvés.`);
+
+  const deptsContent = new Map<string, EpciEntry[]>();
+  let totalCommunes = 0;
+  let processed = 0;
+
+  console.log('\n   Traitement détaillé (récupération des communes)...');
+
+  const BATCH_SIZE = 20;
+  for (let i = 0; i < allEpcis.length; i += BATCH_SIZE) {
+    const batch = allEpcis.slice(i, i + BATCH_SIZE);
+    
+    await Promise.all(batch.map(async (epci: any) => {
+      // Récupérer les communes membres de l'EPCI avec leur centre et surface
+      const communes = await fetchFromApi(`/epcis/${epci.code}/communes?fields=code,nom,departement,centre,surface`);
+      
+      if (communes.length === 0) return;
+
+      const communeEntries: CommuneEntry[] = communes.map((c: any) => ({
+        code: c.code,
+        nom: c.nom,
+        lat: c.centre.coordinates[1],
+        lng: c.centre.coordinates[0],
+        surface: c.surface // en hectares (parfois absent)
+      }));
+
+      const entry: EpciEntry = {
+        code: epci.code,
+        nom: epci.nom,
+        communesCount: communes.length,
+        communes: communeEntries
+      };
+
+      // Rattacher l'EPCI au département majoritaire
+      const deptCode = communes[0].departement?.code;
+      if (deptCode) {
+        if (!deptsContent.has(deptCode)) deptsContent.set(deptCode, []);
+        deptsContent.get(deptCode)!.push(entry);
+      }
+
+      totalCommunes += communes.length;
+    }));
+
+    processed += batch.length;
+    process.stdout.write(`\r   Progression : ${Math.round((processed / allEpcis.length) * 100)}% (${processed}/${allEpcis.length})`);
+    
+    await new Promise(r => setTimeout(r, 100));
   }
 
-  console.log(`📂 Lecture de ${sourceFile} (60MB)...`);
-  const raw = fs.readFileSync(sourcePath, 'utf8');
-  const { data } = JSON.parse(raw) as { data: Record<string, string>[] };
-  console.log(`   ${data.length} communes chargées`);
+  console.log('\n   Construction finale...');
 
-  // --- Regrouper par EPCI ---
-  const epciMap = new Map<string, {
-    nom: string;
-    dep_code: string;
-    dep_nom: string;
-    reg_nom: string;
-    lats: number[];
-    lngs: number[];
-  }>();
+  const departmentsData: DepartmentEntry[] = [];
+  const sortedDeptCodes = [...deptsContent.keys()].sort();
 
-  let skippedNoEpci = 0;
-  let skippedNoCoords = 0;
+  for (const code of sortedDeptCodes) {
+    const deptInfo = deptsMap.get(code) || { nom: `Dept ${code}`, region: 'Inconnue' };
+    const epciList = deptsContent.get(code)!;
 
-  for (const c of data) {
-    if (!c.epci_code) { skippedNoEpci++; continue; }
-
-    const lat = parseFloat(c.latitude_centre);
-    const lng = parseFloat(c.longitude_centre);
-    if (isNaN(lat) || isNaN(lng)) { skippedNoCoords++; continue; }
-
-    if (!epciMap.has(c.epci_code)) {
-      epciMap.set(c.epci_code, {
-        nom: c.epci_nom,
-        dep_code: c.dep_code,
-        dep_nom: c.dep_nom,
-        reg_nom: c.reg_nom,
-        lats: [],
-        lngs: [],
-      });
-    }
-
-    const entry = epciMap.get(c.epci_code)!;
-    entry.lats.push(lat);
-    entry.lngs.push(lng);
-  }
-
-  console.log(`   ${epciMap.size} EPCIs extraits`);
-  if (skippedNoEpci) console.log(`   ⚠️  ${skippedNoEpci} communes sans EPCI ignorées`);
-  if (skippedNoCoords) console.log(`   ⚠️  ${skippedNoCoords} communes sans coordonnées ignorées`);
-
-  // --- Regrouper par département ---
-  const deptMap = new Map<string, DepartmentEntry>();
-
-  for (const [code, epci] of epciMap) {
-    if (!deptMap.has(epci.dep_code)) {
-      deptMap.set(epci.dep_code, { code: epci.dep_code, nom: epci.dep_nom, region: epci.reg_nom, epci: [] });
-    }
-
-    deptMap.get(epci.dep_code)!.epci.push({
-      code,
-      nom: epci.nom,
-      communes: epci.lats.length,
-      bbox: {
-        minLat: parseFloat(Math.min(...epci.lats).toFixed(5)),
-        maxLat: parseFloat(Math.max(...epci.lats).toFixed(5)),
-        minLng: parseFloat(Math.min(...epci.lngs).toFixed(5)),
-        maxLng: parseFloat(Math.max(...epci.lngs).toFixed(5)),
-      },
+    departmentsData.push({
+      code: code,
+      nom: deptInfo.nom,
+      region: deptInfo.region,
+      epci: epciList.sort((a, b) => a.nom.localeCompare(b.nom))
     });
   }
 
-  // --- Trier : départements par code, EPCIs par nom ---
-  const departments: DepartmentEntry[] = [...deptMap.values()]
-    .sort((a, b) => a.code.localeCompare(b.code))
-    .map(d => ({ ...d, epci: d.epci.sort((a, b) => a.nom.localeCompare(b.nom)) }));
-
-  const totalEpci = departments.reduce((sum, d) => sum + d.epci.length, 0);
-  const totalCommunes = [...epciMap.values()].reduce((sum, e) => sum + e.lats.length, 0);
-
-  // --- Écrire la sortie ---
   const output: ComcomsData = {
     generated: new Date().toISOString(),
-    source: sourceFile,
-    stats: { departments: departments.length, epci: totalEpci, communes: totalCommunes },
-    departments,
+    source: 'geo.api.gouv.fr',
+    stats: { 
+      departments: departmentsData.length, 
+      epci: allEpcis.length, 
+      communes: totalCommunes 
+    },
+    departments: departmentsData,
   };
 
   const outPath = path.join(__dirname, 'comcoms-data.json');
@@ -132,13 +153,6 @@ async function main() {
   const sizeMo = (fs.statSync(outPath).size / 1024 / 1024).toFixed(2);
 
   console.log(`\n✅ comcoms-data.json généré (${sizeMo} Mo)`);
-  console.log(`   ${departments.length} départements | ${totalEpci} EPCIs | ${totalCommunes} communes`);
-  console.log(`\n📍 Aperçu par région:`);
-
-  // Afficher un résumé par département
-  for (const d of departments) {
-    console.log(`   [${d.code}] ${d.nom} — ${d.epci.length} EPCI`);
-  }
 }
 
-main();
+main().catch(console.error);
