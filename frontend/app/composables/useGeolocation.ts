@@ -67,6 +67,7 @@ export function useGeolocation(options: GeolocationOptions = {}) {
   const isFirstPosition = ref<boolean>(true)
   const lastFetchLat = ref<number | null>(null)
   const lastFetchLng = ref<number | null>(null)
+  const isTracking = ref<boolean>(false)
 
   // Callbacks externes (pour refresh des POIs par exemple)
   const onPositionUpdate = ref<((lat: number, lng: number) => void) | null>(null)
@@ -85,6 +86,8 @@ export function useGeolocation(options: GeolocationOptions = {}) {
 
     geolocLoading.value = true
     geolocError.value = null
+
+    const { showGeoNotification } = useNotifications()
 
     watchId.value = navigator.geolocation.watchPosition(
       (position: GeolocationPosition) => {
@@ -148,6 +151,9 @@ export function useGeolocation(options: GeolocationOptions = {}) {
         maximumAge: 10000           // Accepte une position de moins de 10 secondes
       }
     )
+
+    isTracking.value = true
+    showGeoNotification()
   }
 
   /**
@@ -158,6 +164,9 @@ export function useGeolocation(options: GeolocationOptions = {}) {
     if (watchId.value !== null) {
       navigator.geolocation.clearWatch(watchId.value)
       watchId.value = null
+      isTracking.value = false
+      const { hideGeoNotification } = useNotifications()
+      hideGeoNotification()
       console.log('📍 Location tracking stopped')
     }
   }
@@ -191,6 +200,7 @@ export function useGeolocation(options: GeolocationOptions = {}) {
     geolocLoading: readonly(geolocLoading),
     geolocError: readonly(geolocError),
     isFirstPosition: readonly(isFirstPosition),
+    isTracking: readonly(isTracking),
 
     // Actions
     startTracking,
