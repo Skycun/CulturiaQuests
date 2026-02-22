@@ -109,6 +109,8 @@ export default {
         'api::post.post.toggleLike',
         // GDPR
         'api::gdpr-request.gdpr-request.requestData',
+        // Quest generation
+        'api::quest.quest.generateDaily',
       ], 'Authenticated');
     }
 
