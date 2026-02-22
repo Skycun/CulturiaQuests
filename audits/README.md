@@ -25,7 +25,8 @@ audits/
 │   ├── 06-cron-nettoyage-logs.md
 │   ├── 07-liens-footer-landing.md
 │   ├── 08-versionnement-cgu.md
-│   └── 09-champ-age-fantome.md
+│   ├── 09-champ-age-fantome.md
+│   └── 10-icone-notification-android.md
 └── juridique/             ← Taches juridiques/administratives (6 fiches)
     ├── README.md
     ├── 01-informations-editeur.md
@@ -70,3 +71,6 @@ audits/
 11. `technique/06` — Cron nettoyage logs
 12. `juridique/03` — DPO
 13. `juridique/04` — Registre des traitements
+
+### Moyen
+14. `technique/10` — Icone de notification Android (monochromatique)

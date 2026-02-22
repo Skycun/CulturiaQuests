@@ -17,6 +17,7 @@
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/core": "^8.1.0",
+    "@capacitor/local-notifications": "^8.0.1",
     "@nuxt/eslint": "^1.10.0",
     "@nuxt/fonts": "^0.12.1",
     "@nuxt/icon": "^2.1.0",

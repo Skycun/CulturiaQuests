@@ -13,3 +13,4 @@ Modifications de code a implementer pour la conformite RGPD, CGU et la qualite g
 | 7 | Liens CGU/mentions legales dans le footer et la landing | MOYEN | [07-liens-footer-landing.md](./07-liens-footer-landing.md) |
 | 8 | Versionnement des CGU | MOYEN | [08-versionnement-cgu.md](./08-versionnement-cgu.md) |
 | 9 | Nettoyer le champ age fantome | MINEUR | [09-champ-age-fantome.md](./09-champ-age-fantome.md) |
+| 10 | Icone de notification Android (monochromatique) | MOYEN | [10-icone-notification-android.md](./10-icone-notification-android.md) |
