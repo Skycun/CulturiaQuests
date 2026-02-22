@@ -137,7 +137,7 @@ zipalign -v 4 app-release-unsigned.apk app-release.apk
 | `ADMIN_JWT_SECRET` | Strapi admin secret | (généré) |
 | `TRANSFER_TOKEN_SALT` | Strapi transfer salt | (généré) |
 | `JWT_SECRET` | JWT secret utilisateurs | (généré) |
-| `OPENAI_API_KEY` | Clé API OpenAI | `sk-...` |
+| `OLLAMA_MODEL` | Modèle Ollama (LLM local) | `mistral-nemo:12b` |
 | `DISCORD_WEBHOOK_ID` | (optionnel) Discord ID | |
 | `DISCORD_WEBHOOK_TOKEN` | (optionnel) Discord token | |
 

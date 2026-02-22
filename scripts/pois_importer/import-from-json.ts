@@ -1,6 +1,6 @@
 /**
  * import-from-json.ts
- * Importateur de POIs depuis des fichiers JSON existants (backup ou export Gemini).
+ * Importateur de POIs depuis des fichiers JSON existants (backup ou export IA).
  * Réutilise le client Strapi centralisé dans utils.ts
  *
  * Usage: npx tsx import-from-json.ts

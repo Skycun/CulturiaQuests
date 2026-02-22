@@ -1,18 +1,21 @@
 /**
- * Script standalone pour générer des questions quiz via OpenAI et les insérer en base
+ * Script standalone pour générer des questions quiz via Ollama (LLM local) et les insérer en base
+ *
+ * NOTE : La génération quotidienne est maintenant automatique via un cron Strapi (minuit Europe/Paris).
+ *        Ce script reste disponible pour le debug, les tests manuels ou comme fallback.
+ *        Le cron utilise OpenQuizzDB pour les QCM et Ollama uniquement pour les timeline.
  *
  * Usage:
  *   npx tsx generate-quiz-questions.ts                # Génère et affiche seulement
  *   npx tsx generate-quiz-questions.ts --save         # Génère et insère en base
  *   npx tsx generate-quiz-questions.ts --save --force # Supprime l'ancien quiz du jour avant de régénérer
  *
- * Requiert dans le .env racine:
- *   - OPENAI_API_KEY
+ * Requiert:
+ *   - Service Ollama en cours d'exécution (docker-compose up ollama)
  *   - STRAPI_BASE_URL (pour --save)
  *   - STRAPI_API_TOKEN (pour --save)
  */
 
-import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
@@ -25,6 +28,9 @@ const __dirname = path.dirname(__filename);
 
 // Charger le .env depuis la racine du projet
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral:7b';
 
 const TAGS = ['Art', 'History', 'Make', 'Nature', 'Science', 'Society'];
 
@@ -250,39 +256,34 @@ async function saveToDatabase(questions: Question[], force: boolean): Promise<vo
 async function generateQuestions() {
   const saveToDb = process.argv.includes('--save');
   const force = process.argv.includes('--force');
-  const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!apiKey) {
-    console.error('❌ OPENAI_API_KEY non trouvée dans le .env');
-    process.exit(1);
-  }
-
-  console.log('🚀 Génération des questions en cours...\n');
+  console.log(`🚀 Génération des questions via Ollama (${OLLAMA_MODEL})...\n`);
   console.log('📝 Prompt utilisé:\n');
   console.log('─'.repeat(60));
   console.log(PROMPT);
   console.log('─'.repeat(60));
   console.log('\n');
 
-  const openai = new OpenAI({ apiKey });
-
   try {
     const startTime = Date.now();
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-5.2-2025-12-11',
-      messages: [{ role: 'user', content: PROMPT }],
-      response_format: { type: 'json_object' },
+    const res = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
+      model: OLLAMA_MODEL,
+      prompt: PROMPT,
+      format: 'json',
+      stream: false,
+      options: { temperature: 0.7 },
     });
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    const response = JSON.parse(completion.choices[0].message.content || '{}');
+    const response = JSON.parse(res.data.response);
     const questions: Question[] = response.questions || response;
 
     console.log(`✅ Généré en ${elapsed}s\n`);
-    console.log(`📊 Tokens utilisés: ${completion.usage?.total_tokens || 'N/A'}`);
-    console.log(`   - Input: ${completion.usage?.prompt_tokens || 'N/A'}`);
-    console.log(`   - Output: ${completion.usage?.completion_tokens || 'N/A'}\n`);
+    if (res.data.eval_count) {
+      console.log(`📊 Tokens générés: ${res.data.eval_count}`);
+      console.log(`   Durée totale: ${(res.data.total_duration / 1e9).toFixed(2)}s\n`);
+    }
 
     // Validation
     if (!Array.isArray(questions)) {
@@ -338,10 +339,15 @@ async function generateQuestions() {
       console.log('\n💡 Utilisez --save pour insérer en base de données');
     }
   } catch (error) {
-    if (error instanceof OpenAI.APIError) {
-      console.error('❌ Erreur API OpenAI:', error.message);
-      console.error('   Status:', error.status);
-      console.error('   Code:', error.code);
+    if (axios.isAxiosError(error)) {
+      console.error('❌ Erreur Ollama:', error.message);
+      if (error.response) {
+        console.error('   Status:', error.response.status);
+        console.error('   Data:', JSON.stringify(error.response.data)?.substring(0, 200));
+      }
+      if (error.code === 'ECONNREFUSED') {
+        console.error('   Ollama ne semble pas tourner. Lancez: docker-compose up -d ollama');
+      }
     } else if (error instanceof Error) {
       console.error('❌ Erreur:', error.message);
     } else {

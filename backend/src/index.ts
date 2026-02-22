@@ -154,6 +154,8 @@ export default {
         'api::admin-dashboard.admin-dashboard.getConnectionAnalytics',
         'api::admin-dashboard.admin-dashboard.getGdprRequests',
         'api::admin-dashboard.admin-dashboard.markGdprProcessed',
+        // Quiz generation (admin only)
+        'api::quiz-session.quiz-session.generate',
       ];
 
       // Merge: all authenticated permissions + admin-only permissions

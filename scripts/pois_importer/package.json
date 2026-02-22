@@ -10,11 +10,9 @@
     "generate:comcoms": "tsx generate-comcoms-data.ts"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
-    "inquirer": "^12.3.0",
-    "openai": "^6.10.0"
+    "inquirer": "^12.3.0"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
