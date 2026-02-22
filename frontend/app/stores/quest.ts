@@ -78,6 +78,28 @@ export const useQuestStore = defineStore('quest', () => {
     }
   }
 
+  async function generateDailyQuests(poiDocumentIds: string[]) {
+    const client = useStrapiClient()
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await client<any>('/quests/generate-daily', {
+        method: 'POST',
+        body: { poiDocumentIds },
+      })
+
+      const data = response.data || response
+      setQuests(Array.isArray(data) ? data : [])
+      return response.alreadyGenerated
+    } catch (e: any) {
+      console.error('Failed to generate daily quests:', e)
+      error.value = e?.message || 'Failed to generate daily quests'
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchQuests() {
     const client = useStrapiClient()
     loading.value = true
@@ -130,6 +152,7 @@ export const useQuestStore = defineStore('quest', () => {
     updateQuest,
     updateQuestProgress,
     fetchQuests,
+    generateDailyQuests,
   }
 })
 // Persistance supprimée - les quests sont rechargés via guildStore.fetchAll()
