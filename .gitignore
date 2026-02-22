@@ -217,3 +217,7 @@ scripts/populate_db/node_modules
 scripts/**/*.json
 !scripts/**/*.example.json
 pois-output-*.json
+
+# OpenQuizzDB (fichiers téléchargés, ne pas versionner)
+backend/src/data/openquizzdb/openquizzdb_*.json
+backend/src/data/openquizzdb/used-questions.json

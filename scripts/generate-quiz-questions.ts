@@ -1,6 +1,10 @@
 /**
  * Script standalone pour générer des questions quiz via Ollama (LLM local) et les insérer en base
  *
+ * NOTE : La génération quotidienne est maintenant automatique via un cron Strapi (minuit Europe/Paris).
+ *        Ce script reste disponible pour le debug, les tests manuels ou comme fallback.
+ *        Le cron utilise OpenQuizzDB pour les QCM et Ollama uniquement pour les timeline.
+ *
  * Usage:
  *   npx tsx generate-quiz-questions.ts                # Génère et affiche seulement
  *   npx tsx generate-quiz-questions.ts --save         # Génère et insère en base
@@ -26,7 +30,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral-nemo:12b';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral:7b';
 
 const TAGS = ['Art', 'History', 'Make', 'Nature', 'Science', 'Society'];
 

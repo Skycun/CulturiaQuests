@@ -28,7 +28,7 @@ if (!process.env.STRAPI_API_TOKEN && !process.env.STRAPI_TOKEN) {
 
 // ===== CONFIGURATION =====
 export const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
-export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral-nemo:12b';
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral:7b';
 export const STRAPI_BASE_URL = process.env.STRAPI_BASE_URL || 'http://localhost:1337';
 export const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || process.env.STRAPI_TOKEN;
 
@@ -509,7 +509,11 @@ Réponds UNIQUEMENT avec du JSON valide:
         if (e.response) console.error(`   Status: ${e.response.status}`);
       }
 
+      const httpStatus = e.response?.status;
       const isRetryable =
+        httpStatus === 500 ||
+        httpStatus === 502 ||
+        httpStatus === 503 ||
         e.message?.includes('ECONNRESET') ||
         e.message?.includes('ETIMEDOUT') ||
         e.message?.includes('ECONNREFUSED') ||
