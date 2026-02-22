@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from 'axios';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -28,21 +27,32 @@ if (!process.env.STRAPI_API_TOKEN && !process.env.STRAPI_TOKEN) {
 }
 
 // ===== CONFIGURATION =====
-export const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+export const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+export const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral-nemo:12b';
 export const STRAPI_BASE_URL = process.env.STRAPI_BASE_URL || 'http://localhost:1337';
 export const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN || process.env.STRAPI_TOKEN;
 
-export const SEARCH_TYPES = [
-  'tourist_attraction', 'museum', 'historical_place', 'park', 'church',
-];
+export const OVERPASS_API_URL = 'https://overpass-api.de/api/interpreter';
 
-export const CULTURAL_TYPES = [
-  'art_gallery', 'auditorium', 'performing_arts_theater',
-  'historical_place', 'monument', 'museum', 'sculpture',
-  'church', 'mosque', 'synagogue', 'hindu_temple', 'place_of_worship',
-  'tourist_attraction', 'park', 'cemetery',
-];
+// Rayons par défaut selon le type OSM (en mètres)
+const DEFAULT_RADIUS_BY_TYPE: Record<string, number> = {
+  museum: 50,
+  gallery: 50,
+  castle: 150,
+  fort: 120,
+  ruins: 100,
+  archaeological_site: 150,
+  battlefield: 200,
+  park: 200,
+  garden: 100,
+  nature_reserve: 300,
+  place_of_worship: 40,
+  monument: 30,
+  memorial: 30,
+  artwork: 20,
+  attraction: 60,
+  default: 50,
+};
 
 export const GAME_CATEGORIES = ['Art', 'Nature', 'Science', 'Histoire', 'Savoir-faire', 'Société'];
 
@@ -263,110 +273,184 @@ export class StrapiClient {
   }
 }
 
-// ===== GOOGLE MAPS SERVICES =====
+// ===== OVERPASS (OPENSTREETMAP) SERVICES =====
 
-export async function fetchPlaceDetails(placeId: string): Promise<PlaceDetails> {
-  const res = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
-    params: { place_id: placeId, fields: 'opening_hours,geometry', key: GOOGLE_MAPS_API_KEY },
-  });
-  const result = res.data.result;
-  const openingHours: string[] | null = result?.opening_hours?.weekday_text || null;
-  const viewport = result?.geometry?.viewport || null;
-  let baseRadiusMeters: number | null = null;
-  if (viewport) {
+/** Construit la requête Overpass pour une commune (rayon autour du centre) */
+function buildOverpassQuery(lat: number, lng: number, radiusM: number): string {
+  return `[out:json][timeout:30];
+(
+  nwr["tourism"~"museum|attraction|gallery|artwork"](around:${radiusM},${lat},${lng});
+  nwr["historic"](around:${radiusM},${lat},${lng});
+  nwr["leisure"~"park|garden|nature_reserve"](around:${radiusM},${lat},${lng});
+  nwr["amenity"="place_of_worship"](around:${radiusM},${lat},${lng});
+);
+out center bb;`;
+}
+
+/** Détermine le type principal OSM d'un élément pour le rayon par défaut */
+function getOsmMainType(tags: Record<string, string>): string {
+  if (tags.tourism) return tags.tourism;
+  if (tags.historic) return tags.historic;
+  if (tags.leisure) return tags.leisure;
+  if (tags.amenity) return tags.amenity;
+  return 'default';
+}
+
+/** Calcule le rayon à partir de la géométrie OSM (bounds) ou utilise le rayon par défaut */
+function calculateRadiusFromOsm(element: Record<string, unknown>): number {
+  const tags = (element.tags || {}) as Record<string, string>;
+  const defaultRadius = DEFAULT_RADIUS_BY_TYPE[getOsmMainType(tags)] || DEFAULT_RADIUS_BY_TYPE.default;
+
+  // Pour les ways/relations, Overpass retourne bounds si disponible
+  const bounds = element.bounds as { minlat: number; maxlat: number; minlon: number; maxlon: number } | undefined;
+  if (bounds) {
     const toRad = (deg: number) => (deg * Math.PI) / 180;
     const R = 6371000;
-    const dLat = toRad(viewport.southwest.lat - viewport.northeast.lat);
-    const dLng = toRad(viewport.southwest.lng - viewport.northeast.lng);
-    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(viewport.northeast.lat)) * Math.cos(toRad(viewport.southwest.lat)) * Math.sin(dLng / 2) ** 2;
-    baseRadiusMeters = Math.round((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) / 2);
+    const dLat = toRad(bounds.maxlat - bounds.minlat);
+    const dLng = toRad(bounds.maxlon - bounds.minlon);
+    const midLat = toRad((bounds.maxlat + bounds.minlat) / 2);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(midLat) * Math.cos(midLat) * Math.sin(dLng / 2) ** 2;
+    const diameter = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const radius = Math.round(diameter / 2);
+    if (radius > 10) return Math.max(20, Math.min(radius, 500));
   }
+
+  return defaultRadius;
+}
+
+/** Extrait les détails d'un lieu directement depuis les tags OSM (pas d'appel réseau) */
+export function extractPlaceDetails(place: Record<string, unknown>): PlaceDetails {
+  const tags = (place.tags || {}) as Record<string, string>;
+  const openingHours = tags.opening_hours ? [tags.opening_hours] : null;
+  const baseRadiusMeters = calculateRadiusFromOsm(place);
   return { openingHours, baseRadiusMeters };
+}
+
+/** Génère une description lisible des tags OSM pour le prompt IA */
+function formatOsmTags(tags: Record<string, string>): string {
+  const relevant = ['tourism', 'historic', 'leisure', 'amenity', 'heritage', 'wikipedia', 'wikidata', 'denomination', 'religion', 'building'];
+  return relevant
+    .filter(k => tags[k])
+    .map(k => `${k}=${tags[k]}`)
+    .join(', ') || 'N/A';
+}
+
+/** Construit une requête Overpass avec un filtre BBox couvrant toutes les communes de l'EPCI */
+function buildOverpassBBoxQuery(communes: CommuneEntry[]): string {
+  const margin = 0.02; // ~2km de marge pour couvrir les POIs en périphérie
+  const lats = communes.map(c => c.lat);
+  const lngs = communes.map(c => c.lng);
+  const minLat = Math.min(...lats) - margin;
+  const maxLat = Math.max(...lats) + margin;
+  const minLng = Math.min(...lngs) - margin;
+  const maxLng = Math.max(...lngs) + margin;
+
+  return `[out:json][timeout:60][bbox:${minLat},${minLng},${maxLat},${maxLng}];
+(
+  nwr["tourism"~"museum|attraction|gallery|artwork"];
+  nwr["historic"];
+  nwr["leisure"~"park|garden|nature_reserve"];
+  nwr["amenity"="place_of_worship"];
+);
+out center bb;`;
 }
 
 export async function scanEpci(epci: EpciEntry, deptNom: string, regionNom: string): Promise<Record<string, unknown>[]> {
   const seen = new Map<string, Record<string, unknown>>();
-  for (let ci = 0; ci < epci.communes.length; ci++) {
-    const commune = epci.communes[ci];
-    const radiusM = calculateCommuneRadius(commune.surface);
-    // Log de progression par commune
-    process.stdout.write(`  📍 [${ci + 1}/${epci.communes.length}] ${commune.nom} (r=${radiusM}m)…`);
-    let communeNew = 0;
-    for (const type of SEARCH_TYPES) {
-      try {
-        // Boucle de pagination (max 3 pages = 60 résultats par type/commune)
-        let pageToken: string | undefined;
-        let page = 0;
-        do {
-          const params: any = { location: `${commune.lat},${commune.lng}`, radius: radiusM, type, key: GOOGLE_MAPS_API_KEY };
-          if (pageToken) params.pagetoken = pageToken;
 
-          const res = await axios.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json', { params });
+  console.log(`  📍 Scan BBox unique pour ${epci.communes.length} communes…`);
+  const query = buildOverpassBBoxQuery(epci.communes);
 
-          if (res.data.results) {
-            for (const p of res.data.results as Record<string, unknown>[]) {
-              const id = p.place_id as string;
-              if (!seen.has(id)) {
-                seen.set(id, { ...p, _sourceEpci: epci.nom, _sourceDept: deptNom, _sourceRegion: regionNom });
-                communeNew++;
-              }
-            }
-          }
-
-          pageToken = res.data.next_page_token;
-          page++;
-          if (pageToken) await new Promise(r => setTimeout(r, 2000)); // Google exige ~2s avant d'utiliser le token
-        } while (pageToken && page < 3);
-      } catch (e: any) {
-        console.warn(`  ⚠️ Google Maps erreur (${commune.nom}, type=${type}): ${e.message?.substring(0, 80)}`);
+  let attempts = 0;
+  let res = null;
+  while (attempts < 3) {
+    try {
+      res = await axios.post(OVERPASS_API_URL, `data=${encodeURIComponent(query)}`, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 90000,
+      });
+      break;
+    } catch (e: any) {
+      attempts++;
+      const status = e.response?.status;
+      if ((status === 429 || status === 504) && attempts < 3) {
+        const wait = [15000, 30000, 60000][attempts - 1];
+        console.warn(`  ⏳ Overpass ${status}, retry ${attempts}/3 dans ${wait / 1000}s...`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
       }
-      await new Promise(r => setTimeout(r, 200)); // délai entre types
+      console.warn(`  ⚠️ Overpass erreur (${epci.nom}): ${e.message?.substring(0, 80)}`);
+      break;
     }
-    console.log(` +${communeNew} (total: ${seen.size})`);
-    await new Promise(r => setTimeout(r, 100)); // délai entre communes
   }
-  return [...seen.values()].filter(p =>
-    (p.types as string[])?.some(t => CULTURAL_TYPES.includes(t))
-  );
+
+  if (res?.data?.elements) {
+    for (const el of res.data.elements as Record<string, unknown>[]) {
+      const osmId = `${el.type}/${el.id}`;
+      if (seen.has(osmId)) continue;
+
+      const tags = (el.tags || {}) as Record<string, string>;
+      if (!tags.name) continue; // Ignorer les éléments sans nom
+
+      // Coordonnées : directes pour les nodes, center pour les ways/relations
+      const lat = (el.lat as number) || (el.center as { lat: number })?.lat;
+      const lng = (el.lon as number) || (el.center as { lon: number })?.lon;
+      if (!lat || !lng) continue;
+
+      seen.set(osmId, {
+        osm_id: osmId,
+        name: tags.name,
+        tags,
+        lat,
+        lng,
+        bounds: el.bounds,
+        _sourceEpci: epci.nom,
+        _sourceDept: deptNom,
+        _sourceRegion: regionNom,
+      });
+    }
+  }
+
+  console.log(`  ✅ ${seen.size} POIs trouvés pour ${epci.nom}`);
+  return [...seen.values()];
 }
 
-// ===== GEMINI SERVICES =====
+// ===== OLLAMA SERVICES =====
 
-let _geminiModel: any = null;
-function getGeminiModel() {
-  if (!_geminiModel) {
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY!);
-    _geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-  }
-  return _geminiModel;
-}
-
-/** Test rapide de la connectivité Gemini — à appeler avant de lancer l'analyse en masse */
-export async function testGeminiConnection(): Promise<boolean> {
+/** Test rapide de la connectivité Ollama — à appeler avant de lancer l'analyse en masse */
+export async function testOllamaConnection(): Promise<boolean> {
   try {
-    const model = getGeminiModel();
-    const result = await model.generateContent('Réponds uniquement "ok".');
-    const text = result.response.text();
-    console.log(`✅ Gemini connecté (réponse: "${text.trim().substring(0, 20)}")`);
+    const res = await axios.get(`${OLLAMA_BASE_URL}/api/tags`);
+    const models = res.data.models || [];
+    const modelNames = models.map((m: { name: string }) => m.name);
+    const hasModel = modelNames.some((n: string) => n === OLLAMA_MODEL || n.startsWith(OLLAMA_MODEL.split(':')[0]));
+
+    if (!hasModel) {
+      console.error(`❌ Modèle "${OLLAMA_MODEL}" non trouvé dans Ollama.`);
+      console.error(`   Modèles disponibles: ${modelNames.join(', ') || '(aucun)'}`);
+      console.error(`   Lancez: docker exec -it ollama ollama pull ${OLLAMA_MODEL}`);
+      return false;
+    }
+
+    console.log(`✅ Ollama connecté (modèle: ${OLLAMA_MODEL})`);
     return true;
   } catch (e: any) {
-    console.error(`❌ Gemini inaccessible: ${e.message}`);
-    console.error(`   Vérifiez GEMINI_API_KEY et la connectivité réseau.`);
+    console.error(`❌ Ollama inaccessible: ${e.message}`);
+    console.error(`   Vérifiez que le service Ollama tourne sur ${OLLAMA_BASE_URL}`);
     return false;
   }
 }
 
-export async function categorizeWithGemini(place: Record<string, unknown>, details: PlaceDetails): Promise<AIResult> {
-  const model = getGeminiModel();
+export async function categorizeWithAI(place: Record<string, unknown>, details: PlaceDetails): Promise<AIResult> {
+  const tags = (place.tags || {}) as Record<string, string>;
 
-  const prompt = `
-Analyse ce lieu pour un jeu RPG culturel géolocalisé.
+  const prompt = `Analyse ce lieu pour un jeu RPG culturel géolocalisé.
 
-Lieu: "${place.name}" (${(place.types as string[])?.join(', ') || 'N/A'})
-Adresse: ${place.vicinity || 'N/A'}
+Lieu: "${place.name}" (${formatOsmTags(tags)})
+Adresse: ${tags['addr:street'] ? `${tags['addr:housenumber'] || ''} ${tags['addr:street']}, ${tags['addr:city'] || ''}`.trim() : 'N/A'}
 Département: ${place._sourceDept}
 Horaires: ${details.openingHours ? details.openingHours.join(' | ') : 'Non spécifiés'}
-Rayon viewport: ${details.baseRadiusMeters || 'N/A'} m
+Rayon estimé: ${details.baseRadiusMeters || 'N/A'} m
 
 Tes missions :
 1. Catégories: Choisis 1-2 parmi [${GAME_CATEGORIES.join(', ')}].
@@ -400,13 +484,15 @@ Réponds UNIQUEMENT avec du JSON valide:
 
   while (attempts < 5) {
     try {
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      
-      // Nettoyage JSON renforcé
-      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
-      const data = JSON.parse(jsonStr);
+      const res = await axios.post(`${OLLAMA_BASE_URL}/api/generate`, {
+        model: OLLAMA_MODEL,
+        prompt,
+        format: 'json',
+        stream: false,
+        options: { temperature: 0.3 },
+      });
+
+      const data = JSON.parse(res.data.response);
 
       if (!data.isPubliclyAccessible) {
         console.error(`❌ REJET [${place.name}]: ${data.reasoning}`);
@@ -415,23 +501,21 @@ Réponds UNIQUEMENT avec du JSON valide:
     } catch (e: any) {
       attempts++;
 
-      // Log à chaque retry pour visibilité
       if (attempts < 5) {
-        console.warn(`  ⚠️ Gemini retry ${attempts}/5 [${(place.name as string)?.substring(0, 30)}]: ${e.message?.substring(0, 60)}`);
+        console.warn(`  ⚠️ Ollama retry ${attempts}/5 [${(place.name as string)?.substring(0, 30)}]: ${e.message?.substring(0, 60)}`);
       } else {
-        console.error(`\n💥 ERREUR FATALE GEMINI sur [${place.name}]:`);
+        console.error(`\n💥 ERREUR FATALE OLLAMA sur [${place.name}]:`);
         console.error(`   Message: ${e.message}`);
         if (e.response) console.error(`   Status: ${e.response.status}`);
       }
 
       const isRetryable =
-        e.message?.includes('503') ||
-        e.message?.includes('429') ||
-        e.message?.includes('Error fetching') ||
-        e.message?.includes('fetch') ||
         e.message?.includes('ECONNRESET') ||
         e.message?.includes('ETIMEDOUT') ||
+        e.message?.includes('ECONNREFUSED') ||
         e.message?.includes('network') ||
+        e.code === 'ECONNRESET' ||
+        e.code === 'ETIMEDOUT' ||
         e instanceof SyntaxError;
       if (isRetryable && attempts < 5) {
         await new Promise(r => setTimeout(r, delay));
@@ -442,6 +526,5 @@ Réponds UNIQUEMENT avec du JSON valide:
     }
   }
 
-  // Retourne un objet erreur explicite avec flag _error pour distinguer d'un rejet légitime
-  return { categories: [], reasoning: 'Erreur technique Gemini (voir logs)', isPubliclyAccessible: false, accessType: 'inconnu' as const, radiusMeters: 50, _error: true };
+  return { categories: [], reasoning: 'Erreur technique Ollama (voir logs)', isPubliclyAccessible: false, accessType: 'inconnu' as const, radiusMeters: 50, _error: true };
 }

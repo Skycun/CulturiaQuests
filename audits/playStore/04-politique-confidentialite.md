@@ -56,7 +56,7 @@ La politique de confidentialite doit couvrir :
    - Hebergeur : [nom et pays]
    - OpenStreetMap / CartoDB (tuiles cartographiques, IP exposee)
    - Google Fonts (si non hebergees localement, IP exposee)
-   - OpenAI (generation de quiz, aucune donnee personnelle transmise)
+   - Ollama (generation de quiz en local, aucune donnee transmise a un tiers)
 7. **Transferts hors UE** : mentionner les services US le cas echeant
 8. **Droits des utilisateurs** : acces, rectification, effacement, portabilite, opposition, limitation
 9. **Comment exercer ses droits** : email de contact, bouton "Demander mes donnees" dans l'app

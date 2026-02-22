@@ -143,7 +143,7 @@ CulturiaQuests/
 │   └── public/              # Assets publics
 │
 ├── 📁 scripts/              # Scripts utilitaires
-│   ├── pois_importer/       # Import de POI (Google Maps)
+│   ├── pois_importer/       # Import de POI (OpenStreetMap + Ollama)
 │   ├── populate_db/         # Seeding de la base de données
 │   └── ai_reviewer.py       # Revue de code IA (CI/CD)
 │
@@ -188,7 +188,7 @@ CulturiaQuests/
 | **Arrêter** | `docker compose down` | Arrête les conteneurs |
 | **Sauvegarde BDD** | `bash scripts/backup-db.sh` | Crée une sauvegarde |
 | **Restaurer BDD** | `bash scripts/restore-db.sh <fichier>.tar.gz` | Restaure une sauvegarde |
-| **Import POIs** | `npx tsx scripts/pois_importer/comcom-import.ts` | Import par ComCom (Google + Gemini) |
+| **Import POIs** | `npx tsx scripts/pois_importer/comcom-import.ts` | Import par ComCom (OpenStreetMap + Ollama) |
 
 ---
 

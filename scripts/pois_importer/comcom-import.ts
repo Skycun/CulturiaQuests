@@ -1,7 +1,7 @@
 /**
  * comcom-import.ts
  * Importateur de POIs par communautés de communes (EPCI).
- * Sélection interactive département → EPCI, scan multi-points Google Maps, analyse Gemini.
+ * Sélection interactive département → EPCI, scan Overpass (OpenStreetMap), analyse Ollama.
  *
  * Usage: npx tsx comcom-import.ts
  * Prérequis: comcoms-data.json généré via generate-comcoms-data.ts
@@ -16,11 +16,10 @@ const __dirname = path.dirname(__filename);
 
 // Import depuis UTILS
 import {
-  GOOGLE_MAPS_API_KEY, GEMINI_API_KEY, STRAPI_BASE_URL, STRAPI_API_TOKEN,
-  SEARCH_TYPES, CULTURAL_TYPES,
+  OLLAMA_BASE_URL, OLLAMA_MODEL, STRAPI_BASE_URL, STRAPI_API_TOKEN,
   EpciEntry, DepartmentEntry, ComcomsData, POIOutput,
   computeAreaKm2,
-  StrapiClient, fetchPlaceDetails, scanEpci, categorizeWithGemini, testGeminiConnection,
+  StrapiClient, extractPlaceDetails, scanEpci, categorizeWithAI, testOllamaConnection,
   loadImportState, updateEpciState
 } from './utils';
 
@@ -163,12 +162,6 @@ async function main() {
   console.log('🗺️  CulturiaQuests — Importateur par Communautés de Communes\n');
 
   // --- Vérifications ---
-  if (!GOOGLE_MAPS_API_KEY || !GEMINI_API_KEY) {
-    console.error('❌ Clés API manquantes dans .env');
-    console.log('   Requis : GOOGLE_MAPS_API_KEY, GEMINI_API_KEY');
-    process.exit(1);
-  }
-
   const dataPath = path.join(__dirname, 'comcoms-data.json');
   if (!fs.existsSync(dataPath)) {
     console.error('❌ comcoms-data.json introuvable.');
@@ -209,19 +202,19 @@ async function main() {
   console.log('\n📋 Résumé de la sélection :');
   console.log(`   Départements :  ${[...new Set(selectedEpcis.map(s => s.dept.nom))].join(', ')}`);
   console.log(`   EPCIs :          ${selectedEpcis.length}`);
-  console.log(`   Communes :       ${totalCommunes} (Points de recherche)`);
-  console.log(`   Requêtes API est.: ${totalCommunes * SEARCH_TYPES.length} (Google Maps)\n`);
+  console.log(`   Communes :       ${totalCommunes} (couvertes par BBox)`);
+  console.log(`   Requêtes API est.: ${selectedEpcis.length} (1 requête BBox par EPCI — Overpass gratuit)\n`);
 
   const { go } = await inquirer.prompt([{
     type: 'confirm',
     name: 'go',
-    message: 'Démarrer le scan Google Maps ?',
+    message: 'Démarrer le scan Overpass (OpenStreetMap) ?',
     default: true,
   }]);
   if (!go) process.exit(0);
 
   // ============================================================
-  // PHASE 1 — Scan Google Maps (multi-points par EPCI)
+  // PHASE 1 — Scan Overpass / OpenStreetMap (multi-points par EPCI)
   // ============================================================
   const state: DashboardState = {
     epciList: selectedEpcis.map(({ epci, dept }) => ({
@@ -231,7 +224,7 @@ async function main() {
     recentLogs: ['🚀 Démarrage du scan...'],
   };
 
-  const globalSeen = new Set<string>();   // dédup globale par place_id
+  const globalSeen = new Set<string>();   // dédup globale par osm_id
   const allPlaces: Record<string, unknown>[] = [];
 
   renderDashboard(state);
@@ -248,7 +241,8 @@ async function main() {
       const cached = JSON.parse(fs.readFileSync(cacheFile, 'utf8')) as Record<string, unknown>[];
       let newCount = 0;
       for (const p of cached) {
-        const id = p.place_id as string;
+        const id = p.osm_id as string;
+        if (!id) continue; // Ignorer les anciens caches au format Google Maps
         if (!globalSeen.has(id)) {
           globalSeen.add(id);
           allPlaces.push(p);
@@ -271,7 +265,7 @@ async function main() {
 
       let newCount = 0;
       for (const p of places) {
-        const id = p.place_id as string;
+        const id = p.osm_id as string;
         if (!globalSeen.has(id)) {
           globalSeen.add(id);
           allPlaces.push(p);
@@ -304,12 +298,12 @@ async function main() {
   }
 
   // ============================================================
-  // PHASE 2 — Analyse Gemini
+  // PHASE 2 — Analyse Ollama
   // ============================================================
   const { doAnalysis } = await inquirer.prompt([{
     type: 'confirm',
     name: 'doAnalysis',
-    message: `Analyser ces ${allPlaces.length} lieux avec Gemini ?`,
+    message: `Analyser ces ${allPlaces.length} lieux avec Ollama (${OLLAMA_MODEL}) ?`,
     default: true,
   }]);
 
@@ -318,11 +312,11 @@ async function main() {
     process.exit(0);
   }
 
-  // Test de connectivité Gemini avant de lancer l'analyse en masse
-  console.log('\n🔌 Test de connexion Gemini...');
-  const geminiOk = await testGeminiConnection();
-  if (!geminiOk) {
-    console.error('\n❌ Impossible de contacter Gemini. Abandon de l\'analyse.');
+  // Test de connectivité Ollama avant de lancer l'analyse en masse
+  console.log('\n🔌 Test de connexion Ollama...');
+  const ollamaOk = await testOllamaConnection();
+  if (!ollamaOk) {
+    console.error('\n❌ Impossible de contacter Ollama. Abandon de l\'analyse.');
     console.log(`💾 Données brutes en cache dans exports/ (${selectedEpcis.length} fichiers EPCI)`);
     console.log('   Relancez le script pour reprendre sans rescanner.');
     process.exit(1);
@@ -334,8 +328,8 @@ async function main() {
 
   renderDashboard(state);
 
-  // Concurrence limitée à 3 pour respecter les rate limits Gemini/Google
-  const CONCURRENCY = 3;
+  // Concurrence limitée à 1 pour Ollama local (un seul GPU)
+  const CONCURRENCY = 1;
 
   async function processWithConcurrency<T>(
     items: T[],
@@ -357,32 +351,30 @@ async function main() {
     renderDashboard(state);
 
     try {
-      const details  = await fetchPlaceDetails(place.place_id as string);
-      const analysis = await categorizeWithGemini(place, details);
+      const details  = extractPlaceDetails(place);
+      const analysis = await categorizeWithAI(place, details);
 
       state.analysisProcessing--;
 
       if (analysis._error) {
-        // Erreur technique Gemini (rate limit, parsing, etc.)
         state.analysisErrors++;
         state.recentLogs.push(`  ⚠️ ERREUR: ${((place.name as string) || '?').substring(0, 30)}…`);
       } else if (analysis.isPubliclyAccessible) {
         state.analysisAccepted++;
 
-        const isMuseum = (place.types as string[])?.some(t =>
-          ['museum', 'art_gallery', 'aquarium', 'zoo'].includes(t)
-        );
+        const tags = (place.tags || {}) as Record<string, string>;
+        const isMuseum = tags.tourism === 'museum' || tags.tourism === 'gallery';
 
         validPOIs.push({
           name:        place.name as string,
           description: analysis.reasoning,
-          latitude:    (place.geometry as { location: { lat: number } }).location.lat,
-          longitude:   (place.geometry as { location: { lng: number } }).location.lng,
+          latitude:    place.lat as number,
+          longitude:   place.lng as number,
           type:        isMuseum ? 'museum' : 'poi',
           categories:  analysis.categories,
           accessType:  analysis.accessType,
           radiusMeters: analysis.radiusMeters,
-          rating:      (place.rating as number) || null,
+          rating:      null,
           epci:        place._sourceEpci as string,
           department:  place._sourceDept as string,
           region:      place._sourceRegion as string,

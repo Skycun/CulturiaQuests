@@ -68,10 +68,10 @@ Creer un document (tableur ou PDF) contenant les informations suivantes pour cha
 | **Base legale** | Interet legitime |
 | **Categories de personnes** | Aucune (pas de donnees personnelles) |
 | **Categories de donnees** | Aucune donnee personnelle transmise |
-| **Destinataires** | OpenAI (prompts de generation uniquement) |
-| **Transferts hors UE** | Oui (serveurs OpenAI aux USA) - mais aucune donnee personnelle |
+| **Destinataires** | Aucun (Ollama tourne en local) |
+| **Transferts hors UE** | Non (traitement local via Ollama) |
 | **Duree de conservation** | N/A |
-| **Mesures de securite** | Cle API securisee, pas de donnees personnelles dans les prompts |
+| **Mesures de securite** | Traitement local, pas de donnees transmises a un tiers |
 
 ## Format
 

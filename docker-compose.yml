@@ -33,7 +33,6 @@ services:
       DATABASE_USERNAME: ${POSTGRES_USER}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
       NODE_ENV: development
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
       HOST: 0.0.0.0
     volumes:
       - ./backend:/opt/app
@@ -73,10 +72,23 @@ services:
       - app-network
     command: sh -c "npm install && npm run dev"
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull ${OLLAMA_MODEL:-mistral-nemo:12b} && wait"]
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - app-network
+
 volumes:
   strapi-data:
   backend_node_modules:
-  frontend_node_modules: 
+  frontend_node_modules:
+  ollama-data:
 
 networks:
   app-network:

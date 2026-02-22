@@ -12,7 +12,7 @@ CulturiaQuests is a geolocation-based RPG web application with a headless CMS ar
 - **Frontend**: Nuxt.js 4.2.1 (Vue 3) with Tailwind CSS, Pinia, and @nuxtjs/strapi
 - **Mobile**: Capacitor (Android) for native app packaging
 - **Infrastructure**: Docker Compose orchestration (dev + prod), GitHub Actions CI/CD
-- **AI**: OpenAI API for daily quiz question generation
+- **AI**: Ollama (local LLM, Mistral Nemo 12B) for quiz generation and POI categorization
 
 ## Development Commands
 
@@ -255,10 +255,10 @@ On startup, automatically grants permissions:
 ## Scripts
 
 ### Quiz Generator (`scripts/generate-quiz-questions.ts`)
-TypeScript script using OpenAI API to generate daily quiz questions (10 per day, mix of QCM and timeline types). Supports `--save` to insert into database and `--force` to overwrite existing sessions. Run with `tsx`.
+TypeScript script using Ollama (local LLM) to generate daily quiz questions (10 per day, mix of QCM and timeline types). Supports `--save` to insert into database and `--force` to overwrite existing sessions. Run with `tsx`.
 
 ### POI Importer (`scripts/pois_importer/`)
-TypeScript tool to import Points of Interest from Google Maps API. Output JSON files are generated as `pois-output-*.json` for seeding the database.
+TypeScript tool to import Points of Interest from OpenStreetMap (Overpass API) with Ollama AI categorization. Output JSON files are generated in `exports/` for seeding the database.
 
 ### Zones Importer (`scripts/zones_importer/`)
 TypeScript script to import French administrative zones (regions, departments, communautés de communes) from Etalab GeoJSON datasets into Strapi. Hierarchical import with parent-child relationships.
@@ -296,7 +296,7 @@ GitHub Actions workflow that runs on push to `main`/`develop`. Analyzes code cha
 - `PORT` - Strapi backend port (default: 1337)
 - `NUXT_PORT` - Frontend port (default: 3000)
 - `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET` - Strapi security keys
-- `OPENAI_API_KEY` - OpenAI API key for quiz generation
+- `OLLAMA_MODEL` - Ollama model for AI tasks (default: mistral-nemo:12b)
 - `NUXT_PUBLIC_API_URL` - Public API URL for browser (default: http://localhost:1337)
 
 ## Access Points
