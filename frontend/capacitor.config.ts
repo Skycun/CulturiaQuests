@@ -6,6 +6,7 @@ const config: CapacitorConfig = {
   webDir: '.output/public',
   server: {
     androidScheme: 'https',
+    iosScheme: 'https',
     cleartext: false,
     // Permet le hot-reload en dev (optionnel)
     // url: 'http://192.168.x.x:3000',

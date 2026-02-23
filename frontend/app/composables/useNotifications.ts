@@ -10,6 +10,7 @@ const GEO_NOTIFICATION_ID = 1002
  */
 export function useNotifications() {
   const isNative = Capacitor.isNativePlatform()
+  const isAndroid = Capacitor.getPlatform() === 'android'
 
   /**
    * Demande la permission POST_NOTIFICATIONS (Android 13+).
@@ -29,9 +30,10 @@ export function useNotifications() {
    * Crée les canaux Android pour les notifications.
    * - quiz-channel : importance DEFAULT (son + vibration)
    * - geo-channel : importance LOW (silencieux, visuel uniquement)
+   * No-op sur iOS (les channels n'existent que sur Android).
    */
   async function createChannels(): Promise<void> {
-    if (!isNative) return
+    if (!isNative || !isAndroid) return
 
     await LocalNotifications.createChannel({
       id: 'quiz-channel',
@@ -84,10 +86,10 @@ export function useNotifications() {
           id: QUIZ_NOTIFICATION_ID,
           title: 'Quiz du jour disponible !',
           body: 'Un nouveau quiz culturel vous attend. Testez vos connaissances !',
-          channelId: 'quiz-channel',
+          ...(isAndroid && { channelId: 'quiz-channel' }),
           schedule: {
             at: next,
-            allowWhileIdle: true,
+            ...(isAndroid && { allowWhileIdle: true }),
           },
           extra: {
             route: '/social/quiz',
@@ -114,9 +116,9 @@ export function useNotifications() {
           id: GEO_NOTIFICATION_ID,
           title: 'Géolocalisation active',
           body: 'CulturiaQuests utilise votre position pour afficher la carte.',
-          channelId: 'geo-channel',
-          ongoing: true,
-          autoCancel: false,
+          ...(isAndroid
+            ? { channelId: 'geo-channel', ongoing: true, autoCancel: false }
+            : {}),
         },
       ],
     })
